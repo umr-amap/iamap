@@ -1,0 +1,3 @@
+# Installation
+
+## Install QGIS
