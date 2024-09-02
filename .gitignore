@@ -6,3 +6,7 @@ src/iamap/utils/__pycache__
 assets/test.tif.aux.xml
 python*/
 features/
+utils/__pycache__
+icons/__pycache__
+dialogs/packages_installer/__pycache__
+__pycache__
