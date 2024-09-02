@@ -3,3 +3,6 @@
 src/iamap/dialogs/packages_installer/__pycache__
 src/iamap/icons/__pycache__
 src/iamap/utils/__pycache__
+assets/test.tif.aux.xml
+python*/
+features/
