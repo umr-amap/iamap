@@ -98,7 +98,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 name=self.INPUT,
                 description=self.tr(
                     'Input raster layer or image file path'),
-            defaultValue=os.path.join(cwd,'rasters','test.tif'),
+            defaultValue=os.path.join(cwd,'assets','test.tif'),
             ),
         )
 
@@ -309,6 +309,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
 
 
         feedback.pushInfo(f'create model')
+        print(f'create model')
         model = timm.create_model(
             self.backbone_name,
             pretrained=True,
@@ -317,6 +318,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             )
 
         feedback.pushInfo(f'model done')
+        print(f'model done')
         data_config = timm.data.resolve_model_data_config(model)
         _, h, w, = data_config['input_size']
 

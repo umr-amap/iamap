@@ -1,0 +1,9 @@
+[general]
+name=iamap
+description=Extract deep learning features from rasters
+about= Still WIP
+version=0.5.0
+qgisMinimumVersion=3.12
+author=Paul Tresson, Pierre Lecoz
+email=paul.tresson@ird.fr
+repository=github.com/umr-amap/iamap

@@ -104,7 +104,8 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
                 optional=True
             )
         )
-        self.method_opt = ['PCA', 'UMAP', 'K-means', '--Empty--']
+        # self.method_opt = ['PCA', 'UMAP', 'K-means', '--Empty--']
+        self.method_opt = ['PCA', 'K-means', '--Empty--']
         self.addParameter (
             QgsProcessingParameterEnum(
                 name = self.METHOD,
@@ -185,9 +186,9 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
         if self.method == 'PCA':
             proj = PCA(int(self.ncomponents)) 
             save_file = 'pca.pkl'
-        if self.method == 'UMAP':
-            proj = UMAP(int(self.ncomponents))
-            save_file = 'umap.pkl'
+        # if self.method == 'UMAP':
+            # proj = UMAP(int(self.ncomponents))
+            # save_file = 'umap.pkl'
         if self.method == 'K-means':
             proj = KMeans(int(self.ncomponents))
             save_file = 'kmeans_transform.pkl'
