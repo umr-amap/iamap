@@ -4,22 +4,15 @@ import re
 import hashlib
 import numpy as np
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any
 from processing import defaultOutputFolder
 
 import rasterio
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import (QgsProcessing, Qgis,
+from qgis.core import (Qgis,
                        QgsGeometry,
-                       QgsRasterLayer,
-                       QgsRectangle,
-                       QgsCoordinateReferenceSystem,
-                       QgsUnitTypes,
-                       QgsRasterBandStats,
                        QgsCoordinateTransform,
-                       QgsFeatureSink,
                        QgsProcessingException,
-                       QgsProcessingFeedback,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFolderDestination,
@@ -31,12 +24,7 @@ from qgis.core import (QgsProcessing, Qgis,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterExtent,
                        QgsProcessingParameterCrs,
-                       QgsProcessingParameterScale,
-                       QgsProcessingParameterExpression,
-                       QgsProcessingParameterRange,
-                       QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterDefinition,
-                       QgsProcessingParameterFeatureSink,
                        )
 
 import torch
