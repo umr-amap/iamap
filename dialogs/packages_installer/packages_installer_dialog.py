@@ -20,8 +20,6 @@ from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtGui import QCloseEvent
 from qgis.PyQt.QtWidgets import QDialog, QMessageBox, QTextBrowser
 
-# from deepness.common.defines import PLUGIN_NAME
-
 PLUGIN_NAME = "iamap"
 
 PYTHON_VERSION = sys.version_info
@@ -35,6 +33,15 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 _ERROR_COLOR = '#ff0000'
 
+if sys.platform == "linux" or sys.platform == "linux2":
+    PYTHON_EXECUTABLE_PATH = sys.executable
+elif sys.platform == "darwin":  # MacOS
+    PYTHON_EXECUTABLE_PATH = str(Path(sys.prefix) / 'bin' / 'python3')  # sys.executable yields QGIS in macOS
+elif sys.platform == "win32":
+    PYTHON_EXECUTABLE_PATH = 'python'  # sys.executable yields QGis.exe in Windows
+else:
+    raise Exception("Unsupported operating system!")
+
 
 @dataclass
 class PackageToInstall:
@@ -44,75 +51,6 @@ class PackageToInstall:
 
     def __str__(self):
         return f'{self.name}{self.version}'
-
-
-# REQUIREMENTS_PATH = os.path.join(PLUGIN_ROOT_DIR, 'python_requirements/requirements.txt')
-REQUIREMENTS_PATH = os.path.join(PLUGIN_ROOT_DIR, 'requirements.txt')
-
-with open(REQUIREMENTS_PATH, 'r') as f:
-    raw_txt = f.read()
-
-libraries_versions = {}
-
-for line in raw_txt.split('\n'):
-    if line.startswith('#') or not line.strip():
-        continue
-
-    line = line.split(';')[0]
-
-    if '==' in line:
-        lib, version = line.split('==')
-        libraries_versions[lib] = '==' + version
-    elif '>=' in line:
-        lib, version = line.split('>=')
-        libraries_versions[lib] = '>=' + version
-    elif '<=' in line:
-        lib, version = line.split('<=')
-        libraries_versions[lib] = '<=' + version
-    else:
-        libraries_versions[line] = ''
-
-
-packages_to_install = []
-for lib, version in libraries_versions.items():
-
-    import_name = lib[:-1]
-
-    if lib == 'scikit-learn ':
-        import_name = 'sklearn'
-    if lib == 'umap-learn ':
-        import_name = 'umap'
-
-    packages_to_install.append(
-            PackageToInstall(
-                name=lib, 
-                version=version, 
-                import_name=import_name
-                )
-            )
-
-
-# packages_to_install = [
-#     PackageToInstall(name='scikit-learn', version=libraries_versions['scikit-learn'], import_name='sklearn'),
-# ]
-
-if sys.platform == "linux" or sys.platform == "linux2":
-    # packages_to_install += [
-    #     PackageToInstall(name='ime-gpu', version=libraries_versions['onnxruntime-gpu'], import_name='onnxruntime'),
-    # ]
-    PYTHON_EXECUTABLE_PATH = sys.executable
-elif sys.platform == "darwin":  # MacOS
-    # packages_to_install += [
-    #     PackageToInstall(name='onnxruntime', version=libraries_versions['onnxruntime-gpu'], import_name='onnxruntime'),
-    # ]
-    PYTHON_EXECUTABLE_PATH = str(Path(sys.prefix) / 'bin' / 'python3')  # sys.executable yields QGIS in macOS
-elif sys.platform == "win32":
-    # packages_to_install += [
-    #     PackageToInstall(name='onnxruntime', version=libraries_versions['onnxruntime-gpu'], import_name='onnxruntime'),
-    # ]
-    PYTHON_EXECUTABLE_PATH = 'python'  # sys.executable yields QGis.exe in Windows
-else:
-    raise Exception("Unsupported operating system!")
 
 
 class PackagesInstallerDialog(QDialog, FORM_CLASS):
@@ -125,11 +63,13 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
 
     INSTALLATION_IN_PROGRESS = False  # to make sure we will not start the installation twice
 
-    def __init__(self, iface, parent=None):
+    def __init__(self, iface, packages_to_install, device, parent=None):
         super(PackagesInstallerDialog, self).__init__(parent)
         self.setupUi(self)
         self.iface = iface
         self.tb = self.textBrowser_log  # type: QTextBrowser
+        self.packages_to_install=packages_to_install
+        self.device=device
         self._create_connections()
         self._setup_message()
         self.aborted = False
@@ -171,7 +111,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                  f'\n'
                  f'<b>This plugin requires the following Python packages to be installed:</b>')
         
-        for package in packages_to_install:
+        for package in self.packages_to_install:
             self.log(f'\t- {package.name}{package.version}')
 
         self.log('\n\n'
@@ -201,7 +141,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
 
         self.log(f'<h3><b>Attempting to install required packages...</b></h3>\n')
         try:
-            self._pip_install_packages(packages_to_install)
+            self._pip_install_packages(self.packages_to_install)
         except Exception as e:
             msg = (f'\n <span style="color: {_ERROR_COLOR};"><b> '
                    f'Packages installation failed with exception: {e}!\n'
@@ -310,7 +250,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                 raise InterruptedError('Installation aborted by user')
 
     def _check_packages_installation_and_log(self) -> bool:
-        packages_ok = are_packages_importable()
+        packages_ok = are_packages_importable(self.device)
         self.pushButton_install_packages.setEnabled(not packages_ok)
 
         if packages_ok:
@@ -319,7 +259,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
             return True
 
         try:
-            import_packages()
+            import_packages(self.device)
             raise Exception("Unexpected successful import of packages?!? It failed a moment ago, we shouldn't be here!")
         except Exception:
             msg_base = '<b>Python packages required by the plugin could not be loaded due to the following error:</b>'
@@ -334,23 +274,104 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
 
         return False
 
+def get_pytorch_version(cuda_version):
+    # Map CUDA versions to PyTorch versions
+    ## cf. https://pytorch.org/get-started/locally/
+    cuda_to_pytorch = {
+        "11.8": "--index-url https://download.pytorch.org/whl/cu118",
+        "12.1": "",
+        "12.4": "--index-url https://download.pytorch.org/whl/cu124",
+    }
+    return cuda_to_pytorch.get(cuda_version, None)
 
-dialog = None
+
+def get_packages_to_install(device):
+
+    requirements_path = os.path.join(PLUGIN_ROOT_DIR, 'requirements.txt')
+    packages_to_install = []
+    print(device)
+
+    if device == 'cpu':
+        pass
+
+    else :
+        if device == 'amd':
+            packages_to_install.append(
+                    PackageToInstall(
+                        name='torch torchvision', 
+                        version='--index-url https://download.pytorch.org/whl/rocm6.1', 
+                        import_name='torch'
+                        )
+                    )
+
+        else:
+            packages_to_install.append(
+                    PackageToInstall(
+                        name='torch torchvision', 
+                        version=get_pytorch_version(device), 
+                        import_name='torch'
+                        )
+                    )
+        
+
+
+    with open(requirements_path, 'r') as f:
+        raw_txt = f.read()
+
+    libraries_versions = {}
+
+    for line in raw_txt.split('\n'):
+        if line.startswith('#') or not line.strip():
+            continue
+
+        line = line.split(';')[0]
+
+        if '==' in line:
+            lib, version = line.split('==')
+            libraries_versions[lib] = '==' + version
+        elif '>=' in line:
+            lib, version = line.split('>=')
+            libraries_versions[lib] = '>=' + version
+        elif '<=' in line:
+            lib, version = line.split('<=')
+            libraries_versions[lib] = '<=' + version
+        else:
+            libraries_versions[line] = ''
+
+
+    for lib, version in libraries_versions.items():
+
+        import_name = lib[:-1]
+
+        if lib == 'scikit-learn ':
+            import_name = 'sklearn'
+        if lib == 'umap-learn ':
+            import_name = 'umap'
+
+        packages_to_install.append(
+                PackageToInstall(
+                    name=lib, 
+                    version=version, 
+                    import_name=import_name
+                    )
+                )
+    return packages_to_install
+
 
 
 def import_package(package: PackageToInstall):
-    # print(package.import_name)
     importlib.import_module(package.import_name)
 
 
-def import_packages():
+def import_packages(device):
+    packages_to_install = get_packages_to_install(device)
     for package in packages_to_install:
         import_package(package)
 
 
-def are_packages_importable() -> bool:
+def are_packages_importable(device) -> bool:
     try:
-        import_packages()
+        import_packages(device)
     except Exception:
         logging.exception(f'Python packages required by the plugin could not be loaded due to the following error:')
         return False
@@ -366,17 +387,19 @@ def check_pip_installed() -> bool:
         return False
 
 
-def check_required_packages_and_install_if_necessary(iface):
+dialog = None
+def check_required_packages_and_install_if_necessary(iface, device='cpu'):
     os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
     if PACKAGES_INSTALL_DIR not in sys.path:
         sys.path.append(PACKAGES_INSTALL_DIR)  # TODO: check for a less intrusive way to do this
 
-    if are_packages_importable():
+    if are_packages_importable(device):
         # if packages are importable we are fine, nothing more to do then
         return
 
     global dialog
-    dialog = PackagesInstallerDialog(iface)
+    packages_to_install = get_packages_to_install(device)
+    dialog = PackagesInstallerDialog(iface, packages_to_install=packages_to_install, device=device)
     dialog.setWindowModality(QtCore.Qt.WindowModal)
     dialog.show()
     dialog.move_to_top()
