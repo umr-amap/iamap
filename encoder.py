@@ -84,6 +84,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
     MERGE_METHOD = 'MERGE_METHOD'
     WORKERS = 'WORKERS'
     PAUSES = 'PAUSES'
+    REMOVE_TEMP_FILES = 'REMOVE_TEMP_FILES'
     
 
     def initAlgorithm(self, config=None):
@@ -156,6 +157,13 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             defaultValue=0,
             minValue=0,
             maxValue=10000
+        )
+
+        remove_tmp_files = QgsProcessingParameterBoolean(
+            name=self.REMOVE_TEMP_FILES,
+            description=self.tr(
+                'Remove temporary files after encoding. If you want to test different merging options, it may be better to keep the tiles.'),
+            defaultValue=True,
         )
 
         self.addParameter(
@@ -299,7 +307,8 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 cuda_id_param, 
                 merge_param, 
                 nworkers_param,
-                pauses_param
+                pauses_param,
+                remove_tmp_files
                 ):
             param.setFlags(
                 param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -334,7 +343,6 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
 
 
         feedback.pushInfo(f'create model')
-        print(f'create model')
         model = timm.create_model(
             self.backbone_name,
             pretrained=True,
@@ -343,7 +351,6 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             )
 
         feedback.pushInfo(f'model done')
-        print(f'model done')
         data_config = timm.data.resolve_model_data_config(model)
         _, h, w, = data_config['input_size']
 
@@ -514,29 +521,29 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 method = self.merge_method,
                 )
 
-        ## cleaning up temp tiles
-        ## keep last tiles and merged tiles in case of resume
-        last_batch_done = self.get_last_batch_done()
-        if not all_encoding_done:
-            tiles_to_remove = [
-                    os.path.join(self.output_subdir, f)
-                    for f in os.listdir(self.output_subdir)
-                    if f.endswith('_tmp.tif') and not f.startswith(str(last_batch_done))
-                    ]
-            tiles_to_remove = [
-                    f for f in tiles_to_remove
-                    if not f.endswith('merged_tmp.tif')
-                    ]
-            print(last_batch_done)
-            print(tiles_to_remove)
+        if self.remove_tmp_files:
 
-        ## else cleanup all temp files
-        else : 
-            tiles_to_remove = [os.path.join(self.output_subdir, f)
-                 for f in os.listdir(self.output_subdir)
-                 if f.endswith('_tmp.tif')]
+            ## cleaning up temp tiles
+            ## keep last tiles and merged tiles in case of resume
+            last_batch_done = self.get_last_batch_done()
+            if not all_encoding_done:
+                tiles_to_remove = [
+                        os.path.join(self.output_subdir, f)
+                        for f in os.listdir(self.output_subdir)
+                        if f.endswith('_tmp.tif') and not f.startswith(str(last_batch_done))
+                        ]
+                tiles_to_remove = [
+                        f for f in tiles_to_remove
+                        if not f.endswith('merged_tmp.tif')
+                        ]
 
-        remove_files(tiles_to_remove)
+            ## else cleanup all temp files
+            else : 
+                tiles_to_remove = [os.path.join(self.output_subdir, f)
+                     for f in os.listdir(self.output_subdir)
+                     if f.endswith('_tmp.tif')]
+
+            remove_files(tiles_to_remove)
 
 
         parameters['OUTPUT_RASTER']=dst_path
@@ -683,6 +690,8 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         merge_method_idx = self.parameterAsEnum(
             parameters, self.MERGE_METHOD, context)
         self.merge_method = self.merge_options[merge_method_idx]
+        self.remove_tmp_files = self.parameterAsBoolean(
+            parameters, self.REMOVE_TEMP_FILES, context)
 
         rlayer_data_provider = rlayer.dataProvider()
 
