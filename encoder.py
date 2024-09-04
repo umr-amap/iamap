@@ -364,6 +364,11 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                                   mint=dataset.index.bounds[4], maxt=dataset.index.bounds[5])
 
 
+        if feedback.isCanceled():
+            feedback.pushWarning(
+                self.tr("\n !!!Processing is canceled by user!!! \n"))
+            return
+
         feedback.pushInfo(f'create model')
         model = timm.create_model(
             self.backbone_name,
@@ -371,6 +376,11 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             in_chans=len(input_bands),
             num_classes=0
             )
+
+        if feedback.isCanceled():
+            feedback.pushWarning(
+                self.tr("\n !!!Processing is canceled by user!!! \n"))
+            return
 
         feedback.pushInfo(f'model done')
         data_config = timm.data.resolve_model_data_config(model)
