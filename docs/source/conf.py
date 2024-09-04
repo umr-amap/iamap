@@ -7,14 +7,14 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'iamap'
-copyright = '2024, TRESSON Paul, TULLET Hadrien, LE COZ Pierre'
-author = 'TRESSON Paul, TULLET Hadrien, LE COZ Pierre'
-release = '1.0.0'
+copyright = '2024, TRESSON Paul, TULET Hadrien, LE COZ Pierre'
+author = 'TRESSON Paul, TULET Hadrien, LE COZ Pierre'
+release = '0.5.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = ['sphinx_rtd_theme']
 
 templates_path = ['_templates']
 exclude_patterns = []
