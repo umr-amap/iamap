@@ -51,6 +51,16 @@ def get_model_size(model):
     os.remove('temp.p')
     return size
 
+def remove_files(file_paths):
+    for file_path in file_paths:
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            else:
+                print(f"File not found: {file_path}")
+        except Exception as e:
+            print(f"Error removing {file_path}: {e}")
+
 class EncoderAlgorithm(QgsProcessingAlgorithm):
     """
     """
@@ -421,6 +431,9 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         elapsed_time_list = []
         total = 100 / len(dataloader) if len(dataloader) else 0
 
+        ## will update if process is canceled by the user
+        all_encoding_done = True
+
         for current, sample in enumerate(dataloader):
 
             if current <= last_batch_done:
@@ -432,6 +445,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 self.load_feature = False
                 feedback.pushWarning(
                     self.tr("\n !!!Processing is canceled by user!!! \n"))
+                all_encoding_done = False
                 break
             feedback.pushInfo(f'\n{"-"*8}\nBatch no. {current} loaded')
 
@@ -460,8 +474,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             elapsed_time = (end_time - start_time)
             elapsed_time_list.append(elapsed_time)
             time_spent = sum(elapsed_time_list)
-            time_remain = (time_spent / (current + 1)) * \
-                (len(dataloader) - current - 1)
+            time_remain = (time_spent / (current + 1)) * (len(dataloader) - current - 1)
 
             # TODO: show gpu usage info
             # if torch.cuda.is_available() and self.use_gpu:
@@ -486,15 +499,45 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             feedback.setProgress(int((current+1) * total))
 
 
-        all_tiles = [os.path.join(self.output_subdir,f) for f in os.listdir(self.output_subdir) if f.endswith('.tif')]
-        dst_path = Path(os.path.join(self.output_subdir,'merged.tiff'))
+        ## merging all temp tiles
         feedback.pushInfo(f"\n\n{'-'*8}\n Merging tiles \n{'-'*8}\n" )
+        all_tiles = [os.path.join(self.output_subdir,f) for f in os.listdir(self.output_subdir) if f.endswith('_tmp.tif')]
+
+        if not all_encoding_done :
+            dst_path = Path(os.path.join(self.output_subdir,'merged_tmp.tif'))
+        else:
+            dst_path = Path(os.path.join(self.output_subdir,'merged.tif'))
 
         merge_tiles(
                 tiles = all_tiles, 
                 dst_path = dst_path,
                 method = self.merge_method,
                 )
+
+        ## cleaning up temp tiles
+        ## keep last tiles and merged tiles in case of resume
+        last_batch_done = self.get_last_batch_done()
+        if not all_encoding_done:
+            tiles_to_remove = [
+                    os.path.join(self.output_subdir, f)
+                    for f in os.listdir(self.output_subdir)
+                    if f.endswith('_tmp.tif') and not f.startswith(str(last_batch_done))
+                    ]
+            tiles_to_remove = [
+                    f for f in tiles_to_remove
+                    if not f.endswith('merged_tmp.tif')
+                    ]
+            print(last_batch_done)
+            print(tiles_to_remove)
+
+        ## else cleanup all temp files
+        else : 
+            tiles_to_remove = [os.path.join(self.output_subdir, f)
+                 for f in os.listdir(self.output_subdir)
+                 if f.endswith('_tmp.tif')]
+
+        remove_files(tiles_to_remove)
+
 
         parameters['OUTPUT_RASTER']=dst_path
 
@@ -503,9 +546,10 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
     def get_last_batch_done(self):
 
         ## get largest batch_number achieved
-        ## files are saved with the pattern '{batch_number}_{image_id_within_batch}.tif'
+        ## files are saved with the pattern '{batch_number}_{image_id_within_batch}_tmp.tif'
         # Regular expression pattern to extract numbers
-        pattern = re.compile(r'^(\d+)_\d+\.tif$')
+        # pattern = re.compile(r'^(\d+)_\d+\.tif$')
+        pattern = re.compile(r'^(\d+)_\d+_tmp\.tif$')
 
         # Initialize a set to store unique first numbers
         batch_numbers = set()
@@ -539,7 +583,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             _, height, width, channels = feature.shape
             bbox = bboxes[idx]
             rio_transform = rasterio.transform.from_bounds(bbox.minx, bbox.miny, bbox.maxx, bbox.maxy, width, height)  # west, south, east, north, width, height
-            feature_path = os.path.join(self.output_subdir, f"{nbatch}_{idx}.tif")
+            feature_path = os.path.join(self.output_subdir, f"{nbatch}_{idx}_tmp.tif")
             with rasterio.open(
                     feature_path,
                     mode="w",
