@@ -3,6 +3,7 @@ import time
 import tempfile
 import re
 import hashlib
+import shutil
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any
@@ -50,6 +51,27 @@ def get_model_size(model):
     size = os.path.getsize("temp.p")/1e6
     os.remove('temp.p')
     return size
+
+def check_disk_space(path):
+    # Get disk usage statistics about the given path
+    total, used, free = shutil.disk_usage(path)
+    
+    # Convert bytes to a more readable format (e.g., GB)
+    total_gb = total / (1024 ** 3)
+    used_gb = used / (1024 ** 3)
+    free_gb = free / (1024 ** 3)
+    
+    return total_gb, used_gb, free_gb
+
+def get_dir_size(path='.'):
+    total = 0
+    with os.scandir(path) as it:
+        for entry in it:
+            if entry.is_file():
+                total += entry.stat().st_size
+            elif entry.is_dir():
+                total += get_dir_size(entry.path)
+    return total / (1024 ** 3)
 
 def remove_files(file_paths):
     for file_path in file_paths:
@@ -447,6 +469,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 continue
 
             start_time = time.time()
+
             # Stop the algorithm if cancel button has been clicked
             if feedback.isCanceled():
                 self.load_feature = False
@@ -454,22 +477,45 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                     self.tr("\n !!!Processing is canceled by user!!! \n"))
                 all_encoding_done = False
                 break
+            
             feedback.pushInfo(f'\n{"-"*8}\nBatch no. {current} loaded')
 
             images = sample['image'].to(device)
             if len(images.shape) > 4:
                 images = images.squeeze(1)
+            
             feedback.pushInfo(f'Batch shape {images.shape}')
 
             features = model.forward_features(images)
             features = features[:,1:,:] # take only patch tokens
+            
             if current <= last_batch_done + 1:
                 n_patches = int(np.sqrt(features.shape[1]))   
+
             features = features.view(features.shape[0],n_patches,n_patches,features.shape[-1])
             features = features.detach().cpu().numpy()
             feedback.pushInfo(f'Features shape {features.shape}')
+
             self.save_features(features,sample['bbox'], current)
             feedback.pushInfo(f'Features saved')
+
+            if current <= last_batch_done + 1:
+                total_space, total_used_space, free_space = check_disk_space(self.output_subdir)
+                print(current)
+                print(free_space)
+                print(total_used_space)
+
+                used_outputsubdir = get_dir_size(str(self.output_subdir))
+                print(used_outputsubdir)
+                
+                to_use = ((len(dataloader) / (current+1)) - 1) * used_outputsubdir
+                print(to_use)
+
+                if to_use >= free_space:
+                    feedback.pushWarning(
+                        self.tr(f"\n !!! only {free_space} GB disk space remaining, canceling !!! \n"))
+                    break
+
 
             bboxes.extend(sample['bbox'])
 
