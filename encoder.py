@@ -184,7 +184,8 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 name=self.CKPT,
                 description=self.tr(
                     'Pretrained checkpoint'),
-                extension='pth',
+                # extension='pth',
+                fileFilter='Checkpoint Files (*.pth *.pkl);; All Files (*.*)',
                 optional=True,
                 defaultValue=None
             )
