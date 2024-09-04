@@ -1,5 +1,6 @@
 import os
 import time
+import tempfile
 import re
 import hashlib
 import numpy as np
@@ -81,6 +82,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         with some other properties.
         """
         cwd = Path(__file__).parent.absolute()
+        tmp_wd = os.path.join(tempfile.gettempdir(), "iamap_features")
 
         self.addParameter(
             QgsProcessingParameterRasterLayer(
@@ -196,7 +198,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 self.OUTPUT,
                 self.tr(
                     "Output directory (choose the location that the image features will be saved)"),
-            defaultValue=os.path.join(cwd,'features'),
+            defaultValue=tmp_wd,
             )
         )
 
