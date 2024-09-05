@@ -61,10 +61,10 @@ Go to OSGeo4W Shell and install the following dependencies.
 
    ::
 
-       pip install torchgeo == 0.5.2
-       pip install geopandas == 0.14.4
-       pip install scikit-learn == 1.5.1
-       # (optional) pip install umap-learn == 0.5.6
+       pip install torchgeo==0.5.2
+       pip install geopandas==0.14.4
+       pip install scikit-learn==1.5.1
+       # (optional) pip install umap-learn==0.5.6
 
 If you have any issue with windows, please provide your QGIS version, your python version an the dependencies currently installed in OSGeo4W.
 You can do that by going to OSGeo4W Shell and run the following lines :
