@@ -46,52 +46,16 @@ from torchgeo.transforms import AugmentationSequential
 from .utils.geo import get_mean_sd_by_band
 from .utils.geo import merge_tiles
 from .utils.torchgeo import NoBordersGridGeoSampler
+from .utils.misc import (QGISLogHandler, 
+                         get_dir_size, 
+                         get_model_size, 
+                         remove_files, 
+                         check_disk_space,
+                         get_unique_filename,
+                         )
 
-class QGISLogHandler(logging.Handler):
-    def __init__(self, feedback):
-        super().__init__()
-        self.feedback = feedback
 
-    def emit(self, record):
-        msg = self.format(record)
-        self.feedback.pushInfo(msg)
 
-def get_model_size(model):
-    torch.save(model.state_dict(), "temp.p")
-    size = os.path.getsize("temp.p")/1e6
-    os.remove('temp.p')
-    return size
-
-def check_disk_space(path):
-    # Get disk usage statistics about the given path
-    total, used, free = shutil.disk_usage(path)
-    
-    # Convert bytes to a more readable format (e.g., GB)
-    total_gb = total / (1024 ** 3)
-    used_gb = used / (1024 ** 3)
-    free_gb = free / (1024 ** 3)
-    
-    return total_gb, used_gb, free_gb
-
-def get_dir_size(path='.'):
-    total = 0
-    with os.scandir(path) as it:
-        for entry in it:
-            if entry.is_file():
-                total += entry.stat().st_size
-            elif entry.is_dir():
-                total += get_dir_size(entry.path)
-    return total / (1024 ** 3)
-
-def remove_files(file_paths):
-    for file_path in file_paths:
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            else:
-                print(f"File not found: {file_path}")
-        except Exception as e:
-            print(f"Error removing {file_path}: {e}")
 
 class EncoderAlgorithm(QgsProcessingAlgorithm):
     """
