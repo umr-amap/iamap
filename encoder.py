@@ -1,4 +1,6 @@
 import os
+import logging
+import sys
 import time
 import tempfile
 import re
@@ -7,7 +9,6 @@ import shutil
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any
-from processing import defaultOutputFolder
 
 import rasterio
 from qgis.PyQt.QtCore import QCoreApplication
@@ -45,6 +46,15 @@ from torchgeo.transforms import AugmentationSequential
 from .utils.geo import get_mean_sd_by_band
 from .utils.geo import merge_tiles
 from .utils.torchgeo import NoBordersGridGeoSampler
+
+class QGISLogHandler(logging.Handler):
+    def __init__(self, feedback):
+        super().__init__()
+        self.feedback = feedback
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.feedback.pushInfo(msg)
 
 def get_model_size(model):
     torch.save(model.state_dict(), "temp.p")
@@ -369,13 +379,28 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 self.tr("\n !!!Processing is canceled by user!!! \n"))
             return
 
-        feedback.pushInfo(f'create model')
+
+        ### Custom logging to have more feedback during model loading
+        logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger()
+
+        # Attach the QGIS log handler
+        logger.addHandler(QGISLogHandler(feedback))
+
+        # Log a message
+        logger.info("Starting model loading...")
+
+        # Load the model
+        feedback.pushInfo(f'creating model')
         model = timm.create_model(
             self.backbone_name,
             pretrained=True,
             in_chans=len(input_bands),
-            num_classes=0
+            num_classes=0,
             )
+        logger.info("Model loaded succesfully !")
+        logger.handlers.clear()
+
 
         if feedback.isCanceled():
             feedback.pushWarning(
