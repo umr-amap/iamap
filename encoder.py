@@ -558,7 +558,10 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         if not all_encoding_done :
             dst_path = Path(os.path.join(self.output_subdir,'merged_tmp.tif'))
         else:
-            dst_path = Path(os.path.join(self.output_subdir,'merged.tif'))
+            # dst_path = Path(os.path.join(self.output_subdir,'merged.tif'))
+            ## update filename if a merged.tif file allready exists
+            dst_path, layer_name = get_unique_filename(self.output_subdir, 'merged.tif')
+            dst_path = Path(dst_path)
 
         merge_tiles(
                 tiles = all_tiles, 
@@ -593,7 +596,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
 
         parameters['OUTPUT_RASTER']=dst_path
 
-        return {"Output feature path": self.output_subdir, 'Patch samples saved': self.iPatch, 'OUTPUT_RASTER':dst_path}
+        return {"Output feature path": self.output_subdir, 'Patch samples saved': self.iPatch, 'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
 
     def get_last_batch_done(self):
 
