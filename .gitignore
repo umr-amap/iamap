@@ -10,3 +10,4 @@ utils/__pycache__
 icons/__pycache__
 dialogs/packages_installer/__pycache__
 __pycache__
+pyrightconfig.json
