@@ -59,7 +59,7 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
                 name=self.INPUT,
                 description=self.tr(
                     'Input raster layer or image file path'),
-            defaultValue=os.path.join(cwd,'rasters','test.tif'),
+            defaultValue=os.path.join(cwd,'assets','test.tif'),
             ),
         )
 
@@ -145,7 +145,7 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
                 self.OUTPUT,
                 self.tr(
                     "Output directory (choose the location that the image features will be saved)"),
-            defaultValue=os.path.join(cwd,'features'),
+            defaultValue=os.path.join(cwd,'models'),
             )
         )
 

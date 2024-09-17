@@ -57,7 +57,7 @@ class SimilarityAlgorithm(QgsProcessingAlgorithm):
                 name=self.INPUT,
                 description=self.tr(
                     'Input raster layer or image file path'),
-            defaultValue=os.path.join(cwd,'rasters','test.tif'),
+            defaultValue=os.path.join(cwd,'assets','test.tif'),
             ),
         )
 
@@ -103,7 +103,7 @@ class SimilarityAlgorithm(QgsProcessingAlgorithm):
                 name=self.TEMPLATE,
                 description=self.tr(
                     'Input shapefile path for cosine similarity'),
-            defaultValue=os.path.join(cwd,'rasters','template.shp'),
+            defaultValue=os.path.join(cwd,'assets','template.shp'),
             ),
         )
 

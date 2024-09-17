@@ -63,7 +63,7 @@ class RFAlgorithm(QgsProcessingAlgorithm):
                 name=self.INPUT,
                 description=self.tr(
                     'Input raster layer or image file path'),
-            defaultValue=os.path.join(cwd,'rasters','test.tif'),
+            defaultValue=os.path.join(cwd,'assets','test.tif'),
             ),
         )
 
@@ -109,7 +109,7 @@ class RFAlgorithm(QgsProcessingAlgorithm):
                 name=self.TEMPLATE,
                 description=self.tr(
                     'Input shapefile path for training data set for random forest (if no test data_set, will be devised in train and test)'),
-            defaultValue=os.path.join(cwd,'rasters','RF.gpkg'),
+            defaultValue=os.path.join(cwd,'assets','rf.gpkg'),
             ),
         )
         
@@ -128,7 +128,7 @@ class RFAlgorithm(QgsProcessingAlgorithm):
                 self.OUTPUT,
                 self.tr(
                     "Output directory (choose the location that the image features will be saved)"),
-            defaultValue=os.path.join(cwd,'features'),
+            defaultValue=os.path.join(cwd,'models'),
             )
         )
         
@@ -139,7 +139,6 @@ class RFAlgorithm(QgsProcessingAlgorithm):
                 description = self.tr(
                     'Name of the column you want random forest to work on'),
                 defaultValue = 'Type',
-                # defaultValue = 'vit_small_patch16_224.dino',
             )
         )
 
