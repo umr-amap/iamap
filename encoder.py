@@ -460,7 +460,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         total = 100 / len(dataloader) if len(dataloader) else 0
 
         ## will update if process is canceled by the user
-        all_encoding_done = True
+        self.all_encoding_done = True
 
         for current, sample in enumerate(dataloader):
 
@@ -474,7 +474,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 self.load_feature = False
                 feedback.pushWarning(
                     self.tr("\n !!!Processing is canceled by user!!! \n"))
-                all_encoding_done = False
+                self.all_encoding_done = False
                 break
             
             feedback.pushInfo(f'\n{"-"*8}\nBatch no. {current} loaded')
@@ -555,7 +555,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(f"\n\n{'-'*8}\n Merging tiles \n{'-'*8}\n" )
         all_tiles = [os.path.join(self.output_subdir,f) for f in os.listdir(self.output_subdir) if f.endswith('_tmp.tif')]
 
-        if not all_encoding_done :
+        if not self.all_encoding_done :
             dst_path = Path(os.path.join(self.output_subdir,'merged_tmp.tif'))
         else:
             # dst_path = Path(os.path.join(self.output_subdir,'merged.tif'))
@@ -571,32 +571,62 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
 
         if self.remove_tmp_files:
 
-            ## cleaning up temp tiles
-            ## keep last tiles and merged tiles in case of resume
-            last_batch_done = self.get_last_batch_done()
-            if not all_encoding_done:
-                tiles_to_remove = [
-                        os.path.join(self.output_subdir, f)
-                        for f in os.listdir(self.output_subdir)
-                        if f.endswith('_tmp.tif') and not f.startswith(str(last_batch_done))
-                        ]
-                tiles_to_remove = [
-                        f for f in tiles_to_remove
-                        if not f.endswith('merged_tmp.tif')
-                        ]
+            self.remove_temp_files()
 
-            ## else cleanup all temp files
-            else : 
-                tiles_to_remove = [os.path.join(self.output_subdir, f)
-                     for f in os.listdir(self.output_subdir)
-                     if f.endswith('_tmp.tif')]
+            # ## cleaning up temp tiles
+            # ## keep last tiles and merged tiles in case of resume
+            # last_batch_done = self.get_last_batch_done()
+            # if not self.all_encoding_done:
+            #     tiles_to_remove = [
+            #             os.path.join(self.output_subdir, f)
+            #             for f in os.listdir(self.output_subdir)
+            #             if f.endswith('_tmp.tif') and not f.startswith(str(last_batch_done))
+            #             ]
+            #     tiles_to_remove = [
+            #             f for f in tiles_to_remove
+            #             if not f.endswith('merged_tmp.tif')
+            #             ]
 
-            remove_files(tiles_to_remove)
+            # ## else cleanup all temp files
+            # else : 
+            #     tiles_to_remove = [os.path.join(self.output_subdir, f)
+            #          for f in os.listdir(self.output_subdir)
+            #          if f.endswith('_tmp.tif')]
+
+            # remove_files(tiles_to_remove)
 
 
         parameters['OUTPUT_RASTER']=dst_path
 
         return {"Output feature path": self.output_subdir, 'Patch samples saved': self.iPatch, 'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
+
+    def remove_temp_files(self):
+        """
+        cleaning up temp tiles
+        keep last tiles and merged tiles in case of resume
+        """
+
+        last_batch_done = self.get_last_batch_done()
+        if not self.all_encoding_done:
+            tiles_to_remove = [
+                    os.path.join(self.output_subdir, f)
+                    for f in os.listdir(self.output_subdir)
+                    if f.endswith('_tmp.tif') and not f.startswith(str(last_batch_done))
+                    ]
+            tiles_to_remove = [
+                    f for f in tiles_to_remove
+                    if not f.endswith('merged_tmp.tif')
+                    ]
+
+        ## else cleanup all temp files
+        else : 
+            tiles_to_remove = [os.path.join(self.output_subdir, f)
+                 for f in os.listdir(self.output_subdir)
+                 if f.endswith('_tmp.tif')]
+
+        remove_files(tiles_to_remove)
+
+        return
 
     def get_last_batch_done(self):
 
