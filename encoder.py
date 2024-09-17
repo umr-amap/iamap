@@ -81,6 +81,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
     WORKERS = 'WORKERS'
     PAUSES = 'PAUSES'
     REMOVE_TEMP_FILES = 'REMOVE_TEMP_FILES'
+    TEMP_FILES_CLEANUP_FREQ = 'TEMP_FILES_CLEANUP_FREQ'
     
 
     def initAlgorithm(self, config=None):
@@ -152,6 +153,16 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             type=QgsProcessingParameterNumber.Integer,
             defaultValue=0,
             minValue=0,
+            maxValue=10000
+        )
+
+        tmp_files_cleanup_frq = QgsProcessingParameterNumber(
+            name=self.TEMP_FILES_CLEANUP_FREQ,
+            description=self.tr(
+                'Frequencie at which temporary files should be cleaned up (zero means no cleanup).'),
+            type=QgsProcessingParameterNumber.Integer,
+            defaultValue=1000,
+            minValue=1,
             maxValue=10000
         )
 
@@ -304,7 +315,8 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 merge_param, 
                 nworkers_param,
                 pauses_param,
-                remove_tmp_files
+                remove_tmp_files,
+                tmp_files_cleanup_frq,
                 ):
             param.setFlags(
                 param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -515,7 +527,6 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                         self.tr(f"\n !!! only {free_space} GB disk space remaining, canceling !!! \n"))
                     break
 
-
             bboxes.extend(sample['bbox'])
 
             if self.pauses != 0:
@@ -546,6 +557,25 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 time_remain_m, time_remain_s = divmod(int(time_remain), 60)
                 time_remain_h, time_remain_m = divmod(time_remain_m, 60)
                 feedback.pushInfo(f"Estimated time remaining: {time_remain_h:d}h:{time_remain_m:02d}m:{time_remain_s:02d}s \n" )
+
+            if ((current + 1) % self.cleanup_frq == 0) and self.remove_tmp_files:
+
+                ## not the cleanest way to do for now
+                ## but avoids to refactor all
+                self.all_encoding_done = False
+                feedback.pushInfo('Cleaning temporary files...')
+                all_tiles = [os.path.join(self.output_subdir,f) for f in os.listdir(self.output_subdir) if f.endswith('_tmp.tif')]
+                all_tiles = [f for f in all_tiles if not f.startswith('merged')]
+
+                dst_path = Path(os.path.join(self.output_subdir,'merged_tmp.tif'))
+
+                merge_tiles(
+                        tiles = all_tiles, 
+                        dst_path = dst_path,
+                        method = self.merge_method,
+                        )
+                self.remove_temp_files()
+                self.all_encoding_done = True
 
             # Update the progress bar
             feedback.setProgress(int((current+1) * total))
@@ -763,6 +793,8 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             parameters, self.CUDA_ID, context)
         self.pauses = self.parameterAsInt(
             parameters, self.PAUSES, context)
+        self.cleanup_frq = self.parameterAsInt(
+            parameters, self.TEMP_FILES_CLEANUP_FREQ, context)
         self.nworkers = self.parameterAsInt(
             parameters, self.WORKERS, context)
         merge_method_idx = self.parameterAsEnum(
