@@ -52,6 +52,7 @@ from .utils.misc import (QGISLogHandler,
                          remove_files, 
                          check_disk_space,
                          get_unique_filename,
+                         chunks,
                          )
 
 
@@ -563,11 +564,33 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             dst_path, layer_name = get_unique_filename(self.output_subdir, 'merged.tif')
             dst_path = Path(dst_path)
 
-        merge_tiles(
-                tiles = all_tiles, 
-                dst_path = dst_path,
-                method = self.merge_method,
-                )
+        try:
+            merge_tiles(
+                    tiles = all_tiles, 
+                    dst_path = dst_path,
+                    method = self.merge_method,
+                    )
+        except :
+            files_chunks = chunks(all_tiles, 100)
+            merged_chunks = []
+            for i, chunk in enumerate(files_chunks):
+                chunk_path = Path(os.path.join(self.output_subdir,f'chunk_{i}.tif'))
+                merge_tiles(
+                        tiles = chunk,
+                        dst_path = chunk_path,
+                        method = self.merge_method,
+                        )
+                merged_chunks.append(chunk_path)
+
+            merge_tiles(
+                    tiles = merged_chunks,
+                    dst_path = dst_path,
+                    method = self.merge_method,
+                    )
+
+            remove_files(merged_chunks)
+
+
 
         if self.remove_tmp_files:
 
