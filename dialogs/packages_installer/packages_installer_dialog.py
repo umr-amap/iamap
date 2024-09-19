@@ -226,15 +226,15 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
             elif pck.name == 'torch':
                 torch_url = pck.version.split("index-url ")[-1]
         
-        cmd_torch = [PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install', '-U', f'--target={PACKAGES_INSTALL_DIR}', 'torch', f"--index-url={torch_url}"] 
-        cmd_torch_string = ' '.join(cmd_torch)
+                cmd_torch = [PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install', '-U', f'--target={PACKAGES_INSTALL_DIR}', 'torch', f"--index-url={torch_url}"] 
+                cmd_torch_string = ' '.join(cmd_torch)
 
-        self.log(f'<em>Running command: \n  $ {cmd_torch_string} </em>')
-        with subprocess.Popen(cmd_torch,
-                              stdout=subprocess.PIPE,
-                              universal_newlines=True,
-                              stderr=subprocess.STDOUT) as process:
-            self._do_process_output_logging(process)
+                self.log(f'<em>Running command: \n  $ {cmd_torch_string} </em>')
+                with subprocess.Popen(cmd_torch,
+                                    stdout=subprocess.PIPE,
+                                    universal_newlines=True,
+                                    stderr=subprocess.STDOUT) as process:
+                    self._do_process_output_logging(process)
 
 
         self.log(f'<em>Running command: \n  $ {cmd_string} </em>')
