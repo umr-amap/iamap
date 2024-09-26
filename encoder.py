@@ -1,25 +1,21 @@
 import os
+import logging
+import sys
 import time
+import tempfile
 import re
 import hashlib
+import shutil
 import numpy as np
 from pathlib import Path
-from typing import Dict, Any, List
-from processing import defaultOutputFolder
+from typing import Dict, Any
 
 import rasterio
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import (QgsProcessing, Qgis,
+from qgis.core import (Qgis,
                        QgsGeometry,
-                       QgsRasterLayer,
-                       QgsRectangle,
-                       QgsCoordinateReferenceSystem,
-                       QgsUnitTypes,
-                       QgsRasterBandStats,
                        QgsCoordinateTransform,
-                       QgsFeatureSink,
                        QgsProcessingException,
-                       QgsProcessingFeedback,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFolderDestination,
@@ -31,12 +27,7 @@ from qgis.core import (QgsProcessing, Qgis,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterExtent,
                        QgsProcessingParameterCrs,
-                       QgsProcessingParameterScale,
-                       QgsProcessingParameterExpression,
-                       QgsProcessingParameterRange,
-                       QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterDefinition,
-                       QgsProcessingParameterFeatureSink,
                        )
 
 import torch
@@ -55,12 +46,16 @@ from torchgeo.transforms import AugmentationSequential
 from .utils.geo import get_mean_sd_by_band
 from .utils.geo import merge_tiles
 from .utils.torchgeo import NoBordersGridGeoSampler
+from .utils.misc import (QGISLogHandler, 
+                         get_dir_size, 
+                         get_model_size, 
+                         remove_files, 
+                         check_disk_space,
+                         get_unique_filename,
+                         )
 
-def get_model_size(model):
-    torch.save(model.state_dict(), "temp.p")
-    size = os.path.getsize("temp.p")/1e6
-    os.remove('temp.p')
-    return size
+
+
 
 class EncoderAlgorithm(QgsProcessingAlgorithm):
     """
@@ -81,9 +76,12 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
     BATCH_SIZE = 'BATCH_SIZE'
     CUDA_ID = 'CUDA_ID'
     BACKBONE_CHOICE = 'BACKBONE_CHOICE'
+    BACKBONE_OPT = 'BACKBONE_OPT'
     MERGE_METHOD = 'MERGE_METHOD'
     WORKERS = 'WORKERS'
     PAUSES = 'PAUSES'
+    REMOVE_TEMP_FILES = 'REMOVE_TEMP_FILES'
+    TEMP_FILES_CLEANUP_FREQ = 'TEMP_FILES_CLEANUP_FREQ'
     
 
     def initAlgorithm(self, config=None):
@@ -92,6 +90,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         with some other properties.
         """
         cwd = Path(__file__).parent.absolute()
+        tmp_wd = os.path.join(tempfile.gettempdir(), "iamap_features")
 
         self.addParameter(
             QgsProcessingParameterRasterLayer(
@@ -157,6 +156,23 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             maxValue=10000
         )
 
+        tmp_files_cleanup_frq = QgsProcessingParameterNumber(
+            name=self.TEMP_FILES_CLEANUP_FREQ,
+            description=self.tr(
+                'Frequencie at which temporary files should be cleaned up (zero means no cleanup).'),
+            type=QgsProcessingParameterNumber.Integer,
+            defaultValue=1000,
+            minValue=1,
+            maxValue=10000
+        )
+
+        remove_tmp_files = QgsProcessingParameterBoolean(
+            name=self.REMOVE_TEMP_FILES,
+            description=self.tr(
+                'Remove temporary files after encoding. If you want to test different merging options, it may be better to keep the tiles.'),
+            defaultValue=True,
+        )
+
         self.addParameter(
             QgsProcessingParameterExtent(
                 name=self.EXTENT,
@@ -195,7 +211,8 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 name=self.CKPT,
                 description=self.tr(
                     'Pretrained checkpoint'),
-                extension='pth',
+                # extension='pth',
+                fileFilter='Checkpoint Files (*.pth *.pkl);; All Files (*.*)',
                 optional=True,
                 defaultValue=None
             )
@@ -206,7 +223,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 self.OUTPUT,
                 self.tr(
                     "Output directory (choose the location that the image features will be saved)"),
-            defaultValue=os.path.join(cwd,'features'),
+            defaultValue=tmp_wd,
             )
         )
 
@@ -217,13 +234,36 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 defaultValue=True
             )
         )
+        self.backbone_opt = [
+                            'ViT base DINO',
+                            'ViT tiny Imagenet (smallest)', 
+                            'ViT base MAE', 
+                            'SAM', 
+                            '--Empty--'
+                            ]
+        self.timm_backbone_opt = [
+                            'vit_base_patch16_224.dino',
+                            'vit_tiny_patch16_224.augreg_in21k',
+                            'vit_base_patch16_224.mae',
+                            'samvit_base_patch16.sa1b',
+                            ]
+        self.addParameter (
+            QgsProcessingParameterEnum(
+                name = self.BACKBONE_OPT,
+                description = self.tr(
+                    "Pre-selected backbones if you don't know what to pick"),
+                defaultValue = 0,
+                options = self.backbone_opt,
+                
+            )
+        )
         self.addParameter (
             QgsProcessingParameterString(
                 name = self.BACKBONE_CHOICE,
                 description = self.tr(
-                    'Backbone choice (see huggingface.co/timm/)'),
-                defaultValue = 'vit_base_patch16_224.dino',
-                # defaultValue = 'vit_small_patch16_224.dino',
+                    'Enter a architecture name if you want to test another backbone (see huggingface.co/timm/)'),
+                defaultValue = None,
+                optional=True,
             )
         )
         
@@ -274,7 +314,9 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 cuda_id_param, 
                 merge_param, 
                 nworkers_param,
-                pauses_param
+                pauses_param,
+                remove_tmp_files,
+                tmp_files_cleanup_frq,
                 ):
             param.setFlags(
                 param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -308,17 +350,40 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                                   mint=dataset.index.bounds[4], maxt=dataset.index.bounds[5])
 
 
-        feedback.pushInfo(f'create model')
-        print(f'create model')
+        if feedback.isCanceled():
+            feedback.pushWarning(
+                self.tr("\n !!!Processing is canceled by user!!! \n"))
+            return
+
+
+        ### Custom logging to have more feedback during model loading
+        logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger()
+
+        # Attach the QGIS log handler
+        logger.addHandler(QGISLogHandler(feedback))
+
+        # Log a message
+        logger.info("Starting model loading...")
+
+        # Load the model
+        feedback.pushInfo(f'creating model')
         model = timm.create_model(
             self.backbone_name,
             pretrained=True,
             in_chans=len(input_bands),
-            num_classes=0
+            num_classes=0,
             )
+        logger.info("Model loaded succesfully !")
+        logger.handlers.clear()
+
+
+        if feedback.isCanceled():
+            feedback.pushWarning(
+                self.tr("\n !!!Processing is canceled by user!!! \n"))
+            return
 
         feedback.pushInfo(f'model done')
-        print(f'model done')
         data_config = timm.data.resolve_model_data_config(model)
         _, h, w, = data_config['input_size']
 
@@ -406,34 +471,61 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         elapsed_time_list = []
         total = 100 / len(dataloader) if len(dataloader) else 0
 
+        ## will update if process is canceled by the user
+        self.all_encoding_done = True
+
         for current, sample in enumerate(dataloader):
 
             if current <= last_batch_done:
                 continue
 
             start_time = time.time()
+
             # Stop the algorithm if cancel button has been clicked
             if feedback.isCanceled():
                 self.load_feature = False
                 feedback.pushWarning(
                     self.tr("\n !!!Processing is canceled by user!!! \n"))
+                self.all_encoding_done = False
                 break
+            
             feedback.pushInfo(f'\n{"-"*8}\nBatch no. {current} loaded')
 
             images = sample['image'].to(device)
             if len(images.shape) > 4:
                 images = images.squeeze(1)
+            
             feedback.pushInfo(f'Batch shape {images.shape}')
 
             features = model.forward_features(images)
             features = features[:,1:,:] # take only patch tokens
+            
             if current <= last_batch_done + 1:
                 n_patches = int(np.sqrt(features.shape[1]))   
+
             features = features.view(features.shape[0],n_patches,n_patches,features.shape[-1])
             features = features.detach().cpu().numpy()
             feedback.pushInfo(f'Features shape {features.shape}')
+
             self.save_features(features,sample['bbox'], current)
             feedback.pushInfo(f'Features saved')
+
+            if current <= last_batch_done + 1:
+                total_space, total_used_space, free_space = check_disk_space(self.output_subdir)
+                print(current)
+                print(free_space)
+                print(total_used_space)
+
+                used_outputsubdir = get_dir_size(str(self.output_subdir))
+                print(used_outputsubdir)
+                
+                to_use = ((len(dataloader) / (current+1)) - 1) * used_outputsubdir
+                print(to_use)
+
+                if to_use >= free_space:
+                    feedback.pushWarning(
+                        self.tr(f"\n !!! only {free_space} GB disk space remaining, canceling !!! \n"))
+                    break
 
             bboxes.extend(sample['bbox'])
 
@@ -445,8 +537,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             elapsed_time = (end_time - start_time)
             elapsed_time_list.append(elapsed_time)
             time_spent = sum(elapsed_time_list)
-            time_remain = (time_spent / (current + 1)) * \
-                (len(dataloader) - current - 1)
+            time_remain = (time_spent / (current + 1)) * (len(dataloader) - current - 1)
 
             # TODO: show gpu usage info
             # if torch.cuda.is_available() and self.use_gpu:
@@ -467,13 +558,40 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 time_remain_h, time_remain_m = divmod(time_remain_m, 60)
                 feedback.pushInfo(f"Estimated time remaining: {time_remain_h:d}h:{time_remain_m:02d}m:{time_remain_s:02d}s \n" )
 
+            if ((current + 1) % self.cleanup_frq == 0) and self.remove_tmp_files:
+
+                ## not the cleanest way to do for now
+                ## but avoids to refactor all
+                self.all_encoding_done = False
+                feedback.pushInfo('Cleaning temporary files...')
+                all_tiles = [os.path.join(self.output_subdir,f) for f in os.listdir(self.output_subdir) if f.endswith('_tmp.tif')]
+                all_tiles = [f for f in all_tiles if not f.startswith('merged')]
+
+                dst_path = Path(os.path.join(self.output_subdir,'merged_tmp.tif'))
+
+                merge_tiles(
+                        tiles = all_tiles, 
+                        dst_path = dst_path,
+                        method = self.merge_method,
+                        )
+                self.remove_temp_files()
+                self.all_encoding_done = True
+
             # Update the progress bar
             feedback.setProgress(int((current+1) * total))
 
 
-        all_tiles = [os.path.join(self.output_subdir,f) for f in os.listdir(self.output_subdir) if f.endswith('.tif')]
-        dst_path = Path(os.path.join(self.output_subdir,'merged.tiff'))
+        ## merging all temp tiles
         feedback.pushInfo(f"\n\n{'-'*8}\n Merging tiles \n{'-'*8}\n" )
+        all_tiles = [os.path.join(self.output_subdir,f) for f in os.listdir(self.output_subdir) if f.endswith('_tmp.tif')]
+
+        if not self.all_encoding_done :
+            dst_path = Path(os.path.join(self.output_subdir,'merged_tmp.tif'))
+        else:
+            # dst_path = Path(os.path.join(self.output_subdir,'merged.tif'))
+            ## update filename if a merged.tif file allready exists
+            dst_path, layer_name = get_unique_filename(self.output_subdir, 'merged.tif')
+            dst_path = Path(dst_path)
 
         merge_tiles(
                 tiles = all_tiles, 
@@ -481,16 +599,72 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 method = self.merge_method,
                 )
 
+        if self.remove_tmp_files:
+
+            self.remove_temp_files()
+
+            # ## cleaning up temp tiles
+            # ## keep last tiles and merged tiles in case of resume
+            # last_batch_done = self.get_last_batch_done()
+            # if not self.all_encoding_done:
+            #     tiles_to_remove = [
+            #             os.path.join(self.output_subdir, f)
+            #             for f in os.listdir(self.output_subdir)
+            #             if f.endswith('_tmp.tif') and not f.startswith(str(last_batch_done))
+            #             ]
+            #     tiles_to_remove = [
+            #             f for f in tiles_to_remove
+            #             if not f.endswith('merged_tmp.tif')
+            #             ]
+
+            # ## else cleanup all temp files
+            # else : 
+            #     tiles_to_remove = [os.path.join(self.output_subdir, f)
+            #          for f in os.listdir(self.output_subdir)
+            #          if f.endswith('_tmp.tif')]
+
+            # remove_files(tiles_to_remove)
+
+
         parameters['OUTPUT_RASTER']=dst_path
 
-        return {"Output feature path": self.output_subdir, 'Patch samples saved': self.iPatch, 'OUTPUT_RASTER':dst_path}
+        return {"Output feature path": self.output_subdir, 'Patch samples saved': self.iPatch, 'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
+
+    def remove_temp_files(self):
+        """
+        cleaning up temp tiles
+        keep last tiles and merged tiles in case of resume
+        """
+
+        last_batch_done = self.get_last_batch_done()
+        if not self.all_encoding_done:
+            tiles_to_remove = [
+                    os.path.join(self.output_subdir, f)
+                    for f in os.listdir(self.output_subdir)
+                    if f.endswith('_tmp.tif') and not f.startswith(str(last_batch_done))
+                    ]
+            tiles_to_remove = [
+                    f for f in tiles_to_remove
+                    if not f.endswith('merged_tmp.tif')
+                    ]
+
+        ## else cleanup all temp files
+        else : 
+            tiles_to_remove = [os.path.join(self.output_subdir, f)
+                 for f in os.listdir(self.output_subdir)
+                 if f.endswith('_tmp.tif')]
+
+        remove_files(tiles_to_remove)
+
+        return
 
     def get_last_batch_done(self):
 
         ## get largest batch_number achieved
-        ## files are saved with the pattern '{batch_number}_{image_id_within_batch}.tif'
+        ## files are saved with the pattern '{batch_number}_{image_id_within_batch}_tmp.tif'
         # Regular expression pattern to extract numbers
-        pattern = re.compile(r'^(\d+)_\d+\.tif$')
+        # pattern = re.compile(r'^(\d+)_\d+\.tif$')
+        pattern = re.compile(r'^(\d+)_\d+_tmp\.tif$')
 
         # Initialize a set to store unique first numbers
         batch_numbers = set()
@@ -524,7 +698,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             _, height, width, channels = feature.shape
             bbox = bboxes[idx]
             rio_transform = rasterio.transform.from_bounds(bbox.minx, bbox.miny, bbox.maxx, bbox.maxy, width, height)  # west, south, east, north, width, height
-            feature_path = os.path.join(self.output_subdir, f"{nbatch}_{idx}.tif")
+            feature_path = os.path.join(self.output_subdir, f"{nbatch}_{idx}_tmp.tif")
             with rasterio.open(
                     feature_path,
                     mode="w",
@@ -583,9 +757,19 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
 
         ckpt_path = self.parameterAsFile(
             parameters, self.CKPT, context)
-        
-        self.backbone_name = self.parameterAsString(
+
+
+        ## Use the given backbone name is any, use preselected models otherwise.
+        input_name = self.parameterAsString(
             parameters, self.BACKBONE_CHOICE, context)
+        
+        if input_name:
+            self.backbone_name = input_name
+        else:
+            backbone_idx = self.parameterAsEnum(
+                parameters, self.BACKBONE_OPT, context)
+            self.backbone_name = self.timm_backbone_opt[backbone_idx]
+            feedback.pushInfo(f'self.backbone_name:{self.backbone_name}')
 
         self.stride = self.parameterAsInt(
             parameters, self.STRIDE, context)
@@ -609,11 +793,15 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             parameters, self.CUDA_ID, context)
         self.pauses = self.parameterAsInt(
             parameters, self.PAUSES, context)
+        self.cleanup_frq = self.parameterAsInt(
+            parameters, self.TEMP_FILES_CLEANUP_FREQ, context)
         self.nworkers = self.parameterAsInt(
             parameters, self.WORKERS, context)
         merge_method_idx = self.parameterAsEnum(
             parameters, self.MERGE_METHOD, context)
         self.merge_method = self.merge_options[merge_method_idx]
+        self.remove_tmp_files = self.parameterAsBoolean(
+            parameters, self.REMOVE_TEMP_FILES, context)
 
         rlayer_data_provider = rlayer.dataProvider()
 

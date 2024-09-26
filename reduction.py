@@ -1,10 +1,13 @@
 import os
+import tempfile
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any
 import joblib
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+import psutil
+import json
+
 
 import rasterio
 from rasterio import windows
@@ -26,11 +29,29 @@ from qgis.core import (Qgis,
                        )
 
 
-from sklearn.decomposition import PCA
-#from umap.umap_ import UMAP
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA, IncrementalPCA
 from sklearn.cluster import KMeans
 
-import json
+from .utils.misc import get_unique_filename
+#from umap.umap_ import UMAP
+
+
+RANDOM_SEED = 42
+
+
+def calculate_chunk_size(X, memory_buffer=0.1):
+    # Estimate available memory
+    available_memory = psutil.virtual_memory().available
+    
+    # Estimate the memory footprint of one sample
+    sample_memory = X[0].nbytes
+    
+    # Determine maximum chunk size within available memory (leaving some buffer)
+    max_chunk_size = int(available_memory * (1 - memory_buffer) / sample_memory)
+    
+    return max_chunk_size
+
 
 
 
@@ -58,13 +79,14 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
         with some other properties.
         """
         cwd = Path(__file__).parent.absolute()
+        tmp_wd = os.path.join(tempfile.gettempdir(), "iamap_reduction")
 
         self.addParameter(
             QgsProcessingParameterRasterLayer(
                 name=self.INPUT,
                 description=self.tr(
                     'Input raster layer or image file path'),
-            defaultValue=os.path.join(cwd,'rasters','test.tif'),
+            defaultValue=os.path.join(cwd,'assets','test.tif'),
             ),
         )
 
@@ -105,7 +127,7 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
             )
         )
         # self.method_opt = ['PCA', 'UMAP', 'K-means', '--Empty--']
-        self.method_opt = ['PCA', 'K-means', '--Empty--']
+        self.method_opt = ['IPCA','PCA', 'K-means', '--Empty--']
         self.addParameter (
             QgsProcessingParameterEnum(
                 name = self.METHOD,
@@ -163,7 +185,8 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
                 self.OUTPUT,
                 self.tr(
                     "Output directory (choose the location that the image features will be saved)"),
-            defaultValue=os.path.join(cwd,'features'),
+            # defaultValue=os.path.join(cwd,'models'),
+            defaultValue=tmp_wd,
             )
         )
 
@@ -183,19 +206,8 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
 
         input_bands = [i_band -1 for i_band in self.selected_bands]
 
-        if self.method == 'PCA':
-            proj = PCA(int(self.ncomponents)) 
-            save_file = 'pca.pkl'
-        # if self.method == 'UMAP':
-            # proj = UMAP(int(self.ncomponents))
-            # save_file = 'umap.pkl'
-        if self.method == 'K-means':
-            proj = KMeans(int(self.ncomponents))
-            save_file = 'kmeans_transform.pkl'
-
-        out_path = os.path.join(self.output_dir, save_file)
-
         with rasterio.open(self.rlayer_path) as ds:
+
             transform = ds.transform
             crs = ds.crs
             win = windows.from_bounds(
@@ -209,81 +221,89 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
             transform = ds.window_transform(win)
             raster = np.transpose(raster, (1,2,0))
             raster = raster[:,:,input_bands]
+            fit_raster = raster.reshape(-1, raster.shape[-1])
 
-            feedback.pushInfo(f'{raster.shape}')
-            feedback.pushInfo(f'{raster.reshape(-1, raster.shape[0]).shape}')
+            # feedback.pushInfo(f'{raster.shape}')
+            # feedback.pushInfo(f'{raster.reshape(-1, raster.shape[0]).shape}')
 
             if self.subset:
-                feedback.pushInfo(f'Using a random subset of {self.subset} pixels')
+
+                feedback.pushInfo(f'Using a random subset of {self.subset} pixels, random seed is {RANDOM_SEED}')
+
                 fit_raster = raster.reshape(-1, raster.shape[-1])
                 nsamples = fit_raster.shape[0]
     
                 # Generate random indices to select subset_size number of samples
-                np.random.seed(42)
+                np.random.seed(RANDOM_SEED)
                 random_indices = np.random.choice(nsamples, size=self.subset, replace=False)
                 fit_raster = fit_raster[random_indices,:]
-                feedback.pushInfo(f'Starting fit\n')
-                proj.fit(fit_raster)
-                
-                if self.method=='PCA' :
-                    eig = proj.components_
-                    
-                    absolute_eig = np.abs(eig)
-                    contributions = pd.DataFrame(eig.T, columns=[f'PC{i+1}' for i in range(eig.shape[0])])
-                    #feedback.pushInfo(f"Contributions des variables aux composantes principales : {contributions}")
-                    
 
-                    # Filtrer les contributions supérieures à 0.8
-                    #threshold = 0.01
-                    significant_contributions = contributions[contributions > self.thresold_pca].dropna(how='all')
-                    feedback.pushInfo(f"Contributions des variables aux composantes principales : {significant_contributions}")
-                if self.save_model:
-                    joblib.dump(proj, out_path)
+                # remove nans
+                fit_raster = fit_raster[~np.isnan(fit_raster).any(axis=1)]
 
-                feedback.pushInfo(f'starting inference\n')
-                proj_img = proj.transform(raster.reshape(-1, raster.shape[-1]))
+            feedback.pushInfo(f"Mean raster : {np.mean(raster)}")
+            feedback.pushInfo(f"Standart dev : {np.std(raster)}")
+            fit_raster = (fit_raster-np.mean(raster))/np.std(raster)
+            feedback.pushInfo(f"Mean raster normalized : {np.mean(fit_raster)}")
+            feedback.pushInfo(f"Standart dev normalized : {np.std(fit_raster)}")
 
+            iter = None
+            if self.method == 'PCA':
+                proj = PCA(int(self.ncomponents)) 
+                save_file = 'pca.pkl'
+            if self.method == 'IPCA':
+                proj = IncrementalPCA(int(self.ncomponents)) 
+                save_file = 'ipca.pkl'
+                chunk_size = calculate_chunk_size(fit_raster)
+                iter = range(0, len(fit_raster), chunk_size) 
+            if self.method == 'K-means':
+                proj = KMeans(int(self.ncomponents))
+                save_file = 'kmeans_transform.pkl'
+                iter = range(proj.max_iter)
+            # if self.method == 'UMAP':
+                # proj = UMAP(int(self.ncomponents))
+                # save_file = 'umap.pkl'
 
+            feedback.pushInfo(f'Starting fit. If it goes for too long, consider setting a subset.\n')
+
+            ## if fitting can be divided, we provide the possibility to cancel and to have progression
+            if iter and hasattr(proj, 'partial_fit'):
+                for i in iter:
+                    if feedback.isCanceled():
+                        feedback.pushWarning(
+                            self.tr("\n !!!Processing is canceled by user!!! \n"))
+                        break
+                    proj.partial_fit(fit_raster)
+                    feedback.setProgress((i / len(iter)) * 100)
+
+            ## else, all in one go
             else:
-                scaler = StandardScaler()
-                #raster_normalized=scaler.fit_transform(raster)
-                feedback.pushInfo(f"Mean raster : {np.mean(raster)}")
-                feedback.pushInfo(f"Standart dev : {np.std(raster)}")
-                raster = (raster-np.mean(raster))/np.std(raster)
-                feedback.pushInfo(f"Mean raster normalized : {np.mean(raster)}")
-                feedback.pushInfo(f"Standart dev normalized : {np.std(raster)}")
-                #feedback.pushInfo(f"Mean raster normalized: {raster_normalized.mean}")
-                proj_img = proj.fit_transform(raster.reshape(-1, raster.shape[-1]))
+                proj.fit(fit_raster)
+
+
+            feedback.pushInfo(f'Fitting done, saving model\n')
+            if self.save_model:
+                out_path = os.path.join(self.output_dir, save_file)
+                joblib.dump(proj, out_path)
+
+            feedback.pushInfo(f'Inference over raster\n')
+            raster = (raster-np.mean(raster))/np.std(raster)
+            np.nan_to_num(raster) # NaN to zero after normalisation
+            proj_img = proj.transform(raster.reshape(-1, raster.shape[-1]))
                 
-                if self.method=='PCA' :
-                    eig = proj.components_.T
-                    feedback.pushInfo(f"Thresold: {self.thresold_pca}")
-                    
-                    cos2 = eig ** 2
-                    cos2_filtered = cos2 > self.thresold_pca
-                    feedback.pushInfo(f"Contributions des variables aux composantes principales : {cos2_filtered}")
-                    num_values_above_threshold = np.sum(cos2_filtered)
+            if self.method=='PCA' :
 
-                    feedback.pushInfo(f"Number of values in cos2 > threshold: {num_values_above_threshold}")
-                    #contributions = pd.DataFrame(eig, columns=[f'PC{i+1}' for i in range(eig.T.shape[0])])
-                    #feedback.pushInfo(f"Contributions des variables aux composantes principales : {contributions}")
-                    
+                feedback.pushInfo(f'Loging variables contributions\n')
+                eig = proj.components_.T
+                feedback.pushInfo(f"Thresold: {self.thresold_pca}")
+                
+                cos2 = eig ** 2
+                cos2_filtered = cos2 > self.thresold_pca
+                feedback.pushInfo(f"Contributions of variables to components : {cos2_filtered}")
+                num_values_above_threshold = np.sum(cos2_filtered)
 
-                    # Filtrer les contributions supérieures à 0.8
-                    #threshold = 0.01
-                    #significant_contributions = contributions[contributions > self.thresold_pca].dropna(how='all')
-                    #feedback.pushInfo(f"Contributions des variables aux composantes principales : {significant_contributions}")
+                feedback.pushInfo(f"Number of values in cos2 > threshold: {num_values_above_threshold}")
 
-
-                    """
-                    for i in range(self.ncomponents):
-                        component_loadings = absolute_eig[:, i]
-                        top_indices = np.argsort(component_loadings)[-top_n:][::-1]
-                        #top_indices = np.argsort(component_loadings)
-                        feedback.pushInfo(f'eigenvectors significatifs : {top_indices}')
-                """
-                if self.save_model:
-                    joblib.dump(proj, out_path)
             params = proj.get_params()
 
             proj_img = proj_img.reshape((raster.shape[0], raster.shape[1],-1))
@@ -303,16 +323,17 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
                         i += 1
 
             
-            
-            
-            if os.path.exists(dst_path):
-                    i = 1
-                    while True:
-                        modified_output_file = os.path.join(self.output_dir, f"proj_{i}.tif")
-                        if not os.path.exists(modified_output_file):
-                            dst_path = modified_output_file
-                            break
-                        i += 1
+
+            feedback.pushInfo(f'Export to geotif\n')
+            dst_path, layer_name = get_unique_filename(self.output_dir, 'proj.tif', 'reduced features')
+            # if os.path.exists(dst_path):
+            #         i = 1
+            #         while True:
+            #             modified_output_file = os.path.join(self.output_dir, f"proj_{i}.tif")
+            #             if not os.path.exists(modified_output_file):
+            #                 dst_path = modified_output_file
+            #                 break
+            #             i += 1
 
             with rasterio.open(dst_path, 'w', driver='GTiff',
                                height=height, width=width, count=channels, dtype='float32',
@@ -325,7 +346,8 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
 
             parameters['OUTPUT_RASTER']=dst_path
 
-        return {'OUTPUT_RASTER':dst_path}
+        return {'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
+
 
     def process_options(self,parameters, context, feedback):
         self.iPatch = 0
@@ -377,10 +399,12 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
             parameters, self.CRS, context)
         extent = self.parameterAsExtent(
             parameters, self.EXTENT, context)
-        self.output_dir = self.parameterAsString(
+        output_dir = self.parameterAsString(
             parameters, self.OUTPUT, context)
         self.save_model = self.parameterAsBoolean(
             parameters, self.SAVE_MODEL, context)
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
         rlayer_data_provider = rlayer.dataProvider()
 
