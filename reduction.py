@@ -233,6 +233,9 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
                 random_indices = np.random.choice(nsamples, size=self.subset, replace=False)
                 fit_raster = fit_raster[random_indices,:]
 
+                # remove nans
+                fit_raster = fit_raster[~np.isnan(fit_raster).any(axis=1)]
+
             feedback.pushInfo(f"Mean raster : {np.mean(raster)}")
             feedback.pushInfo(f"Standart dev : {np.std(raster)}")
             fit_raster = (fit_raster-np.mean(raster))/np.std(raster)
@@ -279,6 +282,8 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
                 joblib.dump(proj, out_path)
 
             feedback.pushInfo(f'Inference over raster\n')
+            raster = (raster-np.mean(raster))/np.std(raster)
+            np.nan_to_num(raster) # NaN to zero after normalisation
             proj_img = proj.transform(raster.reshape(-1, raster.shape[-1]))
                 
             if self.method=='PCA' :
