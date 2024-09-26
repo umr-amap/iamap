@@ -30,6 +30,7 @@ from sklearn.cluster import KMeans
 
 from .utils.misc import get_unique_filename
 
+RANDOM_SEED = 42
 
 class ClusterAlgorithm(QgsProcessingAlgorithm):
     """
@@ -172,6 +173,7 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
             proj = KMeans(int(self.nclusters))
             save_file = 'kmeans_cluster.pkl'
             params = proj.get_params()
+            iter = range(proj.max_iter)
 
         out_path = os.path.join(self.output_dir, save_file)
 
@@ -189,32 +191,77 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
             transform = ds.window_transform(win)
             raster = np.transpose(raster, (1,2,0))
             raster = raster[:,:,input_bands]
+            fit_raster = raster.reshape(-1, raster.shape[-1])
 
             feedback.pushInfo(f'{raster.shape}')
             feedback.pushInfo(f'{raster.reshape(-1, raster.shape[0]).shape}')
 
             if self.subset:
-                feedback.pushInfo(f'Using a random subset of {self.subset} pixels')
-                fit_raster = raster.reshape(-1, raster.shape[-1])
+
+                feedback.pushInfo(f'Using a random subset of {self.subset} pixels, random seed is {RANDOM_SEED}')
+
                 nsamples = fit_raster.shape[0]
     
                 # Generate random indices to select subset_size number of samples
-                np.random.seed(42)
+                np.random.seed(RANDOM_SEED)
                 random_indices = np.random.choice(nsamples, size=self.subset, replace=False)
                 fit_raster = fit_raster[random_indices,:]
-                feedback.pushInfo(f'Starting fit\n')
-                proj.fit(fit_raster)
-                if self.save_model:
-                    joblib.dump(proj, out_path)
 
-                feedback.pushInfo(f'starting inference\n')
-                proj_img = proj.predict(raster.reshape(-1, raster.shape[-1]))
+                # remove nans
+                fit_raster = fit_raster[~np.isnan(fit_raster).any(axis=1)]
 
+            feedback.pushInfo(f"Mean raster : {np.mean(raster)}")
+            feedback.pushInfo(f"Standart dev : {np.std(raster)}")
+            fit_raster = (fit_raster-np.mean(raster))/np.std(raster)
+            feedback.pushInfo(f"Mean raster normalized : {np.mean(fit_raster)}")
+            feedback.pushInfo(f"Standart dev normalized : {np.std(fit_raster)}")
 
+            feedback.pushInfo(f'Starting fit. If it goes for too long, consider setting a subset.\n')
+
+            ## if fitting can be divided, we provide the possibility to cancel and to have progression
+            if iter and hasattr(proj, 'partial_fit'):
+                for i in iter:
+                    if feedback.isCanceled():
+                        feedback.pushWarning(
+                            self.tr("\n !!!Processing is canceled by user!!! \n"))
+                        break
+                    proj.partial_fit(fit_raster)
+                    feedback.setProgress((i / len(iter)) * 100)
+
+            ## else, all in one go
             else:
-                proj_img = proj.fit_predict(raster.reshape(-1, raster.shape[-1]))
-                if self.save_model:
-                    joblib.dump(proj, out_path)
+                proj.fit(fit_raster)
+
+
+            feedback.pushInfo(f'Fitting done, saving model\n')
+            if self.save_model:
+                out_path = os.path.join(self.output_dir, save_file)
+                joblib.dump(proj, out_path)
+
+            feedback.pushInfo(f'Inference over raster\n')
+            proj_img = proj.predict(raster.reshape(-1, raster.shape[-1]))
+            # if self.subset:
+            #     feedback.pushInfo(f'Using a random subset of {self.subset} pixels')
+            #     fit_raster = raster.reshape(-1, raster.shape[-1])
+            #     nsamples = fit_raster.shape[0]
+    
+            #     # Generate random indices to select subset_size number of samples
+            #     np.random.seed(42)
+            #     random_indices = np.random.choice(nsamples, size=self.subset, replace=False)
+            #     fit_raster = fit_raster[random_indices,:]
+            #     feedback.pushInfo(f'Starting fit\n')
+            #     proj.fit(fit_raster)
+            #     if self.save_model:
+            #         joblib.dump(proj, out_path)
+
+            #     feedback.pushInfo(f'starting inference\n')
+            #     proj_img = proj.predict(raster.reshape(-1, raster.shape[-1]))
+
+
+            # else:
+            #     proj_img = proj.fit_predict(raster.reshape(-1, raster.shape[-1]))
+            #     if self.save_model:
+            #         joblib.dump(proj, out_path)
 
             proj_img = proj_img.reshape((raster.shape[0], raster.shape[1],-1))
             height, width, channels = proj_img.shape
