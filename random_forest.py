@@ -3,6 +3,8 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, Any
 import joblib
+import json
+import tempfile
 
 import rasterio
 from rasterio import windows
@@ -34,7 +36,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 
-import json
+from .utils.misc import get_unique_filename
+
 
 class RFAlgorithm(QgsProcessingAlgorithm):
     """
@@ -57,6 +60,7 @@ class RFAlgorithm(QgsProcessingAlgorithm):
         with some other properties.
         """
         cwd = Path(__file__).parent.absolute()
+        tmp_wd = os.path.join(tempfile.gettempdir(), "iamap_rf")
 
         self.addParameter(
             QgsProcessingParameterRasterLayer(
@@ -109,7 +113,8 @@ class RFAlgorithm(QgsProcessingAlgorithm):
                 name=self.TEMPLATE,
                 description=self.tr(
                     'Input shapefile path for training data set for random forest (if no test data_set, will be devised in train and test)'),
-            defaultValue=os.path.join(cwd,'assets','rf.gpkg'),
+            # defaultValue=os.path.join(cwd,'assets','rf.gpkg'),
+            defaultValue=os.path.join(cwd,'assets','rf.shp'),
             ),
         )
         
@@ -128,7 +133,7 @@ class RFAlgorithm(QgsProcessingAlgorithm):
                 self.OUTPUT,
                 self.tr(
                     "Output directory (choose the location that the image features will be saved)"),
-            defaultValue=os.path.join(cwd,'models'),
+            defaultValue=tmp_wd,
             )
         )
         
@@ -324,14 +329,15 @@ class RFAlgorithm(QgsProcessingAlgorithm):
             
 
             
-            if os.path.exists(dst_path):
-                    i = 1
-                    while True:
-                        modified_output_file = os.path.join(self.output_dir, f"random_forest_{i}.tif")
-                        if not os.path.exists(modified_output_file):
-                            dst_path = modified_output_file
-                            break
-                        i += 1
+            dst_path, layer_name = get_unique_filename(self.output_dir, 'random_forest.tif', 'random forest')
+            # if os.path.exists(dst_path):
+            #         i = 1
+            #         while True:
+            #             modified_output_file = os.path.join(self.output_dir, f"random_forest_{i}.tif")
+            #             if not os.path.exists(modified_output_file):
+            #                 dst_path = modified_output_file
+            #                 break
+            #             i += 1
                         
             if os.path.exists(params_file):
                     i = 1
@@ -353,7 +359,7 @@ class RFAlgorithm(QgsProcessingAlgorithm):
 
             parameters['OUTPUT_RASTER']=dst_path
 
-        return {'OUTPUT_RASTER':dst_path}
+        return {'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
 
     def process_options(self,parameters, context, feedback):
         self.iPatch = 0
@@ -402,8 +408,11 @@ class RFAlgorithm(QgsProcessingAlgorithm):
             parameters, self.CRS, context)
         extent = self.parameterAsExtent(
             parameters, self.EXTENT, context)
-        self.output_dir = self.parameterAsString(
+        output_dir = self.parameterAsString(
             parameters, self.OUTPUT, context)
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
 
         rlayer_data_provider = rlayer.dataProvider()
 

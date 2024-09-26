@@ -1,4 +1,5 @@
 import os
+import tempfile
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any
@@ -31,6 +32,8 @@ from qgis.core import (Qgis,
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA, IncrementalPCA
 from sklearn.cluster import KMeans
+
+from .utils.misc import get_unique_filename
 #from umap.umap_ import UMAP
 
 
@@ -76,6 +79,7 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
         with some other properties.
         """
         cwd = Path(__file__).parent.absolute()
+        tmp_wd = os.path.join(tempfile.gettempdir(), "iamap_reduction")
 
         self.addParameter(
             QgsProcessingParameterRasterLayer(
@@ -181,7 +185,8 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
                 self.OUTPUT,
                 self.tr(
                     "Output directory (choose the location that the image features will be saved)"),
-            defaultValue=os.path.join(cwd,'models'),
+            # defaultValue=os.path.join(cwd,'models'),
+            defaultValue=tmp_wd,
             )
         )
 
@@ -320,14 +325,15 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
             
 
             feedback.pushInfo(f'Export to geotif\n')
-            if os.path.exists(dst_path):
-                    i = 1
-                    while True:
-                        modified_output_file = os.path.join(self.output_dir, f"proj_{i}.tif")
-                        if not os.path.exists(modified_output_file):
-                            dst_path = modified_output_file
-                            break
-                        i += 1
+            dst_path, layer_name = get_unique_filename(self.output_dir, 'proj.tif', 'reduced features')
+            # if os.path.exists(dst_path):
+            #         i = 1
+            #         while True:
+            #             modified_output_file = os.path.join(self.output_dir, f"proj_{i}.tif")
+            #             if not os.path.exists(modified_output_file):
+            #                 dst_path = modified_output_file
+            #                 break
+            #             i += 1
 
             with rasterio.open(dst_path, 'w', driver='GTiff',
                                height=height, width=width, count=channels, dtype='float32',
@@ -340,7 +346,7 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
 
             parameters['OUTPUT_RASTER']=dst_path
 
-        return {'OUTPUT_RASTER':dst_path}
+        return {'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
 
 
     def process_options(self,parameters, context, feedback):
@@ -393,10 +399,12 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
             parameters, self.CRS, context)
         extent = self.parameterAsExtent(
             parameters, self.EXTENT, context)
-        self.output_dir = self.parameterAsString(
+        output_dir = self.parameterAsString(
             parameters, self.OUTPUT, context)
         self.save_model = self.parameterAsBoolean(
             parameters, self.SAVE_MODEL, context)
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
         rlayer_data_provider = rlayer.dataProvider()
 

@@ -9,7 +9,12 @@ from PyQt5.QtCore import pyqtSignal, QObject
 from qgis.core import QgsApplication
 from qgis.gui import QgisInterface
 from .provider import IAMapProvider
-from .icons import QIcon_EncoderTool, QIcon_ReductionTool, QIcon_ClusterTool, QIcon_SimilarityTool, QIcon_RandomforestTool
+from .icons import (QIcon_EncoderTool, 
+                    QIcon_ReductionTool, 
+                    QIcon_ClusterTool, 
+                    QIcon_SimilarityTool, 
+                    QIcon_RandomforestTool,
+                    )
 
 
 class IAMap(QObject):
@@ -135,9 +140,10 @@ class IAMap(QObject):
             # Retrieve output parameters from the result dictionary
             if 'OUTPUT_RASTER' in result:
                 output_raster_path = result['OUTPUT_RASTER']
+                output_layer_name = result['OUTPUT_LAYER_NAME']
 
                 # Add the output raster layer to the map canvas
-                self.iface.addRasterLayer(str(output_raster_path), 'reduced features')
+                self.iface.addRasterLayer(str(output_raster_path), output_layer_name)
             else:
                 # Handle missing or unexpected output
                 print('Output raster not found in algorithm result.')
@@ -157,9 +163,10 @@ class IAMap(QObject):
             # Retrieve output parameters from the result dictionary
             if 'OUTPUT_RASTER' in result:
                 output_raster_path = result['OUTPUT_RASTER']
+                output_layer_name = result['OUTPUT_LAYER_NAME']
 
                 # Add the output raster layer to the map canvas
-                self.iface.addRasterLayer(str(output_raster_path), 'clustering')
+                self.iface.addRasterLayer(str(output_raster_path), output_layer_name)
             else:
                 # Handle missing or unexpected output
                 print('Output raster not found in algorithm result.')
@@ -179,9 +186,10 @@ class IAMap(QObject):
             # Retrieve output parameters from the result dictionary
             if 'OUTPUT_RASTER' in result:
                 output_raster_path = result['OUTPUT_RASTER']
+                output_layer_name = result['OUTPUT_LAYER_NAME']
 
                 # Add the output raster layer to the map canvas
-                self.iface.addRasterLayer(str(output_raster_path), 'similarity map')
+                self.iface.addRasterLayer(str(output_raster_path), output_layer_name)
             else:
                 # Handle missing or unexpected output
                 print('Output raster not found in algorithm result.')
@@ -200,9 +208,10 @@ class IAMap(QObject):
             # Retrieve output parameters from the result dictionary
             if 'OUTPUT_RASTER' in result:
                 output_raster_path = result['OUTPUT_RASTER']
+                output_layer_name = result['OUTPUT_LAYER_NAME']
 
                 # Add the output raster layer to the map canvas
-                self.iface.addRasterLayer(str(output_raster_path), 'random forest map')
+                self.iface.addRasterLayer(str(output_raster_path), output_layer_name)
             else:
                 # Handle missing or unexpected output
                 print('Output raster not found in algorithm result.')

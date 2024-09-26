@@ -3,6 +3,8 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, Any
 import joblib
+import tempfile
+import json
 
 import rasterio
 from rasterio import windows
@@ -26,8 +28,7 @@ from qgis.core import (Qgis,
 
 from sklearn.cluster import KMeans
 
-import json
-
+from .utils.misc import get_unique_filename
 
 
 class ClusterAlgorithm(QgsProcessingAlgorithm):
@@ -53,6 +54,7 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
         with some other properties.
         """
         cwd = Path(__file__).parent.absolute()
+        tmp_wd = os.path.join(tempfile.gettempdir(), "iamap_clustering")
 
         self.addParameter(
             QgsProcessingParameterRasterLayer(
@@ -145,7 +147,8 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
                 self.OUTPUT,
                 self.tr(
                     "Output directory (choose the location that the image features will be saved)"),
-            defaultValue=os.path.join(cwd,'models'),
+            # defaultValue=os.path.join(cwd,'models'),
+            defaultValue=tmp_wd,
             )
         )
 
@@ -221,15 +224,16 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
             params_file = os.path.join(self.output_dir, 'cluster_parameters.json')
             
             
-            if os.path.exists(dst_path):
-                    i = 1
-                    while True:
-                        modified_output_file = os.path.join(self.output_dir, f"cluster_{i}.tif")
-                        if not os.path.exists(modified_output_file):
-                            dst_path = modified_output_file
-                            break
-                        i += 1
+            # if os.path.exists(dst_path):
+            #         i = 1
+            #         while True:
+            #             modified_output_file = os.path.join(self.output_dir, f"cluster_{i}.tif")
+            #             if not os.path.exists(modified_output_file):
+            #                 dst_path = modified_output_file
+            #                 break
+            #             i += 1
                         
+            dst_path, layer_name = get_unique_filename(self.output_dir, 'cluster.tif', 'clustered features')
             if os.path.exists(params_file):
                     i = 1
                     while True:
@@ -251,7 +255,7 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
 
             parameters['OUTPUT_RASTER']=dst_path
 
-        return {'OUTPUT_RASTER':dst_path}
+        return {'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
 
     def process_options(self,parameters, context, feedback):
         self.iPatch = 0
@@ -299,10 +303,12 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
             parameters, self.CRS, context)
         extent = self.parameterAsExtent(
             parameters, self.EXTENT, context)
-        self.output_dir = self.parameterAsString(
+        output_dir = self.parameterAsString(
             parameters, self.OUTPUT, context)
         self.save_model = self.parameterAsBoolean(
             parameters, self.SAVE_MODEL, context)
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
         rlayer_data_provider = rlayer.dataProvider()
 
