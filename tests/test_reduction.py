@@ -30,6 +30,7 @@ class TestReductionAlgorithm(unittest.TestCase):
                 md5.update(data)
         result_file_hash = md5.hexdigest()
         assert result_file_hash == 'e47ca7b39f252506526a1ebfa1f33f6c'
+        os.remove(expected_result_path)
 
 
 if __name__ == "__main__":

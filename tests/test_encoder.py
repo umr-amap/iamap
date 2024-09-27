@@ -1,7 +1,10 @@
 import os
 import hashlib
 import unittest
-from qgis.core import QgsProcessingContext, QgsProcessingFeedback
+from qgis.core import (
+        QgsProcessingContext, 
+        QgsProcessingFeedback,
+        )
 
 from ..encoder import EncoderAlgorithm
 
@@ -30,7 +33,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
                 md5.update(data)
         result_file_hash = md5.hexdigest()
         assert result_file_hash == '018b6fc5d88014a7e515824d95ca8686'
-
+        os.remove(expected_result_path)
 
 if __name__ == "__main__":
 

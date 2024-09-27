@@ -30,6 +30,7 @@ class TestClusteringAlgorithm(unittest.TestCase):
                 md5.update(data)
         result_file_hash = md5.hexdigest()
         assert result_file_hash == 'd316fa71b627ee361786154118101f0e'
+        os.remove(expected_result_path)
 
 
 if __name__ == "__main__":
@@ -37,5 +38,3 @@ if __name__ == "__main__":
     test_algo = TestClusteringAlgorithm()
     test_algo.setUp()
     test_algo.test_valid_parameters()
-
-

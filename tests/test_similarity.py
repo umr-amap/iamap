@@ -30,6 +30,7 @@ class TestSimilarityAlgorithm(unittest.TestCase):
                 md5.update(data)
         result_file_hash = md5.hexdigest()
         assert result_file_hash == 'f76eb1f0469725b49fe0252cfe86829a'
+        os.remove(expected_result_path)
 
 
 if __name__ == "__main__":
@@ -37,6 +38,3 @@ if __name__ == "__main__":
     test_algo = TestSimilarityAlgorithm()
     test_algo.setUp()
     test_algo.test_valid_parameters()
-
-
-

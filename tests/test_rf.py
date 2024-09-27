@@ -30,6 +30,7 @@ class TestRFAlgorithm(unittest.TestCase):
                 md5.update(data)
         result_file_hash = md5.hexdigest()
         assert result_file_hash == '80b7dd5b5ad5a4c0ad1d637fa20cf8b0'
+        os.remove(expected_result_path)
 
 
 if __name__ == "__main__":
@@ -37,7 +38,3 @@ if __name__ == "__main__":
     test_algo = TestRFAlgorithm()
     test_algo.setUp()
     test_algo.test_valid_parameters()
-
-
-
-
