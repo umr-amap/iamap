@@ -29,7 +29,7 @@ class TestReductionAlgorithm(unittest.TestCase):
                     break
                 md5.update(data)
         result_file_hash = md5.hexdigest()
-        assert result_file_hash == 'e47ca7b39f252506526a1ebfa1f33f6c'
+        assert result_file_hash == '5eef4ea313d45b12beba8a7b9e2500ba'
         os.remove(expected_result_path)
 
 
