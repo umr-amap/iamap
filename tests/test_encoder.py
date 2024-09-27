@@ -8,7 +8,7 @@ from qgis.core import (
 
 import timm
 import torch
-from torchgeo.transforms import AugmentationSequential
+from torchgeo.datasets import RasterDataset
 
 from ..encoder import EncoderAlgorithm
 
@@ -71,6 +71,28 @@ class TestEncoderAlgorithm(unittest.TestCase):
 
             assert output.shape == exp_feat_size
 
+    def test_RasterDataset(self):
+
+        self.algorithm.initAlgorithm()
+        parameters = {}
+        self.algorithm.process_options(parameters, self.context, self.feedback)
+        RasterDataset.filename_glob = self.algorithm.rlayer_name
+        RasterDataset.all_bands = [
+            self.algorithm.rlayer.bandName(i_band) for i_band in range(1, self.algorithm.rlayer.bandCount()+1)
+        ]
+        # currently only support rgb bands
+        input_bands = [self.algorithm.rlayer.bandName(i_band)
+                       for i_band in self.algorithm.selected_bands]
+
+        if self.algorithm.crs == self.algorithm.rlayer.crs():
+            dataset = RasterDataset(
+                paths=self.algorithm.rlayer_dir, crs=None, res=self.algorithm.res, bands=input_bands, cache=False)
+        else:
+            dataset = RasterDataset(
+                paths=self.algorithm.rlayer_dir, crs=self.algorithm.crs.toWkt(), res=self.algorithm.res, bands=input_bands, cache=False)
+        del dataset
+
+
 
 
 
@@ -78,5 +100,6 @@ if __name__ == "__main__":
 
     test_encoder = TestEncoderAlgorithm()
     test_encoder.setUp()
-    test_encoder.test_valid_parameters()
     test_encoder.test_timm_create_model()
+    test_encoder.test_RasterDataset()
+    test_encoder.test_valid_parameters()
