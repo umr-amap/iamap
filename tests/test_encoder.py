@@ -71,6 +71,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
 
             assert output.shape == exp_feat_size
 
+
     def test_RasterDataset(self):
 
         self.algorithm.initAlgorithm()

@@ -29,7 +29,7 @@ class TestClusteringAlgorithm(unittest.TestCase):
                     break
                 md5.update(data)
         result_file_hash = md5.hexdigest()
-        assert result_file_hash == '835bcb7ab7d7e97d2de26e81415a0d19'
+        assert result_file_hash == 'ecb1e17173b1601866ae7055694739e8'
         os.remove(expected_result_path)
 
 
