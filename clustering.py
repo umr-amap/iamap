@@ -170,7 +170,7 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
         input_bands = [i_band -1 for i_band in self.selected_bands]
 
         if self.method == 'K-means':
-            proj = KMeans(int(self.nclusters))
+            proj = KMeans(int(self.nclusters), random_state=RANDOM_SEED)
             save_file = 'kmeans_cluster.pkl'
             params = proj.get_params()
             iter = range(proj.max_iter)
