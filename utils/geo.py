@@ -49,16 +49,28 @@ def merge_tiles(
         method = custom_method_avg
 
     # memfile = MemoryFile()
-    merge(datasets=file_handler, # list of dataset objects opened in 'r' mode
-        bounds=union_extent, # tuple
-        nodata=nodata, # float
-        dtype=dtype, # dtype
-        # resampling=Resampling.nearest,
-        method=method, # strategy to combine overlapping rasters
-        # dst_path=memfile.name, # str or PathLike to save raster
-        dst_path=dst_path,
-        # dst_kwds={'blockysize':512, 'blockxsize':512} # Dictionary
-      )
+    try:
+        merge(sources=file_handler, # list of dataset objects opened in 'r' mode
+            bounds=union_extent, # tuple
+            nodata=nodata, # float
+            dtype=dtype, # dtype
+            # resampling=Resampling.nearest,
+            method=method, # strategy to combine overlapping rasters
+            # dst_path=memfile.name, # str or PathLike to save raster
+            dst_path=dst_path,
+            # dst_kwds={'blockysize':512, 'blockxsize':512} # Dictionary
+          )
+    except TypeError:
+        merge(datasets=file_handler, # list of dataset objects opened in 'r' mode
+            bounds=union_extent, # tuple
+            nodata=nodata, # float
+            dtype=dtype, # dtype
+            # resampling=Resampling.nearest,
+            method=method, # strategy to combine overlapping rasters
+            # dst_path=memfile.name, # str or PathLike to save raster
+            dst_path=dst_path,
+            # dst_kwds={'blockysize':512, 'blockxsize':512} # Dictionary
+          )
 
 def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True):
     '''
