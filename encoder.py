@@ -388,12 +388,19 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         _, h, w, = data_config['input_size']
 
         if self.quantization:
-            feedback.pushInfo(f'before quantization : {get_model_size(model)}')
 
-            model = torch.quantization.quantize_dynamic(
-                model, {nn.Linear}, dtype=torch.qint8
-            )
-            feedback.pushInfo(f'after quantization : {get_model_size(model)}')
+            try :
+                feedback.pushInfo(f'before quantization : {get_model_size(model)}')
+
+                model = torch.quantization.quantize_dynamic(
+                    model, {nn.Linear}, dtype=torch.qint8
+                )
+                feedback.pushInfo(f'after quantization : {get_model_size(model)}')
+
+            except :
+
+                feedback.pushInfo(f'quantization impossible, using original model.')
+
 
         transform = AugmentationSequential(
                 T.ConvertImageDtype(torch.float32), # change dtype for normalize to be possible
