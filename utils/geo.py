@@ -1,4 +1,5 @@
 from typing import Callable, Union
+import sys
 import rasterio
 import geopandas as gpd
 import numpy as np
@@ -72,7 +73,7 @@ def merge_tiles(
             # dst_kwds={'blockysize':512, 'blockxsize':512} # Dictionary
           )
 
-def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True):
+def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True, subset=1_000):
     '''
     Reads metadata or computes mean and sd of each band of a geotiff.
     If the metadata is not available, mean and standard deviation can be computed via numpy.
@@ -92,6 +93,7 @@ def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True):
         list of standard deviation values per band
     '''
 
+    np.random.seed(42)
     src = rasterio.open(path)
     means = []
     sds = []
@@ -99,6 +101,9 @@ def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True):
         for band in range(1, src.count+1):
             arr = src.read(band)
             arr = replace_nan_with_zero(arr)
+            ## let subset by default for now
+            if subset:
+                arr = np.random.choice(arr.flatten(), size=subset) 
             if ignore_zeros:
                 mean = np.ma.masked_equal(arr, 0).mean()
                 sd = np.ma.masked_equal(arr, 0).std()

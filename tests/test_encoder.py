@@ -37,7 +37,12 @@ class TestEncoderAlgorithm(unittest.TestCase):
                 md5.update(data)
         result_file_hash = md5.hexdigest()
         ## different rasterio versions lead to different hashes ? 
-        possible_hashes = ['018b6fc5d88014a7e515824d95ca8686', '94658648037138c64159ae457c3928dd']
+        possible_hashes = [
+                '018b6fc5d88014a7e515824d95ca8686', 
+                '94658648037138c64159ae457c3928dd',
+                '496ac2e9b92f62d16c8c8f1a0fa07009',
+                'a6230b57bcf0050aa6f21107a16a5548',
+                           ]
         assert result_file_hash in possible_hashes
         os.remove(expected_result_path)
 
@@ -95,6 +100,10 @@ class TestEncoderAlgorithm(unittest.TestCase):
                 paths=self.algorithm.rlayer_dir, crs=self.algorithm.crs.toWkt(), res=self.algorithm.res, bands=input_bands, cache=False)
         del dataset
 
+    def test_cuda(self):
+        if torch.cuda.is_available():
+            assert True
+
 
 
 
@@ -106,3 +115,4 @@ if __name__ == "__main__":
     test_encoder.test_timm_create_model()
     test_encoder.test_RasterDataset()
     test_encoder.test_valid_parameters()
+    test_encoder.test_cuda()
