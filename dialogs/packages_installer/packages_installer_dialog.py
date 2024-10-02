@@ -275,13 +275,28 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.log('\n')
 
     def _pip_install_packages(self, packages: List[PackageToInstall]) -> None:
-        cmd = [PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install', '-U', f'--target={PACKAGES_INSTALL_DIR}']        
+        cmd = [PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install', '-U', f'--target={PACKAGES_INSTALL_DIR}']               
         cmd_string = ' '.join(cmd)
         
         for pck in packages:
-            cmd.append(f"{pck}")
-            cmd_string += f"{pck}"
+            if ("index-url") not in pck.version:
+                cmd.append(f" {pck}")
+                cmd_string += f" {pck}"
+            
+            elif pck.name == 'torch':
+                torch_url = pck.version.split("index-url ")[-1]
         
+                cmd_torch = [PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install', '-U', f'--target={PACKAGES_INSTALL_DIR}', 'torch', f"--index-url={torch_url}"] 
+                cmd_torch_string = ' '.join(cmd_torch)
+
+                self.log(f'<em>Running command: \n  $ {cmd_torch_string} </em>')
+                with subprocess.Popen(cmd_torch,
+                                    stdout=subprocess.PIPE,
+                                    universal_newlines=True,
+                                    stderr=subprocess.STDOUT) as process:
+                    self._do_process_output_logging(process)
+
+
         self.log(f'<em>Running command: \n  $ {cmd_string} </em>')
         with subprocess.Popen(cmd,
                               stdout=subprocess.PIPE,
