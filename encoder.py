@@ -294,7 +294,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterBoolean(
                 self.QUANT,
                 self.tr("Quantization of the model to reduce space"),
-                defaultValue=True
+                defaultValue=False
             )
         )
 
