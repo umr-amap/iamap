@@ -344,9 +344,10 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         output_subdir.mkdir(parents=True, exist_ok=True)
         self.output_subdir = output_subdir
         feedback.pushInfo(f'output_subdir: {output_subdir}')
-        save_parameters_to_json(parameters, self.output_subdir)
-        log_parameters_to_csv(parameters,self.output_dir)
         feedback.pushInfo(f'saving parameters to json file')
+        save_parameters_to_json(parameters, self.output_subdir)
+        feedback.pushInfo(f'logging parameters to csv')
+        log_parameters_to_csv(parameters,self.output_dir)
 
         RasterDataset.filename_glob = self.rlayer_name
         RasterDataset.all_bands = [

@@ -1,4 +1,5 @@
 import shutil
+import time
 import os
 import torch
 import logging
@@ -95,19 +96,20 @@ def convert_qvariant(obj):
         return obj
 
 def save_parameters_to_json(parameters, output_dir):
+
     dst_path = os.path.join(output_dir, 'parameters.json')
     ## convert_qvariant does not work properly for 'CKPT'
     ## converting it to a str
     converted_parameters = convert_qvariant(parameters) 
-    print(parameters)
     converted_parameters['CKPT'] = str(converted_parameters['CKPT'])
 
     for key, item in converted_parameters.items():
-        print(key, type(item))
     with open(dst_path, "w") as json_file:
         json.dump(converted_parameters, json_file, indent=4)
 
+
 def log_parameters_to_csv(parameters, output_dir):
+
     # Compute the MD5 hash of the parameters
     params_hash = compute_md5_hash(parameters)
     
