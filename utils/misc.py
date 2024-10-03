@@ -103,7 +103,6 @@ def save_parameters_to_json(parameters, output_dir):
     converted_parameters = convert_qvariant(parameters) 
     converted_parameters['CKPT'] = str(converted_parameters['CKPT'])
 
-    for key, item in converted_parameters.items():
     with open(dst_path, "w") as json_file:
         json.dump(converted_parameters, json_file, indent=4)
 

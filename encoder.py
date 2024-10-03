@@ -86,6 +86,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
     PAUSES = 'PAUSES'
     REMOVE_TEMP_FILES = 'REMOVE_TEMP_FILES'
     TEMP_FILES_CLEANUP_FREQ = 'TEMP_FILES_CLEANUP_FREQ'
+    JSON_PARAM = 'JSON_PARAM'
     
 
     def initAlgorithm(self, config=None):
@@ -311,6 +312,16 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 defaultValue=0,
                 )
 
+        json_param = QgsProcessingParameterFile(
+                name=self.JSON_PARAM,
+                description=self.tr(
+                    'Pass parameters as json file'),
+                # extension='pth',
+                fileFilter='JSON Files (*.json)',
+                optional=True,
+                defaultValue=None
+            )
+
         for param in (
                 crs_param, 
                 res_param, 
@@ -321,6 +332,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                 pauses_param,
                 remove_tmp_files,
                 tmp_files_cleanup_frq,
+                json_param,
                 ):
             param.setFlags(
                 param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -333,6 +345,8 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         """
         Here is where the processing itself takes place.
         """
+
+        parameters = self.load_parameters_as_json(feedback, parameters)
         self.process_options(parameters, context, feedback)
 
         ## compute parameters hash to have a unique identifier for the run
@@ -637,6 +651,20 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         parameters['OUTPUT_RASTER']=dst_path
 
         return {"Output feature path": self.output_subdir, 'Patch samples saved': self.iPatch, 'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
+
+    def load_parameters_as_json(self, feedback, parameters):
+        parameters['JSON_PARAM'] = str(parameters['JSON_PARAM'])
+        json_param = parameters['JSON_PARAM']
+        print(json_param)
+        if json_param != 'NULL':
+            with open(json_param) as json_file:
+                parameters = json.load(json_file)
+            feedback.pushInfo(f'Loading previous parameters from {json_param}')
+            parameters.pop('JSON_PARAM',None)
+        else:
+            parameters.pop('JSON_PARAM',None)
+        
+        return parameters
 
 
     def remove_temp_files(self):

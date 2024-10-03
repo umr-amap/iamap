@@ -46,7 +46,8 @@ class TestEncoderAlgorithm(unittest.TestCase):
                 'SIZE': 224, 
                 'STRIDE': 224, 
                 'TEMP_FILES_CLEANUP_FREQ': 1000, 
-                'WORKERS': 0
+                'WORKERS': 0,
+                'JSON_PARAM': 'NULL', 
                       }
         result = self.algorithm.processAlgorithm(parameters, self.context, self.feedback)
         expected_result_path = os.path.join(self.algorithm.output_subdir,'merged.tif')
