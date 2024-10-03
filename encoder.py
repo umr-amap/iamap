@@ -53,9 +53,9 @@ from .utils.misc import (QGISLogHandler,
                          remove_files, 
                          check_disk_space,
                          get_unique_filename,
-                         convert_qvariant,
                          save_parameters_to_json,
                          compute_md5_hash,
+                         log_parameters_to_csv,
                          )
 
 
@@ -345,6 +345,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         self.output_subdir = output_subdir
         feedback.pushInfo(f'output_subdir: {output_subdir}')
         save_parameters_to_json(parameters, self.output_subdir)
+        log_parameters_to_csv(parameters,self.output_dir)
         feedback.pushInfo(f'saving parameters to json file')
 
         RasterDataset.filename_glob = self.rlayer_name

@@ -2,6 +2,8 @@ import shutil
 import os
 import torch
 import logging
+import json
+import csv
 import hashlib
 from PyQt5.QtCore import QVariant
 
@@ -91,6 +93,7 @@ def convert_qvariant(obj):
         return [convert_qvariant_obj(item) for item in obj]
     else:
         return obj
+
 def save_parameters_to_json(parameters, output_dir):
     dst_path = os.path.join(output_dir, 'parameters.json')
     ## convert_qvariant does not work properly for 'CKPT'
@@ -103,4 +106,40 @@ def save_parameters_to_json(parameters, output_dir):
         print(key, type(item))
     with open(dst_path, "w") as json_file:
         json.dump(converted_parameters, json_file, indent=4)
+
+def log_parameters_to_csv(parameters, output_dir):
+    # Compute the MD5 hash of the parameters
+    params_hash = compute_md5_hash(parameters)
+    
+    # Define the CSV file path
+    csv_file_path = os.path.join(output_dir, "parameters.csv")
+    
+    # Check if the CSV file exists
+    file_exists = os.path.isfile(csv_file_path)
+    
+    # Read the CSV file and check for the hash if it exists
+    if file_exists:
+        with open(csv_file_path, mode='r', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['md5hash'] == params_hash:
+                    print("This set of parameters is already logged.")
+                    return  # No need to add this set of parameters
+
+    # If not already logged, append the new parameters
+    with open(csv_file_path, mode='a', newline='') as csvfile:
+        fieldnames = ['md5hash'] + list(parameters.keys())  # Columns: md5hash + parameter keys
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # Write the header if the file is being created for the first time
+        if not file_exists:
+            writer.writeheader()
+
+        # Prepare the row with hash + parameters
+        row = {'md5hash': params_hash}
+        row.update(parameters)
+
+        # Write the new row
+        writer.writerow(row)
+        print("Parameters logged successfully.")
 
