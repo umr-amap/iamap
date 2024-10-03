@@ -525,16 +525,10 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
 
             if current <= last_batch_done + 1:
                 total_space, total_used_space, free_space = check_disk_space(self.output_subdir)
-                print(current)
-                print(free_space)
-                print(total_used_space)
 
                 used_outputsubdir = get_dir_size(str(self.output_subdir))
-                print(used_outputsubdir)
                 
                 to_use = ((len(dataloader) / (current+1)) - 1) * used_outputsubdir
-                print(to_use)
-
                 if to_use >= free_space:
                     feedback.pushWarning(
                         self.tr(f"\n !!! only {free_space} GB disk space remaining, canceling !!! \n"))
