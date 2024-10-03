@@ -25,7 +25,29 @@ class TestEncoderAlgorithm(unittest.TestCase):
 
     def test_valid_parameters(self):
         self.algorithm.initAlgorithm()
-        parameters = {}
+        parameters = {
+                'BACKBONE_CHOICE': '', 
+                'BACKBONE_OPT': 0, 
+                'BANDS': None, 
+                'BATCH_SIZE': 1, 
+                'CKPT': 'NULL', 
+                'CRS': None, 
+                'CUDA': True, 
+                'CUDA_ID': 0, 
+                'EXTENT': None, 
+                'FEAT_OPTION': True, 
+                'INPUT': '/home/tresson/.local/share/QGIS/QGIS3/profiles/default/python/plugins/iamap/assets/test.tif', 
+                'MERGE_METHOD': 0, 
+                'OUTPUT': '/tmp/iamap_features', 
+                'PAUSES': 0, 
+                'QUANT': True, 
+                'REMOVE_TEMP_FILES': True, 
+                'RESOLUTION': None, 
+                'SIZE': 224, 
+                'STRIDE': 224, 
+                'TEMP_FILES_CLEANUP_FREQ': 1000, 
+                'WORKERS': 0
+                      }
         result = self.algorithm.processAlgorithm(parameters, self.context, self.feedback)
         expected_result_path = os.path.join(self.algorithm.output_subdir,'merged.tif')
         md5 = hashlib.md5()
@@ -38,10 +60,11 @@ class TestEncoderAlgorithm(unittest.TestCase):
         result_file_hash = md5.hexdigest()
         ## different rasterio versions lead to different hashes ? 
         possible_hashes = [
-                '018b6fc5d88014a7e515824d95ca8686', 
-                '94658648037138c64159ae457c3928dd',
-                '496ac2e9b92f62d16c8c8f1a0fa07009',
-                'a6230b57bcf0050aa6f21107a16a5548',
+                # '018b6fc5d88014a7e515824d95ca8686', 
+                # '94658648037138c64159ae457c3928dd',
+                # '496ac2e9b92f62d16c8c8f1a0fa07009',
+                # 'a6230b57bcf0050aa6f21107a16a5548',
+                '48c3a78773dbc2c4c7bb7885409284ab',
                            ]
         assert result_file_hash in possible_hashes
         os.remove(expected_result_path)
