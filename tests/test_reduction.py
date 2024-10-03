@@ -6,9 +6,6 @@ from qgis.core import QgsProcessingContext, QgsProcessingFeedback
 from ..reduction import ReductionAlgorithm
 from ..utils.misc import get_file_md5_hash
 
-## for hashing without using to much memory
-BUF_SIZE = 65536
-
 
 class TestReductionAlgorithm(unittest.TestCase):
 
