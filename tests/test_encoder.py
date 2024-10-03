@@ -11,9 +11,8 @@ import torch
 from torchgeo.datasets import RasterDataset
 
 from ..encoder import EncoderAlgorithm
+from ..utils.misc import get_file_md5_hash
 
-## for hashing without using to much memory
-BUF_SIZE = 65536
 
 
 class TestEncoderAlgorithm(unittest.TestCase):
@@ -22,10 +21,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
         self.context = QgsProcessingContext()
         self.feedback = QgsProcessingFeedback()
         self.algorithm = EncoderAlgorithm()
-
-    def test_valid_parameters(self):
-        self.algorithm.initAlgorithm()
-        parameters = {
+        self.default_parameters = {
                 'BACKBONE_CHOICE': '', 
                 'BACKBONE_OPT': 0, 
                 'BANDS': None, 
@@ -50,22 +46,36 @@ class TestEncoderAlgorithm(unittest.TestCase):
                 'JSON_PARAM': 'NULL', 
                 'OUT_DTYPE': 0, 
                       }
-        result = self.algorithm.processAlgorithm(parameters, self.context, self.feedback)
+
+    def test_valid_parameters(self):
+
+        self.algorithm.initAlgorithm()
+        _ = self.algorithm.processAlgorithm(self.default_parameters, self.context, self.feedback)
         expected_result_path = os.path.join(self.algorithm.output_subdir,'merged.tif')
-        md5 = hashlib.md5()
-        with open(expected_result_path, 'rb') as f:
-            while True:
-                data = f.read(BUF_SIZE)
-                if not data:
-                    break
-                md5.update(data)
-        result_file_hash = md5.hexdigest()
+        result_file_hash = get_file_md5_hash(expected_result_path)
+
         ## different rasterio versions lead to different hashes ? 
         possible_hashes = [
                 # '018b6fc5d88014a7e515824d95ca8686', 
                 # '94658648037138c64159ae457c3928dd',
                 # '496ac2e9b92f62d16c8c8f1a0fa07009',
                 # 'a6230b57bcf0050aa6f21107a16a5548',
+                '48c3a78773dbc2c4c7bb7885409284ab',
+                           ]
+        assert result_file_hash in possible_hashes
+        os.remove(expected_result_path)
+
+    def test_data_types(self):
+
+        self.algorithm.initAlgorithm()
+        parameters = self.default_parameters
+        parameters['OUT_DTYPE'] = 1
+        _ = self.algorithm.processAlgorithm(parameters, self.context, self.feedback)
+        expected_result_path = os.path.join(self.algorithm.output_subdir,'merged.tif')
+        result_file_hash = get_file_md5_hash(expected_result_path)
+
+        ## different rasterio versions lead to different hashes ? 
+        possible_hashes = [
                 '48c3a78773dbc2c4c7bb7885409284ab',
                            ]
         assert result_file_hash in possible_hashes
@@ -140,4 +150,5 @@ if __name__ == "__main__":
     test_encoder.test_timm_create_model()
     test_encoder.test_RasterDataset()
     test_encoder.test_valid_parameters()
+    test_encoder.test_data_types()
     test_encoder.test_cuda()

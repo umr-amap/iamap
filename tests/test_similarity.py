@@ -4,9 +4,7 @@ import unittest
 from qgis.core import QgsProcessingContext, QgsProcessingFeedback
 
 from ..similarity import SimilarityAlgorithm
-
-## for hashing without using to much memory
-BUF_SIZE = 65536
+from ..utils.misc import get_file_md5_hash
 
 
 class TestSimilarityAlgorithm(unittest.TestCase):
@@ -21,14 +19,7 @@ class TestSimilarityAlgorithm(unittest.TestCase):
         parameters = {}
         result = self.algorithm.processAlgorithm(parameters, self.context, self.feedback)
         expected_result_path = os.path.join(self.algorithm.output_dir,'similarity.tif')
-        md5 = hashlib.md5()
-        with open(expected_result_path, 'rb') as f:
-            while True:
-                data = f.read(BUF_SIZE)
-                if not data:
-                    break
-                md5.update(data)
-        result_file_hash = md5.hexdigest()
+        result_file_hash = get_file_md5_hash(expected_result_path)
         assert result_file_hash == 'f76eb1f0469725b49fe0252cfe86829a'
         os.remove(expected_result_path)
 

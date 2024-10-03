@@ -8,6 +8,9 @@ import csv
 import hashlib
 from PyQt5.QtCore import QVariant
 
+## for hashing without using to much memory
+BUF_SIZE = 65536
+
 class QGISLogHandler(logging.Handler):
     def __init__(self, feedback):
         super().__init__()
@@ -78,6 +81,16 @@ def get_unique_filename(directory, filename, layer_name='merged features'):
 def compute_md5_hash(parameters,keys_to_remove = ['MERGE_METHOD', 'WORKERS', 'PAUSES']):
         param_encoder = {key: parameters[key] for key in parameters if key not in keys_to_remove}
         return hashlib.md5(str(param_encoder).encode("utf-8")).hexdigest()
+
+def get_file_md5_hash(path):
+        md5 = hashlib.md5()
+        with open(path, 'rb') as f:
+            while True:
+                data = f.read(BUF_SIZE)
+                if not data:
+                    break
+                md5.update(data)
+        return md5.hexdigest()
 
 def convert_qvariant_obj(obj):
     if isinstance(obj, QVariant):
