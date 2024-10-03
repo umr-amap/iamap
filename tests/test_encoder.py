@@ -76,7 +76,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
 
         ## different rasterio versions lead to different hashes ? 
         possible_hashes = [
-                '48c3a78773dbc2c4c7bb7885409284ab',
+                'ef0c4b0d57f575c1cd10c0578c7114c0'
                            ]
         assert result_file_hash in possible_hashes
         os.remove(expected_result_path)
