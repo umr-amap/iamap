@@ -2,6 +2,7 @@ import shutil
 import os
 import torch
 import logging
+from PyQt5.QtCore import QVariant
 
 class QGISLogHandler(logging.Handler):
     def __init__(self, feedback):
@@ -69,3 +70,20 @@ def get_unique_filename(directory, filename, layer_name='merged features'):
         i += 1
 
     return os.path.join(directory, candidate), updated_layer_name
+
+
+def convert_qvariant_obj(obj):
+    if isinstance(obj, QVariant):
+        return obj.value()  # Extract the native Python value from QVariant
+    else:
+        return obj
+
+def convert_qvariant(obj):
+    if isinstance(obj, QVariant):
+        return obj.value()  # Extract the native Python value from QVariant
+    elif isinstance(obj, dict):
+        return {key: convert_qvariant_obj(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_qvariant_obj(item) for item in obj]
+    else:
+        return obj
