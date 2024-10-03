@@ -2,6 +2,7 @@ import shutil
 import os
 import torch
 import logging
+import hashlib
 from PyQt5.QtCore import QVariant
 
 class QGISLogHandler(logging.Handler):
@@ -71,6 +72,9 @@ def get_unique_filename(directory, filename, layer_name='merged features'):
 
     return os.path.join(directory, candidate), updated_layer_name
 
+def compute_md5_hash(parameters,keys_to_remove = ['MERGE_METHOD', 'WORKERS', 'PAUSES']):
+        param_encoder = {key: parameters[key] for key in parameters if key not in keys_to_remove}
+        return hashlib.md5(str(param_encoder).encode("utf-8")).hexdigest()
 
 def convert_qvariant_obj(obj):
     if isinstance(obj, QVariant):
@@ -87,3 +91,16 @@ def convert_qvariant(obj):
         return [convert_qvariant_obj(item) for item in obj]
     else:
         return obj
+def save_parameters_to_json(parameters, output_dir):
+    dst_path = os.path.join(output_dir, 'parameters.json')
+    ## convert_qvariant does not work properly for 'CKPT'
+    ## converting it to a str
+    converted_parameters = convert_qvariant(parameters) 
+    print(parameters)
+    converted_parameters['CKPT'] = str(converted_parameters['CKPT'])
+
+    for key, item in converted_parameters.items():
+        print(key, type(item))
+    with open(dst_path, "w") as json_file:
+        json.dump(converted_parameters, json_file, indent=4)
+

@@ -54,6 +54,8 @@ from .utils.misc import (QGISLogHandler,
                          check_disk_space,
                          get_unique_filename,
                          convert_qvariant,
+                         save_parameters_to_json,
+                         compute_md5_hash,
                          )
 
 
@@ -336,15 +338,13 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         ## compute parameters hash to have a unique identifier for the run
         ## some parameters do not change the encoding part of the algorithm
         keys_to_remove = ['MERGE_METHOD', 'WORKERS', 'PAUSES']
-        param_encoder = {key: parameters[key] for key in parameters if key not in keys_to_remove}
-
-        param_hash = hashlib.md5(str(param_encoder).encode("utf-8")).hexdigest()
-        output_subdir = os.path.join(self.output_dir,param_hash)
+        subdir_hash = compute_md5_hash(parameters, keys_to_remove=keys_to_remove)
+        output_subdir = os.path.join(self.output_dir,subdir_hash)
         output_subdir = Path(output_subdir)
         output_subdir.mkdir(parents=True, exist_ok=True)
         self.output_subdir = output_subdir
         feedback.pushInfo(f'output_subdir: {output_subdir}')
-        self.save_parameters_to_json(parameters)
+        save_parameters_to_json(parameters, self.output_subdir)
         feedback.pushInfo(f'saving parameters to json file')
 
         RasterDataset.filename_glob = self.rlayer_name
@@ -642,18 +642,6 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
 
         return {"Output feature path": self.output_subdir, 'Patch samples saved': self.iPatch, 'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
 
-    def save_parameters_to_json(self, parameters):
-        dst_path = os.path.join(self.output_subdir, 'parameters.json')
-        ## convert_qvariant does not work properly for 'CKPT'
-        ## converting it to a str
-        converted_parameters = convert_qvariant(parameters) 
-        print(parameters)
-        converted_parameters['CKPT'] = str(converted_parameters['CKPT'])
-
-        for key, item in converted_parameters.items():
-            print(key, type(item))
-        with open(dst_path, "w") as json_file:
-            json.dump(converted_parameters, json_file, indent=4)
 
     def remove_temp_files(self):
         """
