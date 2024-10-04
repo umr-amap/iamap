@@ -57,6 +57,7 @@ from .utils.misc import (QGISLogHandler,
                          compute_md5_hash,
                          log_parameters_to_csv,
                          )
+from .utils.torch import quantize_model
 
 
 
@@ -435,9 +436,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             try :
                 feedback.pushInfo(f'before quantization : {get_model_size(model)}')
 
-                model = torch.quantization.quantize_dynamic(
-                    model, {nn.Linear}, dtype=torch.qint8
-                )
+                quantize_model(model, device)
                 feedback.pushInfo(f'after quantization : {get_model_size(model)}')
 
             except :
@@ -637,29 +636,6 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
 
             self.remove_temp_files()
 
-            # ## cleaning up temp tiles
-            # ## keep last tiles and merged tiles in case of resume
-            # last_batch_done = self.get_last_batch_done()
-            # if not self.all_encoding_done:
-            #     tiles_to_remove = [
-            #             os.path.join(self.output_subdir, f)
-            #             for f in os.listdir(self.output_subdir)
-            #             if f.endswith('_tmp.tif') and not f.startswith(str(last_batch_done))
-            #             ]
-            #     tiles_to_remove = [
-            #             f for f in tiles_to_remove
-            #             if not f.endswith('merged_tmp.tif')
-            #             ]
-
-            # ## else cleanup all temp files
-            # else : 
-            #     tiles_to_remove = [os.path.join(self.output_subdir, f)
-            #          for f in os.listdir(self.output_subdir)
-            #          if f.endswith('_tmp.tif')]
-
-            # remove_files(tiles_to_remove)
-
-
         parameters['OUTPUT_RASTER']=dst_path
 
         return {"Output feature path": self.output_subdir, 'Patch samples saved': self.iPatch, 'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
@@ -743,6 +719,8 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             dtype: str = 'float32'
             ):
 
+        if dtype == 'int8':
+            feature = (feature * 127).astype(np.int8)
         # iterate over batch_size dimension
         for idx in range(feature.shape[0]):
             _, height, width, channels = feature.shape
