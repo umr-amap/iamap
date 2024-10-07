@@ -1,6 +1,7 @@
 import os
 import hashlib
 import unittest
+import pytest
 from qgis.core import (
         QgsProcessingContext, 
         QgsProcessingFeedback,
@@ -67,6 +68,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
         assert result_file_hash in possible_hashes
         os.remove(expected_result_path)
 
+    @pytest.mark.slow
     def test_data_types(self):
 
         self.algorithm.initAlgorithm()
