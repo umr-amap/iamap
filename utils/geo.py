@@ -95,10 +95,22 @@ def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True, subset=1_00
 
     np.random.seed(42)
     src = rasterio.open(path)
+    print('pouet\n\n')
     means = []
     sds = []
-    if force_compute:
-        for band in range(1, src.count+1):
+    for band in range(1, src.count+1):
+        try:
+            tags = src.tags(band)
+            if 'STATISTICS_MEAN' in tags and 'STATISTICS_STDDEV' in tags:
+                mean = float(tags['STATISTICS_MEAN'])
+                sd = float(tags['STATISTICS_STDDEV'])
+                means.append(mean)
+                sds.append(sd)
+            else:
+                raise KeyError("Statistics metadata not found.")
+
+        except KeyError:
+
             arr = src.read(band)
             arr = replace_nan_with_zero(arr)
             ## let subset by default for now
@@ -113,22 +125,9 @@ def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True, subset=1_00
             means.append(float(mean))
             sds.append(float(sd))
 
-    else:
-        for band in range(1, src.count+1):
-            try:
-                tags = src.tags(band)
-                if 'STATISTICS_MEAN' in tags and 'STATISTICS_STDDEV' in tags:
-                    mean = float(tags['STATISTICS_MEAN'])
-                    sd = float(tags['STATISTICS_STDDEV'])
-                    means.append(mean)
-                    sds.append(sd)
-                else:
-                    raise KeyError("Statistics metadata not found.")
+        except Exception as e:
+            print(f"Error processing band {band}: {e}")
 
-            except KeyError:
-                    warnings.warn("Statistics metadata not found and computation not enabled.", UserWarning)
-            except Exception as e:
-                print(f"Error processing band {band}: {e}")
 
     src.close()
     return means, sds

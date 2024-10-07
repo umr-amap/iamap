@@ -964,6 +964,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         self.rlayer_name = os.path.basename(self.rlayer_path)
 
         # get mean and sd of dataset from raster metadata
+        feedback.pushInfo(f'Computing means and sds for normalization')
         means, sds = get_mean_sd_by_band(self.rlayer_path)
         # subset with selected_bands
         feedback.pushInfo(f'Selected bands: {self.selected_bands}')
