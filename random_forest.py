@@ -329,7 +329,9 @@ class RFAlgorithm(QgsProcessingAlgorithm):
             
 
             
-            dst_path, layer_name = get_unique_filename(self.output_dir, 'random_forest.tif', 'random forest')
+            rlayer_basename = os.path.basename(self.rlayer_path)
+            rlayer_name, ext = os.path.splitext(rlayer_basename)
+            dst_path, layer_name = get_unique_filename(self.output_dir, 'random_forest.tif', f'{rlayer_name} random forest')
             # if os.path.exists(dst_path):
             #         i = 1
             #         while True:

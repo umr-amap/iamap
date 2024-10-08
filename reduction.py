@@ -325,7 +325,9 @@ class ReductionAlgorithm(QgsProcessingAlgorithm):
             
 
             feedback.pushInfo(f'Export to geotif\n')
-            dst_path, layer_name = get_unique_filename(self.output_dir, 'proj.tif', 'reduced features')
+            rlayer_basename = os.path.basename(self.rlayer_path)
+            rlayer_name, ext = os.path.splitext(rlayer_basename)
+            dst_path, layer_name = get_unique_filename(self.output_dir, 'proj.tif', f'{rlayer_name} reduction')
             # if os.path.exists(dst_path):
             #         i = 1
             #         while True:

@@ -280,7 +280,9 @@ class ClusterAlgorithm(QgsProcessingAlgorithm):
             #                 break
             #             i += 1
                         
-            dst_path, layer_name = get_unique_filename(self.output_dir, 'cluster.tif', 'clustered features')
+            rlayer_basename = os.path.basename(self.rlayer_path)
+            rlayer_name, ext = os.path.splitext(rlayer_basename)
+            dst_path, layer_name = get_unique_filename(self.output_dir, 'cluster.tif', f'{rlayer_name} clustering')
             if os.path.exists(params_file):
                     i = 1
                     while True:

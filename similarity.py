@@ -207,7 +207,9 @@ class SimilarityAlgorithm(QgsProcessingAlgorithm):
             sim = sim.numpy()
             height, width, channels = sim.shape
 
-            dst_path, layer_name = get_unique_filename(self.output_dir, 'similarity.tif', 'similarity')
+            rlayer_basename = os.path.basename(self.rlayer_path)
+            rlayer_name, ext = os.path.splitext(rlayer_basename)
+            dst_path, layer_name = get_unique_filename(self.output_dir, 'similarity.tif', f'{rlayer_name} similarity')
             params_file = os.path.join(self.output_dir,'cosine.json')
             
             # if os.path.exists(dst_path):
