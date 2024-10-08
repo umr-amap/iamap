@@ -12,3 +12,4 @@ dialogs/packages_installer/__pycache__
 __pycache__
 pyrightconfig.json
 models
+dinov2_base_518px_p14_reg4.lvd142m.pc22_subtrain2.8M_12n8A10040h115999it_over_125000_timm_compatible.pth
