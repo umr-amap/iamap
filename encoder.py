@@ -248,14 +248,14 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
                             'ViT base DINO',
                             'ViT tiny Imagenet (smallest)', 
                             'ViT base MAE', 
-                            # 'SAM', 
+                            'SAM', 
                             '--Empty--'
                             ]
         self.timm_backbone_opt = [
                             'vit_base_patch16_224.dino',
                             'vit_tiny_patch16_224.augreg_in21k',
                             'vit_base_patch16_224.mae',
-                            # 'samvit_base_patch16.sa1b',
+                            'samvit_base_patch16.sa1b',
                             ]
         self.addParameter (
             QgsProcessingParameterEnum(

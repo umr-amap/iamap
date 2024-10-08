@@ -98,13 +98,13 @@ class TestEncoderAlgorithm(unittest.TestCase):
                 'vit_base_patch16_224.dino',
                 'vit_tiny_patch16_224.augreg_in21k',
                 'vit_base_patch16_224.mae',
-                # 'samvit_base_patch16.sa1b',
+                'samvit_base_patch16.sa1b',
                 ]
         expected_output_size = [
                 torch.Size([1,197,768]),
                 torch.Size([1,197,192]),
                 torch.Size([1,197,768]),
-                # torch.Size([1, 256, 64, 64]),
+                torch.Size([1, 256, 64, 64]),
                 ]
 
         for arch, exp_feat_size in zip(archs, expected_output_size):
