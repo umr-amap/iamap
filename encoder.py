@@ -4,8 +4,6 @@ import sys
 import time
 import tempfile
 import re
-import hashlib
-import shutil
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any
@@ -40,13 +38,13 @@ import torchvision.transforms as T
 import kornia.augmentation as K
 import timm
 
-from torchgeo.datasets import RasterDataset, BoundingBox,stack_samples
-from torchgeo.samplers import GridGeoSampler, Units
-from torchgeo.transforms import AugmentationSequential
+# from torchgeo.datasets import RasterDataset, BoundingBox,stack_samples
+# from torchgeo.samplers import GridGeoSampler, Units
+# from torchgeo.transforms import AugmentationSequential
+# from .utils.torchgeo import NoBordersGridGeoSampler
 
 from .utils.geo import get_mean_sd_by_band
 from .utils.geo import merge_tiles
-from .utils.torchgeo import NoBordersGridGeoSampler
 from .utils.misc import (QGISLogHandler, 
                          get_dir_size, 
                          get_model_size, 
@@ -58,6 +56,11 @@ from .utils.misc import (QGISLogHandler,
                          log_parameters_to_csv,
                          )
 from .utils.torch import quantize_model
+
+from .tg.datasets import RasterDataset
+from .tg.utils import stack_samples, BoundingBox
+from .tg.samplers import NoBordersGridGeoSampler, Units
+from .tg.transforms import AugmentationSequential
 
 
 

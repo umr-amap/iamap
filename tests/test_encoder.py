@@ -9,7 +9,8 @@ from qgis.core import (
 
 import timm
 import torch
-from torchgeo.datasets import RasterDataset
+# from torchgeo.datasets import RasterDataset
+from..tg.datasets import RasterDataset
 
 from ..encoder import EncoderAlgorithm
 from ..utils.misc import get_file_md5_hash
@@ -64,6 +65,8 @@ class TestEncoderAlgorithm(unittest.TestCase):
                 # 'a6230b57bcf0050aa6f21107a16a5548',
                 '48c3a78773dbc2c4c7bb7885409284ab',
                 '431e034b842129679b99a067f2bd3ba4',
+                '60153535214eaa44458db4e297af72b9',
+                'f1394d1950f91e4f8277a8667ae77e85',
                            ]
         assert result_file_hash in possible_hashes
         os.remove(expected_result_path)
@@ -82,6 +85,8 @@ class TestEncoderAlgorithm(unittest.TestCase):
         possible_hashes = [
                 'ef0c4b0d57f575c1cd10c0578c7114c0',
                 'ebfad32752de71c5555bda2b40c19b2e',
+                'd3705c256320b7190dd4f92ad2087247',
+                '65fa46916d6d0d08ad9656d7d7fabd01',
                            ]
         assert result_file_hash in possible_hashes
         os.remove(expected_result_path)
