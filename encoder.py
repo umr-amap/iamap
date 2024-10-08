@@ -59,7 +59,7 @@ from .utils.torch import quantize_model
 
 from .tg.datasets import RasterDataset
 from .tg.utils import stack_samples, BoundingBox
-from .tg.samplers import NoBordersGridGeoSampler, Units
+from .tg.samplers import NoBordersGridGeoSampler, Units, compute_bounds
 from .tg.transforms import AugmentationSequential
 
 
@@ -393,8 +393,11 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         else:
             dataset = RasterDataset(
                 paths=self.rlayer_dir, crs=self.crs.toWkt(), res=self.res, bands=input_bands, cache=False)
-        extent_bbox = BoundingBox(minx=self.extent.xMinimum(), maxx=self.extent.xMaximum(), miny=self.extent.yMinimum(), maxy=self.extent.yMaximum(),
-                                  mint=dataset.index.bounds[4], maxt=dataset.index.bounds[5])
+        # extent_bbox = BoundingBox(minx=self.extent.xMinimum(), maxx=self.extent.xMaximum(), miny=self.extent.yMinimum(), maxy=self.extent.yMaximum(),
+        #                           mint=dataset.index.bounds[4], maxt=dataset.index.bounds[5])
+
+        extent_bbox = compute_bounds(dataset.index, dataset)
+        print(extent_bbox)
 
 
         if feedback.isCanceled():
@@ -646,7 +649,6 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
     def load_parameters_as_json(self, feedback, parameters):
         parameters['JSON_PARAM'] = str(parameters['JSON_PARAM'])
         json_param = parameters['JSON_PARAM']
-        print(json_param)
         if json_param != 'NULL':
             with open(json_param) as json_file:
                 parameters = json.load(json_file)

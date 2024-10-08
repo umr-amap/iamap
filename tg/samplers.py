@@ -1,4 +1,5 @@
 import abc
+import sys
 from collections.abc import Iterator
 from typing import Optional, Union
 
@@ -10,6 +11,68 @@ from .datasets import GeoDataset
 from enum import Enum, auto
 from .utils import BoundingBox
 from .utils import _to_tuple, get_random_bounding_box, tile_to_chips
+from qgis.core import QgsSpatialIndex, QgsRectangle, QgsPointXY, QgsFeature, QgsGeometry
+from qgis.core import QgsRectangle, QgsFeatureRequest
+
+# def compute_bounds(spatial_index: QgsSpatialIndex, dataset: GeoDataset) -> BoundingBox:
+#     """Compute the bounding box (extent) for all features in the spatial index."""
+#     minx, miny, maxx, maxy = float('inf'), float('inf'), float('-inf'), float('-inf')
+
+#     # Use QgsFeatureRequest to fetch the features from the dataset using their IDs
+#     for feature_id in spatial_index.intersects(QgsRectangle(float('-inf'), float('-inf'), float('inf'), float('inf'))):
+#         # Use QgsFeatureRequest to fetch the feature by ID
+#         request = QgsFeatureRequest().setFilterFid(feature_id)
+#         feature = next(dataset.features(request), None)  # Fetch the feature
+
+#         if feature is not None:
+#             geometry = feature.geometry().boundingBox()
+
+#             # Update bounds
+#             minx = min(minx, geometry.xMinimum())
+#             miny = min(miny, geometry.yMinimum())
+#             maxx = max(maxx, geometry.xMaximum())
+#             maxy = max(maxy, geometry.yMaximum())
+
+#     return BoundingBox(minx=minx, maxx=maxx, miny=miny, maxy=maxy, mint=0, maxt=sys.maxsize)
+
+def compute_bounds(spatial_index: QgsSpatialIndex, dataset: GeoDataset) -> BoundingBox:
+    """Compute the bounding box (extent) for all features in the spatial index."""
+    minx, miny, maxx, maxy = float('-inf'), float('-inf'), float('inf'), float('inf')
+
+    # Use QgsFeatureRequest to fetch the features from the dataset using their IDs
+    for feature_id in spatial_index.intersects(QgsRectangle(float('-inf'), float('-inf'), float('inf'), float('inf'))):
+        # Access the feature directly from the dataset.features dictionary using feature_id
+        feature = dataset.features.get(feature_id, None)
+
+        if feature is not None:
+            geometry = feature.geometry().boundingBox()
+
+            # Update bounds
+            minx = min(minx, geometry.xMinimum())
+            miny = min(miny, geometry.yMinimum())
+            maxx = max(maxx, geometry.xMaximum())
+            maxy = max(maxy, geometry.yMaximum())
+
+    return BoundingBox(minx=minx, maxx=maxx, miny=miny, maxy=maxy, mint=0, maxt=sys.maxsize)
+
+
+
+# def compute_bounds(spatial_index: QgsSpatialIndex, dataset: GeoDataset) -> BoundingBox:
+#     """Compute the bounding box (extent) for all features in the spatial index."""
+#     minx, miny, maxx, maxy = float('inf'), float('inf'), float('-inf'), float('-inf')
+
+#     # Iterate over all features in the dataset
+#     for feature_id in spatial_index.intersects(QgsRectangle(float('-inf'), float('-inf'), float('inf'), float('inf'))):
+#         feature = dataset.features[feature_id]
+#         geometry = feature.geometry().boundingBox()
+
+#         # Update bounds
+#         minx = min(minx, geometry.xMinimum())
+#         miny = min(miny, geometry.yMinimum())
+#         maxx = max(maxx, geometry.xMaximum())
+#         maxy = max(maxy, geometry.yMaximum())
+
+#     return BoundingBox(minx=minx, maxx=maxx, miny=miny, maxy=maxy, mint=0, maxt=sys.maxsize)
 
 
 class Units(Enum):
@@ -25,6 +88,44 @@ class Units(Enum):
     #: Units of :term:`coordinate reference system (CRS)`
     CRS = auto()
 
+
+# class GeoSampler(Sampler[BoundingBox], abc.ABC):
+#     """Abstract base class for sampling from :class:`~torchgeo.datasets.GeoDataset`.
+
+#     Unlike PyTorch's :class:`~torch.utils.data.Sampler`, :class:`GeoSampler`
+#     returns enough geospatial information to uniquely index any
+#     :class:`~torchgeo.datasets.GeoDataset`. This includes things like latitude,
+#     longitude, height, width, projection, coordinate system, and time.
+#     """
+
+#     def __init__(self, dataset: GeoDataset, roi: Optional[BoundingBox] = None) -> None:
+#         """Initialize a new Sampler instance.
+
+#         Args:
+#             dataset: dataset to index from
+#             roi: region of interest to sample from (minx, maxx, miny, maxy, mint, maxt)
+#                 (defaults to the bounds of ``dataset.index``)
+#         """
+#         if roi is None:
+#             self.index = dataset.index
+#             roi = BoundingBox(*self.index.bounds)
+#         else:
+#             self.index = Index(interleaved=False, properties=Property(dimension=3))
+#             hits = dataset.index.intersection(tuple(roi), objects=True)
+#             for hit in hits:
+#                 bbox = BoundingBox(*hit.bounds) & roi
+#                 self.index.insert(hit.id, tuple(bbox), hit.object)
+
+#         self.res = dataset.res
+#         self.roi = roi
+
+#     @abc.abstractmethod
+#     def __iter__(self) -> Iterator[BoundingBox]:
+#         """Return the index of a dataset.
+
+#         Returns:
+#             (minx, maxx, miny, maxy, mint, maxt) coordinates to index a dataset
+#         """
 
 class GeoSampler(Sampler[BoundingBox], abc.ABC):
     """Abstract base class for sampling from :class:`~torchgeo.datasets.GeoDataset`.
@@ -43,17 +144,31 @@ class GeoSampler(Sampler[BoundingBox], abc.ABC):
             roi: region of interest to sample from (minx, maxx, miny, maxy, mint, maxt)
                 (defaults to the bounds of ``dataset.index``)
         """
+        self.dataset = dataset
+        self.res = dataset.res
+        
+        # If ROI is not provided, use the dataset bounds
         if roi is None:
             self.index = dataset.index
-            roi = BoundingBox(*self.index.bounds)
+            roi = BoundingBox(*self.index.boundingBox())
         else:
-            self.index = Index(interleaved=False, properties=Property(dimension=3))
-            hits = dataset.index.intersection(tuple(roi), objects=True)
-            for hit in hits:
-                bbox = BoundingBox(*hit.bounds) & roi
-                self.index.insert(hit.id, tuple(bbox), hit.object)
+            # Create a new spatial index and insert only items in the region of interest (ROI)
+            self.index = QgsSpatialIndex()
+            self.temporal_data = {}  # To store the temporal components (mint, maxt)
 
-        self.res = dataset.res
+            # Find dataset features intersecting with the ROI
+            hits = dataset.index.intersects(QgsRectangle(roi.minx, roi.miny, roi.maxx, roi.maxy))
+            print(hits)
+            print(dataset.features)
+            for fid in hits:
+                feature = dataset.features[fid]
+                print(feature)
+                # self.temporal_data[fid] = (bbox.mint, bbox.maxt)
+                # print(dataset.features)
+                ## Not handling temporal values for now
+                bbox = BoundingBox(*feature.geometry().boundingBox().toRectF().getCoords(), 0,0) & roi
+                self.index.insertFeature(feature)
+
         self.roi = roi
 
     @abc.abstractmethod
@@ -218,18 +333,31 @@ class GridGeoSampler(GeoSampler):
             self.stride = (self.stride[0] * self.res, self.stride[1] * self.res)
 
         self.hits = []
-        for hit in self.index.intersection(tuple(self.roi), objects=True):
-            bounds = BoundingBox(*hit.bounds)
+        # for hit in self.index.intersection(tuple(self.roi), objects=True):
+        #     bounds = BoundingBox(*hit.bounds)
+        #     if (
+        #         bounds.maxx - bounds.minx >= self.size[1]
+        #         and bounds.maxy - bounds.miny >= self.size[0]
+        #     ):
+        #         self.hits.append(hit)
+        for hit in self.index.intersects(QgsRectangle(self.roi.minx, self.roi.miny, self.roi.maxx, self.roi.maxy)):
+            
+            feature = self.dataset.features[hit]
+            # print(feature)
+            ## Not handling temporal values for now
+            bounds = BoundingBox(*feature.geometry().boundingBox().toRectF().getCoords(), 0,0)
+            self.index.insertFeature(feature)
+            # hit.bounds = bounds
             if (
                 bounds.maxx - bounds.minx >= self.size[1]
                 and bounds.maxy - bounds.miny >= self.size[0]
             ):
-                self.hits.append(hit)
+                self.hits.append(bounds)
 
         self.length = 0
         for hit in self.hits:
-            bounds = BoundingBox(*hit.bounds)
-            rows, cols = tile_to_chips(bounds, self.size, self.stride)
+            # bounds = BoundingBox(*hit.bounds)
+            rows, cols = tile_to_chips(hit, self.size, self.stride)
             self.length += rows * cols
 
     def __iter__(self) -> Iterator[BoundingBox]:
@@ -277,8 +405,8 @@ class NoBordersGridGeoSampler(GridGeoSampler):
             (minx, maxx, miny, maxy, mint, maxt) coordinates to index a dataset
         """
         # For each tile...
-        for hit in self.hits:
-            bounds = BoundingBox(*hit.bounds)
+        for bounds in self.hits:
+            # bounds = BoundingBox(*hit.bounds)
             rows, cols = tile_to_chips(bounds, self.size, self.stride)
             mint = bounds.mint
             maxt = bounds.maxt

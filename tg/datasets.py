@@ -33,283 +33,411 @@ from .utils import (
     path_is_vsi,
 )
 
+from qgis.core import QgsSpatialIndex
+
+from qgis.core import QgsSpatialIndex, QgsRectangle, QgsPointXY, QgsFeature, QgsGeometry
+from typing import Any, Optional, Callable, Union, Iterable, Set, Dict
+import shapely.geometry
+import shapely.ops
+import pyproj
+import os
+import glob
+import warnings
+import abc
 
 class GeoDataset(Dataset[dict[str, Any]], abc.ABC):
-    """Abstract base class for datasets containing geospatial information.
-
-    Geospatial information includes things like:
-
-    * coordinates (latitude, longitude)
-    * :term:`coordinate reference system (CRS)`
-    * resolution
-
-    :class:`GeoDataset` is a special class of datasets. Unlike :class:`NonGeoDataset`,
-    the presence of geospatial information allows two or more datasets to be combined
-    based on latitude/longitude. This allows users to do things like:
-
-    * Combine image and target labels and sample from both simultaneously
-      (e.g. Landsat and CDL)
-    * Combine datasets for multiple image sources for multimodal learning or data fusion
-      (e.g. Landsat and Sentinel)
-
-    These combinations require that all queries are present in *both* datasets,
-    and can be combined using an :class:`IntersectionDataset`:
-
-    .. code-block:: python
-
-       dataset = landsat & cdl
-
-    Users may also want to:
-
-    * Combine datasets for multiple image sources and treat them as equivalent
-      (e.g. Landsat 7 and Landsat 8)
-    * Combine datasets for disparate geospatial locations
-      (e.g. Chesapeake NY and PA)
-
-    These combinations require that all queries are present in *at least one* dataset,
-    and can be combined using a :class:`UnionDataset`:
-
-    .. code-block:: python
-
-       dataset = landsat7 | landsat8
-    """
-
     paths: Union[str, Iterable[str]]
     _crs = CRS.from_epsg(4326)
     _res = 0.0
 
-    #: Glob expression used to search for files.
-    #:
-    #: This expression should be specific enough that it will not pick up files from
-    #: other datasets. It should not include a file extension, as the dataset may be in
-    #: a different file format than what it was originally downloaded as.
     filename_glob = "*"
 
-    # NOTE: according to the Python docs:
-    #
-    # * https://docs.python.org/3/library/exceptions.html#NotImplementedError
-    #
-    # the correct way to handle __add__ not being supported is to set it to None,
-    # not to return NotImplemented or raise NotImplementedError. The downside of
-    # this is that we have no way to explain to a user why they get an error and
-    # what they should do instead (use __and__ or __or__).
-
-    #: :class:`GeoDataset` addition can be ambiguous and is no longer supported.
-    #: Users should instead use the intersection or union operator.
     __add__ = None  # type: ignore[assignment]
 
     def __init__(
         self, transforms: Optional[Callable[[dict[str, Any]], dict[str, Any]]] = None
     ) -> None:
-        """Initialize a new Dataset instance.
-
-        Args:
-            transforms: a function/transform that takes an input sample
-                and returns a transformed version
-        """
         self.transforms = transforms
 
-        # Create an R-tree to index the dataset
-        self.index = Index(interleaved=False, properties=Property(dimension=3))
+        # Replace rtree with QgsSpatialIndex
+        self.index = QgsSpatialIndex()
+        self.features = {}  # to store features associated with index entries
 
     @abc.abstractmethod
     def __getitem__(self, query: BoundingBox) -> dict[str, Any]:
-        """Retrieve image/mask and metadata indexed by query.
-
-        Args:
-            query: (minx, maxx, miny, maxy, mint, maxt) coordinates to index
-
-        Returns:
-            sample of image/mask and metadata at that index
-
-        Raises:
-            IndexError: if query is not found in the index
-        """
-
-    def __and__(self, other: "GeoDataset") -> "IntersectionDataset":
-        """Take the intersection of two :class:`GeoDataset`.
-
-        Args:
-            other: another dataset
-
-        Returns:
-            a single dataset
-
-        Raises:
-            ValueError: if other is not a :class:`GeoDataset`
-
-        .. versionadded:: 0.2
-        """
-        return IntersectionDataset(self, other)
-
-    def __or__(self, other: "GeoDataset") -> "UnionDataset":
-        """Take the union of two GeoDatasets.
-
-        Args:
-            other: another dataset
-
-        Returns:
-            a single dataset
-
-        Raises:
-            ValueError: if other is not a :class:`GeoDataset`
-
-        .. versionadded:: 0.2
-        """
-        return UnionDataset(self, other)
+        pass
 
     def __len__(self) -> int:
-        """Return the number of files in the dataset.
-
-        Returns:
-            length of the dataset
-        """
-        return len(self.index)
+        return len(self.features)
 
     def __str__(self) -> str:
-        """Return the informal string representation of the object.
-
-        Returns:
-            informal string representation
-        """
         return f"""\
 {self.__class__.__name__} Dataset
     type: GeoDataset
     bbox: {self.bounds}
     size: {len(self)}"""
 
-    # NOTE: This hack should be removed once the following issue is fixed:
-    # https://github.com/Toblerity/rtree/issues/87
-
     def __getstate__(
         self,
-    ) -> tuple[dict[str, Any], list[tuple[Any, Any, Optional[Any]]]]:
+    ) -> tuple[dict[str, Any], list[tuple[Any, QgsRectangle, Optional[Any]]]]:
         """Define how instances are pickled.
 
         Returns:
             the state necessary to unpickle the instance
         """
-        objects = self.index.intersection(self.index.bounds, objects=True)
-        tuples = [(item.id, item.bounds, item.object) for item in objects]
+        tuples = [(fid, feature.geometry().boundingBox(), feature) for fid, feature in self.features.items()]
         return self.__dict__, tuples
 
     def __setstate__(
         self,
-        state: tuple[
-            dict[Any, Any],
-            list[tuple[int, tuple[float, float, float, float, float, float], str]],
-        ],
+        state: tuple[dict[Any, Any], list[tuple[int, QgsRectangle, QgsFeature]]],
     ) -> None:
-        """Define how to unpickle an instance.
-
-        Args:
-            state: the state of the instance when it was pickled
-        """
+        """Define how to unpickle an instance."""
         attrs, tuples = state
         self.__dict__.update(attrs)
-        for item in tuples:
-            self.index.insert(*item)
+        for fid, bounds, feature in tuples:
+            self.index.insertFeature(feature)
+            self.features[fid] = feature
 
     @property
     def bounds(self) -> BoundingBox:
-        """Bounds of the index.
-
-        Returns:
-            (minx, maxx, miny, maxy, mint, maxt) of the dataset
-        """
-        return BoundingBox(*self.index.bounds)
+        """Bounds of the index."""
+        if not self.features:
+            raise ValueError("Dataset is empty")
+        # Compute bounds based on all features
+        all_bounds = [feature.geometry().boundingBox() for feature in self.features.values()]
+        minx = min(b.xMinimum() for b in all_bounds)
+        maxx = max(b.xMaximum() for b in all_bounds)
+        miny = min(b.yMinimum() for b in all_bounds)
+        maxy = max(b.yMaximum() for b in all_bounds)
+        # Temporal bounds (mint, maxt) should be handled separately
+        return BoundingBox(minx, maxx, miny, maxy, 0, 0)
 
     @property
     def crs(self) -> CRS:
-        """:term:`coordinate reference system (CRS)` of the dataset.
-
-        Returns:
-            The :term:`coordinate reference system (CRS)`.
-        """
         return self._crs
 
     @crs.setter
     def crs(self, new_crs: CRS) -> None:
-        """Change the :term:`coordinate reference system (CRS)` of a GeoDataset.
-
-        If ``new_crs == self.crs``, does nothing, otherwise updates the R-tree index.
-
-        Args:
-            new_crs: New :term:`coordinate reference system (CRS)`.
-        """
         if new_crs == self.crs:
             return
 
         print(f"Converting {self.__class__.__name__} CRS from {self.crs} to {new_crs}")
-        new_index = Index(interleaved=False, properties=Property(dimension=3))
+        new_index = QgsSpatialIndex()
 
         project = pyproj.Transformer.from_crs(
             pyproj.CRS(str(self.crs)), pyproj.CRS(str(new_crs)), always_xy=True
         ).transform
-        for hit in self.index.intersection(self.index.bounds, objects=True):
-            old_minx, old_maxx, old_miny, old_maxy, mint, maxt = hit.bounds
-            old_box = shapely.geometry.box(old_minx, old_miny, old_maxx, old_maxy)
-            new_box = shapely.ops.transform(project, old_box)
-            new_minx, new_miny, new_maxx, new_maxy = new_box.bounds
-            new_bounds = (new_minx, new_maxx, new_miny, new_maxy, mint, maxt)
-            new_index.insert(hit.id, new_bounds, hit.object)
+        for fid, feature in self.features.items():
+            old_geometry = feature.geometry()
+            old_box = QgsRectangle(old_geometry.boundingBox())
+            old_minx, old_maxx, old_miny, old_maxy = old_box.xMinimum(), old_box.xMaximum(), old_box.yMinimum(), old_box.yMaximum()
+            new_box = shapely.ops.transform(project, shapely.geometry.box(old_minx, old_miny, old_maxx, old_maxy))
+            new_bounds = QgsRectangle(new_box.bounds[0], new_box.bounds[1], new_box.bounds[2], new_box.bounds[3])
+
+            new_feature = QgsFeature()
+            new_feature.setGeometry(QgsGeometry.fromRect(new_bounds))
+            new_index.insertFeature(new_feature)
+            self.features[fid] = new_feature
 
         self._crs = new_crs
         self.index = new_index
 
     @property
-    def res(self) -> float:
-        """Resolution of the dataset in units of CRS.
-
-        Returns:
-            The resolution of the dataset.
-        """
-        return self._res
-
-    @res.setter
-    def res(self, new_res: float) -> None:
-        """Change the resolution of a GeoDataset.
-
-        Args:
-            new_res: New resolution.
-        """
-        if new_res == self.res:
-            return
-
-        print(f"Converting {self.__class__.__name__} res from {self.res} to {new_res}")
-        self._res = new_res
-
-    @property
     def files(self) -> set[str]:
-        """A list of all files in the dataset.
-
-        Returns:
-            All files in the dataset.
-
-        .. versionadded:: 0.5
-        """
-        # Make iterable
         if isinstance(self.paths, str):
             paths: Iterable[str] = [self.paths]
         else:
             paths = self.paths
 
-        # Using set to remove any duplicates if directories are overlapping
         files: set[str] = set()
         for path in paths:
             if os.path.isdir(path):
                 pathname = os.path.join(path, "**", self.filename_glob)
                 files |= set(glob.iglob(pathname, recursive=True))
-            elif os.path.isfile(path) or path_is_vsi(path):
+            elif os.path.isfile(path):
                 files.add(path)
             else:
-                warnings.warn(
-                    f"Could not find any relevant files for provided path '{path}'. "
-                    f"Path was ignored.",
-                    UserWarning,
-                )
-
+                warnings.warn(f"Could not find any relevant files for provided path '{path}'. Path was ignored.", UserWarning)
         return files
+
+
+#class GeoDataset(Dataset[dict[str, Any]], abc.ABC):
+#    """Abstract base class for datasets containing geospatial information.
+
+#    Geospatial information includes things like:
+
+#    * coordinates (latitude, longitude)
+#    * :term:`coordinate reference system (CRS)`
+#    * resolution
+
+#    :class:`GeoDataset` is a special class of datasets. Unlike :class:`NonGeoDataset`,
+#    the presence of geospatial information allows two or more datasets to be combined
+#    based on latitude/longitude. This allows users to do things like:
+
+#    * Combine image and target labels and sample from both simultaneously
+#      (e.g. Landsat and CDL)
+#    * Combine datasets for multiple image sources for multimodal learning or data fusion
+#      (e.g. Landsat and Sentinel)
+
+#    These combinations require that all queries are present in *both* datasets,
+#    and can be combined using an :class:`IntersectionDataset`:
+
+#    .. code-block:: python
+
+#       dataset = landsat & cdl
+
+#    Users may also want to:
+
+#    * Combine datasets for multiple image sources and treat them as equivalent
+#      (e.g. Landsat 7 and Landsat 8)
+#    * Combine datasets for disparate geospatial locations
+#      (e.g. Chesapeake NY and PA)
+
+#    These combinations require that all queries are present in *at least one* dataset,
+#    and can be combined using a :class:`UnionDataset`:
+
+#    .. code-block:: python
+
+#       dataset = landsat7 | landsat8
+#    """
+
+#    paths: Union[str, Iterable[str]]
+#    _crs = CRS.from_epsg(4326)
+#    _res = 0.0
+
+#    #: Glob expression used to search for files.
+#    #:
+#    #: This expression should be specific enough that it will not pick up files from
+#    #: other datasets. It should not include a file extension, as the dataset may be in
+#    #: a different file format than what it was originally downloaded as.
+#    filename_glob = "*"
+
+#    # NOTE: according to the Python docs:
+#    #
+#    # * https://docs.python.org/3/library/exceptions.html#NotImplementedError
+#    #
+#    # the correct way to handle __add__ not being supported is to set it to None,
+#    # not to return NotImplemented or raise NotImplementedError. The downside of
+#    # this is that we have no way to explain to a user why they get an error and
+#    # what they should do instead (use __and__ or __or__).
+
+#    #: :class:`GeoDataset` addition can be ambiguous and is no longer supported.
+#    #: Users should instead use the intersection or union operator.
+#    __add__ = None  # type: ignore[assignment]
+
+#    def __init__(
+#        self, transforms: Optional[Callable[[dict[str, Any]], dict[str, Any]]] = None
+#    ) -> None:
+#        """Initialize a new Dataset instance.
+
+#        Args:
+#            transforms: a function/transform that takes an input sample
+#                and returns a transformed version
+#        """
+#        self.transforms = transforms
+
+#        # Create an R-tree to index the dataset
+#        self.index = Index(interleaved=False, properties=Property(dimension=3))
+
+#    @abc.abstractmethod
+#    def __getitem__(self, query: BoundingBox) -> dict[str, Any]:
+#        """Retrieve image/mask and metadata indexed by query.
+
+#        Args:
+#            query: (minx, maxx, miny, maxy, mint, maxt) coordinates to index
+
+#        Returns:
+#            sample of image/mask and metadata at that index
+
+#        Raises:
+#            IndexError: if query is not found in the index
+#        """
+
+#    def __and__(self, other: "GeoDataset") -> "IntersectionDataset":
+#        """Take the intersection of two :class:`GeoDataset`.
+
+#        Args:
+#            other: another dataset
+
+#        Returns:
+#            a single dataset
+
+#        Raises:
+#            ValueError: if other is not a :class:`GeoDataset`
+
+#        .. versionadded:: 0.2
+#        """
+#        return IntersectionDataset(self, other)
+
+#    def __or__(self, other: "GeoDataset") -> "UnionDataset":
+#        """Take the union of two GeoDatasets.
+
+#        Args:
+#            other: another dataset
+
+#        Returns:
+#            a single dataset
+
+#        Raises:
+#            ValueError: if other is not a :class:`GeoDataset`
+
+#        .. versionadded:: 0.2
+#        """
+#        return UnionDataset(self, other)
+
+#    def __len__(self) -> int:
+#        """Return the number of files in the dataset.
+
+#        Returns:
+#            length of the dataset
+#        """
+#        return len(self.index)
+
+#    def __str__(self) -> str:
+#        """Return the informal string representation of the object.
+
+#        Returns:
+#            informal string representation
+#        """
+#        return f"""\
+#{self.__class__.__name__} Dataset
+#    type: GeoDataset
+#    bbox: {self.bounds}
+#    size: {len(self)}"""
+
+#    # NOTE: This hack should be removed once the following issue is fixed:
+#    # https://github.com/Toblerity/rtree/issues/87
+
+#    def __getstate__(
+#        self,
+#    ) -> tuple[dict[str, Any], list[tuple[Any, Any, Optional[Any]]]]:
+#        """Define how instances are pickled.
+
+#        Returns:
+#            the state necessary to unpickle the instance
+#        """
+#        objects = self.index.intersection(self.index.bounds, objects=True)
+#        tuples = [(item.id, item.bounds, item.object) for item in objects]
+#        return self.__dict__, tuples
+
+#    def __setstate__(
+#        self,
+#        state: tuple[
+#            dict[Any, Any],
+#            list[tuple[int, tuple[float, float, float, float, float, float], str]],
+#        ],
+#    ) -> None:
+#        """Define how to unpickle an instance.
+
+#        Args:
+#            state: the state of the instance when it was pickled
+#        """
+#        attrs, tuples = state
+#        self.__dict__.update(attrs)
+#        for item in tuples:
+#            self.index.insert(*item)
+
+#    @property
+#    def bounds(self) -> BoundingBox:
+#        """Bounds of the index.
+
+#        Returns:
+#            (minx, maxx, miny, maxy, mint, maxt) of the dataset
+#        """
+#        return BoundingBox(*self.index.bounds)
+
+#    @property
+#    def crs(self) -> CRS:
+#        """:term:`coordinate reference system (CRS)` of the dataset.
+
+#        Returns:
+#            The :term:`coordinate reference system (CRS)`.
+#        """
+#        return self._crs
+
+#    @crs.setter
+#    def crs(self, new_crs: CRS) -> None:
+#        """Change the :term:`coordinate reference system (CRS)` of a GeoDataset.
+
+#        If ``new_crs == self.crs``, does nothing, otherwise updates the R-tree index.
+
+#        Args:
+#            new_crs: New :term:`coordinate reference system (CRS)`.
+#        """
+#        if new_crs == self.crs:
+#            return
+
+#        print(f"Converting {self.__class__.__name__} CRS from {self.crs} to {new_crs}")
+#        new_index = Index(interleaved=False, properties=Property(dimension=3))
+
+#        project = pyproj.Transformer.from_crs(
+#            pyproj.CRS(str(self.crs)), pyproj.CRS(str(new_crs)), always_xy=True
+#        ).transform
+#        for hit in self.index.intersection(self.index.bounds, objects=True):
+#            old_minx, old_maxx, old_miny, old_maxy, mint, maxt = hit.bounds
+#            old_box = shapely.geometry.box(old_minx, old_miny, old_maxx, old_maxy)
+#            new_box = shapely.ops.transform(project, old_box)
+#            new_minx, new_miny, new_maxx, new_maxy = new_box.bounds
+#            new_bounds = (new_minx, new_maxx, new_miny, new_maxy, mint, maxt)
+#            new_index.insert(hit.id, new_bounds, hit.object)
+
+#        self._crs = new_crs
+#        self.index = new_index
+
+#    @property
+#    def res(self) -> float:
+#        """Resolution of the dataset in units of CRS.
+
+#        Returns:
+#            The resolution of the dataset.
+#        """
+#        return self._res
+
+#    @res.setter
+#    def res(self, new_res: float) -> None:
+#        """Change the resolution of a GeoDataset.
+
+#        Args:
+#            new_res: New resolution.
+#        """
+#        if new_res == self.res:
+#            return
+
+#        print(f"Converting {self.__class__.__name__} res from {self.res} to {new_res}")
+#        self._res = new_res
+
+#    @property
+#    def files(self) -> set[str]:
+#        """A list of all files in the dataset.
+
+#        Returns:
+#            All files in the dataset.
+
+#        .. versionadded:: 0.5
+#        """
+#        # Make iterable
+#        if isinstance(self.paths, str):
+#            paths: Iterable[str] = [self.paths]
+#        else:
+#            paths = self.paths
+
+#        # Using set to remove any duplicates if directories are overlapping
+#        files: set[str] = set()
+#        for path in paths:
+#            if os.path.isdir(path):
+#                pathname = os.path.join(path, "**", self.filename_glob)
+#                files |= set(glob.iglob(pathname, recursive=True))
+#            elif os.path.isfile(path) or path_is_vsi(path):
+#                files.add(path)
+#            else:
+#                warnings.warn(
+#                    f"Could not find any relevant files for provided path '{path}'. "
+#                    f"Path was ignored.",
+#                    UserWarning,
+#                )
+
+#        return files
 
 
 class RasterDataset(GeoDataset):
@@ -390,20 +518,18 @@ class RasterDataset(GeoDataset):
         .. versionchanged:: 0.5
            *root* was renamed to *paths*.
         """
-        print('pre super.__init__')
         super().__init__(transforms)
 
-        print('post super.__init__')
         self.paths = paths
         self.bands = bands or self.all_bands
         self.cache = cache
+        self.res = res
 
         # Populate the dataset index
         i = 0
         filename_regex = re.compile(self.filename_regex, re.VERBOSE)
         for filepath in self.files:
             match = re.match(filename_regex, os.path.basename(filepath))
-            print('regex')
             if match is not None:
                 try:
                     with rasterio.open(filepath) as src:
@@ -431,8 +557,19 @@ class RasterDataset(GeoDataset):
                         date = match.group("date")
                         mint, maxt = disambiguate_timestamp(date, self.date_format)
 
-                    coords = (minx, maxx, miny, maxy, mint, maxt)
-                    self.index.insert(i, coords, filepath)
+                    # Create a QgsFeature to hold the bounding box
+                    feature = QgsFeature()
+                    geometry = QgsGeometry.fromRect(QgsRectangle(minx, miny, maxx, maxy))
+                    feature.setGeometry(geometry)
+
+                    # Add feature ID and additional attributes (e.g., filepath, temporal data)
+                    feature.setAttributes([i, filepath, mint, maxt])
+
+                    # Insert the feature into the spatial index
+                    self.index.addFeature(feature)
+                    self.features[feature.id()] = feature
+                    # coords = (minx, maxx, miny, maxy, mint, maxt)
+                    # self.index.insert(i, coords, filepath)
                     i += 1
 
         if i == 0:
@@ -473,8 +610,16 @@ class RasterDataset(GeoDataset):
         Raises:
             IndexError: if query is not found in the index
         """
-        hits = self.index.intersection(tuple(query), objects=True)
-        filepaths = cast(list[str], [hit.object for hit in hits])
+        # hits = self.index.intersection(tuple(query), objects=True)
+        # filepaths = cast(list[str], [hit.object for hit in hits])
+        # hits = self.index.intersects(QgsRectangle(self.roi.minx, self.roi.miny, self.roi.maxx, self.roi.maxy))
+        filepaths = []
+        for hit in self.index.intersects(QgsRectangle(query.minx, query.miny, query.maxx, query.maxy)):
+            
+            feature = self.features[hit]
+            filepaths.append(feature.attribute(1)) ## corresponds to filepath
+        print(filepaths)
+
 
         if not filepaths:
             raise IndexError(
@@ -883,3 +1028,5 @@ class UnionDataset(GeoDataset):
         self.datasets[0].res = new_res
         self.datasets[1].res = new_res
 
+if __name__ == "__main__":
+    test = RasterDataset(paths=['../assets/test.tif'])
