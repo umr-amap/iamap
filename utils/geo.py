@@ -95,7 +95,6 @@ def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True, subset=1_00
 
     np.random.seed(42)
     src = rasterio.open(path)
-    print('pouet\n\n')
     means = []
     sds = []
     for band in range(1, src.count+1):

@@ -137,7 +137,6 @@ def log_parameters_to_csv(parameters, output_dir):
             reader = csv.DictReader(csvfile)
             for row in reader:
                 if row['md5hash'] == params_hash:
-                    print("This set of parameters is already logged.")
                     return  # No need to add this set of parameters
 
     # If not already logged, append the new parameters
@@ -155,5 +154,3 @@ def log_parameters_to_csv(parameters, output_dir):
 
         # Write the new row
         writer.writerow(row)
-        print("Parameters logged successfully.")
-
