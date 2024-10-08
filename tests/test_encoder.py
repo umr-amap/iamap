@@ -67,6 +67,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
                 '431e034b842129679b99a067f2bd3ba4',
                 '60153535214eaa44458db4e297af72b9',
                 'f1394d1950f91e4f8277a8667ae77e85',
+                'a23837caa3aca54aaca2974d546c5123',
                            ]
         assert result_file_hash in possible_hashes
         os.remove(expected_result_path)

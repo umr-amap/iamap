@@ -620,13 +620,16 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
         ## merging all temp tiles
         feedback.pushInfo(f"\n\n{'-'*8}\n Merging tiles \n{'-'*8}\n" )
         all_tiles = [os.path.join(self.output_subdir,f) for f in os.listdir(self.output_subdir) if f.endswith('_tmp.tif')]
+        rlayer_name, ext = os.path.splitext(self.rlayer_name)
 
         if not self.all_encoding_done :
             dst_path = Path(os.path.join(self.output_subdir,'merged_tmp.tif'))
+            layer_name = f'{rlayer_name} features tmp'
         else:
             # dst_path = Path(os.path.join(self.output_subdir,'merged.tif'))
             ## update filename if a merged.tif file allready exists
-            dst_path, layer_name = get_unique_filename(self.output_subdir, 'merged.tif')
+            
+            dst_path, layer_name = get_unique_filename(self.output_subdir, f'merged.tif', f'{rlayer_name} features')
             dst_path = Path(dst_path)
 
         merge_tiles(
