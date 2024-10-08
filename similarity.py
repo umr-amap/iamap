@@ -1,4 +1,5 @@
 import os
+import time
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any
@@ -132,12 +133,10 @@ class SimilarityAlgorithm(QgsProcessingAlgorithm):
         Here is where the processing itself takes place.
         """
         self.process_options(parameters, context, feedback)
-        
-        template_path = self.template  # Replace with the actual attribute holding the file path
 
-# Create a dictionary to store the template path
+        # Create a dictionary to store the template path
         dictionnary_cosine = {
-            'cosine_path': template_path
+            'cosine_path': self.template
         }
 
         gdf = gpd.read_file(self.template)
@@ -162,7 +161,6 @@ class SimilarityAlgorithm(QgsProcessingAlgorithm):
 
 
         input_bands = [i_band -1 for i_band in self.selected_bands]
-
 
         with rasterio.open(self.rlayer_path) as ds:
             gdf = gdf.to_crs(ds.crs)
