@@ -93,6 +93,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
     REMOVE_TEMP_FILES = 'REMOVE_TEMP_FILES'
     TEMP_FILES_CLEANUP_FREQ = 'TEMP_FILES_CLEANUP_FREQ'
     JSON_PARAM = 'JSON_PARAM'
+    COMPRESS = 'COMPRESS'
     
 
     def initAlgorithm(self, config=None):
@@ -121,6 +122,13 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 optional=True,
                 allowMultiple=True,
             )
+        )
+        compress_param = QgsProcessingParameterBoolean(
+            name=self.COMPRESS,
+            description=self.tr(
+                'Compress final result to uint16 and JP2 to save space'),
+            defaultValue=False,
+            optional=True,
         )
 
         crs_param = QgsProcessingParameterCrs(
@@ -329,6 +337,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 nworkers_param,
                 pauses_param,
                 remove_tmp_files,
+                compress_param,
                 tmp_files_cleanup_frq,
                 json_param,
                 ):
@@ -626,6 +635,9 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         parameters['OUTPUT_RASTER']=dst_path
 
+        if self.compress:
+            dst_path = self.tiff_to_jp2(parameters, feedback)
+
         return {"Output feature path": self.output_subdir, 'Patch samples saved': self.iPatch, 'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
 
     def load_parameters_as_json(self, feedback, parameters):
@@ -768,6 +780,8 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             self.backbone_name = self.timm_backbone_opt[backbone_idx]
             feedback.pushInfo(f'self.backbone_name:{self.backbone_name}')
 
+        self.compress = self.parameterAsBoolean(
+            parameters, self.COMPRESS, context)
         self.stride = self.parameterAsInt(
             parameters, self.STRIDE, context)
         self.size = self.parameterAsInt(

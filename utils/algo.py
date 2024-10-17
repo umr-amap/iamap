@@ -7,7 +7,7 @@ from qgis.core import (Qgis,
                        QgsGeometry,
                        QgsCoordinateTransform,
                        QgsProcessingException,
-                       QgsProcessingAlgorithm,
+                       QgsProcessingAlgorithm, QgsProcessingParameterBoolean,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterBand,
@@ -17,6 +17,8 @@ from qgis.core import (Qgis,
                        QgsProcessingParameterCrs,
                        QgsProcessingParameterDefinition,
                        )
+import rasterio
+from rasterio.enums import Resampling
 
 
 
@@ -30,6 +32,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
     OUTPUT = 'OUTPUT'
     RESOLUTION = 'RESOLUTION'
     CRS = 'CRS'
+    COMPRESS = 'COMPRESS'
     TMP_DIR = 'iamap_tmp'
     
 
@@ -77,6 +80,14 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
             maxValue=100000
         )
 
+        compress_param = QgsProcessingParameterBoolean(
+            name=self.COMPRESS,
+            description=self.tr(
+                'Compress final result to JP2'),
+            defaultValue=True,
+            optional=True,
+        )
+
 
         self.addParameter(
             QgsProcessingParameterExtent(
@@ -110,6 +121,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
                 crs_param, 
                 res_param, 
                 dtype_param,
+                compress_param,
                 ):
             param.setFlags(
                 param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -254,6 +266,59 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         self.rlayer = rlayer
         self.crs = crs
         self.res = res
+
+    def tiff_to_jp2(self, parameters, feedback):
+        """
+        Compress final file to JP2.
+        """
+        
+        feedback.pushInfo(f'Compressing to JP2')
+
+        file = parameters['OUTPUT_RASTER']
+        dst_path = Path(file).with_suffix('.jp2')
+
+        ## update in the parameters
+        parameters['OUTPUT_RASTER'] = dst_path
+
+        with rasterio.open(file) as src:
+            # Read the data
+            float_data = src.read(resampling=Resampling.nearest)
+    
+            # Initialize an array for the normalized uint16 data
+            uint16_data = np.empty_like(float_data, dtype=np.uint16)
+            
+            # Loop through each band to normalize individually
+            for i in range(float_data.shape[0]):
+                band = float_data[i]
+                
+                # Find min and max of the current band
+                band_min = np.min(band)
+                band_max = np.max(band)
+                
+                # Normalize to the range [0, 1]
+                normalized_band = (band - band_min) / (band_max - band_min)
+                
+                # Scale to the uint16 range [0, 65535]
+                uint16_data[i] = (normalized_band * 65535).astype(np.uint16)
+            
+            # Define metadata for the output JP2
+            profile = src.profile
+            profile.update(
+                driver='JP2OpenJPEG',   # Specify JP2 driver
+                dtype='uint16',        # Keep data as float32
+                compress='jp2',         # Compression type (note: might be driver-specific)
+                crs=src.crs,            # Coordinate system
+                transform=src.transform # Affine transform
+            )
+            # profile.update(tiled=False)
+            profile.update(tiled=True, blockxsize=256, blockysize=256)
+
+            # Write to JP2 file
+            with rasterio.open(dst_path, 'w', **profile) as dst:
+                dst.write(uint16_data)
+
+        return dst_path
+
 
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
