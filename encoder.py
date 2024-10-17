@@ -93,7 +93,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
     REMOVE_TEMP_FILES = 'REMOVE_TEMP_FILES'
     TEMP_FILES_CLEANUP_FREQ = 'TEMP_FILES_CLEANUP_FREQ'
     JSON_PARAM = 'JSON_PARAM'
-    OUT_DTYPE = 'OUT_DTYPE'
     
 
     def initAlgorithm(self, config=None):
@@ -282,14 +281,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         
         self.addParameter(
-            QgsProcessingParameterBoolean(
-                self.FEAT_OPTION,
-                self.tr("Display features map"),
-                defaultValue=True
-            )
-        )
-
-        self.addParameter(
             QgsProcessingParameterNumber(
                 name=self.BATCH_SIZE,
                 # large images will be sampled into patches in a grid-like fashion
@@ -319,15 +310,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 defaultValue=0,
                 )
 
-        self.out_dtype_opt = ['float32', 'int8']
-        dtype_param = QgsProcessingParameterEnum(
-                name=self.OUT_DTYPE,
-                description=self.tr(
-                    'Data type of exported features (int8 saves space)'),
-                options=self.out_dtype_opt,
-                defaultValue=0,
-                )
-
         json_param = QgsProcessingParameterFile(
                 name=self.JSON_PARAM,
                 description=self.tr(
@@ -341,7 +323,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         for param in (
                 crs_param, 
                 res_param, 
-                dtype_param,
                 chkpt_param, 
                 cuda_id_param, 
                 merge_param, 
@@ -550,7 +531,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             features = features.detach().cpu().numpy()
             feedback.pushInfo(f'Features shape {features.shape}')
 
-            self.save_features(features,sample['bbox'], current,dtype=self.out_dtype)
+            self.save_features(features,sample['bbox'], current)
             feedback.pushInfo(f'Features saved')
 
             if current <= last_batch_done + 1:
@@ -610,7 +591,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                         tiles = all_tiles, 
                         dst_path = dst_path,
                         method = self.merge_method,
-                        dtype= self.out_dtype,
                         )
                 self.remove_temp_files()
                 self.all_encoding_done = True
@@ -760,10 +740,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         self.iPatch = 0
         
         self.feature_dir = ""
-        
-        self.FEAT_OPTION = self.parameterAsBoolean(
-            parameters, self.FEAT_OPTION, context)
-        
+
         feedback.pushInfo(
                 f'PARAMETERS :\n{parameters}')
         
@@ -790,10 +767,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 parameters, self.BACKBONE_OPT, context)
             self.backbone_name = self.timm_backbone_opt[backbone_idx]
             feedback.pushInfo(f'self.backbone_name:{self.backbone_name}')
-
-        dtype_idx = self.parameterAsEnum(
-            parameters, self.OUT_DTYPE, context)
-        self.out_dtype = self.out_dtype_opt[dtype_idx]
 
         self.stride = self.parameterAsInt(
             parameters, self.STRIDE, context)
