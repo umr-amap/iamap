@@ -1,4 +1,5 @@
 import shutil
+import psutil
 import time
 import os
 import torch
@@ -25,6 +26,20 @@ def get_model_size(model):
     size = os.path.getsize("temp.p")/1e6
     os.remove('temp.p')
     return size
+
+def calculate_chunk_size(X, memory_buffer=0.1):
+    # Estimate available memory
+    available_memory = psutil.virtual_memory().available
+    
+    # Estimate the memory footprint of one sample
+    sample_memory = X[0].nbytes
+    
+    # Determine maximum chunk size within available memory (leaving some buffer)
+    max_chunk_size = int(available_memory * (1 - memory_buffer) / sample_memory)
+    
+    return max_chunk_size
+
+
 
 def check_disk_space(path):
     # Get disk usage statistics about the given path
