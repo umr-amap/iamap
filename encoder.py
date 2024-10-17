@@ -41,7 +41,8 @@ import timm
 # from torchgeo.datasets import RasterDataset, BoundingBox,stack_samples
 # from torchgeo.samplers import GridGeoSampler, Units
 # from torchgeo.transforms import AugmentationSequential
-# from .utils.torchgeo import NoBordersGridGeoSampler
+## from .utils.torchgeo import NoBordersGridGeoSampler
+# from .utils.trchg import NoBordersGridGeoSampler
 
 from .utils.geo import get_mean_sd_by_band
 from .utils.geo import merge_tiles
@@ -55,7 +56,7 @@ from .utils.misc import (QGISLogHandler,
                          compute_md5_hash,
                          log_parameters_to_csv,
                          )
-from .utils.torch import quantize_model
+from .utils.trch import quantize_model
 
 from .tg.datasets import RasterDataset
 from .tg.utils import stack_samples, BoundingBox
