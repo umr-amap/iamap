@@ -440,7 +440,7 @@ class EncoderAlgorithm(QgsProcessingAlgorithm):
             try :
                 feedback.pushInfo(f'before quantization : {get_model_size(model)}')
 
-                quantize_model(model, device)
+                model = quantize_model(model, device)
                 feedback.pushInfo(f'after quantization : {get_model_size(model)}')
 
             except :
