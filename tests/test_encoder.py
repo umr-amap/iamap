@@ -63,6 +63,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
                 # '94658648037138c64159ae457c3928dd',
                 # '496ac2e9b92f62d16c8c8f1a0fa07009',
                 # 'a6230b57bcf0050aa6f21107a16a5548',
+                '0fb32cc57a0dd427d9f0165ec6d5418f',
                 '48c3a78773dbc2c4c7bb7885409284ab',
                 '431e034b842129679b99a067f2bd3ba4',
                 '60153535214eaa44458db4e297af72b9',
