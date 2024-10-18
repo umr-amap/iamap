@@ -46,9 +46,11 @@ def instantiate_sklearn_algorithm(module, algorithm_name, **kwargs):
     # Instantiate the class with the provided parameters
     return AlgorithmClass(**kwargs)
 
-def check_required_parameters(cls, parameter_name):
-    # Get the __init__ method signature
-    init_signature = inspect.signature(cls.__init__)
+
+def get_arguments(module, algorithm_name):
+    AlgorithmClass = getattr(module, algorithm_name)
+    # Get the signature of the __init__ method
+    init_signature = inspect.signature(AlgorithmClass.__init__)
     
     # Retrieve the parameters of the __init__ method
     parameters = init_signature.parameters
