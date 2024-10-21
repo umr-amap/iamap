@@ -92,7 +92,7 @@ class ReductionAlgorithm(SKAlgorithm):
         should provide a basic description about what the algorithm does and the
         parameters and outputs associated with it..
         """
-        return self.tr("Reduce the dimension of deep learning features.")
+        return self.tr(f"Reduce the dimension of deep learning features. Only PCA is thoughfully tested. Other algorithms are implemented as is by sklearn. {self.get_help_sk_methods()}")
 
     def icon(self):
         return 'E'

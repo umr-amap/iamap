@@ -6,6 +6,7 @@ class ClusterAlgorithm(SKAlgorithm):
     """
     """
     TYPE = 'cluster'
+    TMP_DIR = 'iamap_cluster'
 
     def tr(self, string):
         """
@@ -56,8 +57,7 @@ class ClusterAlgorithm(SKAlgorithm):
         should provide a basic description about what the algorithm does and the
         parameters and outputs associated with it..
         """
-        return self.tr("Cluster a raster.")
+        return self.tr(f"Cluster a raster. Only KMeans is thoughfully tested. Other algorithms are implemented as is by sklearn. {self.get_help_sk_methods()}")
 
     def icon(self):
         return 'E'
-

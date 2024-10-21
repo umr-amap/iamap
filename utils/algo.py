@@ -497,7 +497,7 @@ class SKAlgorithm(IAMAPAlgorithm):
                 QgsProcessingParameterNumber(
                     name=self.MAIN_PARAM,
                     description=self.tr(
-                        'Number of target clusters or minimum size of samples'),
+                        'Number of target clusters'),
                     type=QgsProcessingParameterNumber.Integer,
                     defaultValue = 3,
                     minValue=1,
@@ -842,6 +842,36 @@ class SKAlgorithm(IAMAPAlgorithm):
                 kwargs_dict[key] = value
 
         return kwargs_dict
+
+    def get_help_sk_methods(self):
+        """
+        Generate help string with default arguments of supported sklearn algorithms.
+        """
+            
+        proj_methods = ['fit', 'transform']
+        clust_methods = ['fit', 'fit_predict']
+        help_str = '\n\n Here are the default arguments of the supported algorithms:\n\n'
+
+        if self.TYPE == 'proj':
+            algos = get_sklearn_algorithms_with_methods(decomposition, proj_methods)
+            for algo in algos :
+                args = get_arguments(decomposition,algo)
+                help_str += f'- {algo}:\n'
+                help_str += f'{args}\n'
+            algos = get_sklearn_algorithms_with_methods(cluster, proj_methods)
+            for algo in algos :
+                args = get_arguments(cluster,algo)
+                help_str += f'- {algo}:\n'
+                help_str += f'{args}\n'
+
+        if self.TYPE == 'cluster':
+            algos = get_sklearn_algorithms_with_methods(cluster, clust_methods)
+            for algo in algos :
+                args = get_arguments(cluster,algo)
+                help_str += f'- {algo}:\n'
+                help_str += f'{args}\n'
+
+        return help_str
 
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
