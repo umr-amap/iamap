@@ -17,6 +17,7 @@ from qgis.core import (Qgis,
                        QgsProcessingParameterBand,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterEnum,
+                       QgsProcessingParameterFile,
                        QgsProcessingParameterExtent,
                        QgsProcessingParameterString,
                        QgsProcessingParameterCrs,
@@ -26,11 +27,18 @@ import rasterio
 from rasterio import windows
 from rasterio.enums import Resampling
 
+import geopandas as gpd
+from shapely.geometry import box
+
+import torch
+import torch.nn as nn
+
 import sklearn.decomposition as decomposition
 import sklearn.cluster as cluster
 from sklearn.base import BaseEstimator
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, silhouette_samples
+
 
 if __name__ != "__main__":
     from .misc import get_unique_filename, calculate_chunk_size
@@ -913,6 +921,232 @@ class SKAlgorithm(IAMAPAlgorithm):
     def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
         return {}
 
+
+
+class SHPAlgorithm(IAMAPAlgorithm):
+    """
+    Common class for algorithms relying on shapefile data.
+    """
+
+    INPUT = 'INPUT'
+    BANDS = 'BANDS'
+    EXTENT = 'EXTENT'
+    LOAD = 'LOAD'
+    OUTPUT = 'OUTPUT'
+    RESOLUTION = 'RESOLUTION'
+    CRS = 'CRS'
+    TEMPLATE = 'TEMPLATE'
+    TMP_DIR = 'iamap_sim'
+    DEFAULT_TEMPLATE = 'template.shp'
+    TYPE = 'similarity'
+    
+
+    def initAlgorithm(self, config=None):
+        """
+        Here we define the inputs and output of the algorithm, along
+        with some other properties.
+        """
+        cwd = Path(__file__).parent.parent.absolute()
+        tmp_wd = os.path.join(tempfile.gettempdir(),self.TMP_DIR)
+
+        self.addParameter(
+            QgsProcessingParameterRasterLayer(
+                name=self.INPUT,
+                description=self.tr(
+                    'Input raster layer or image file path'),
+            defaultValue=os.path.join(cwd,'assets','test.tif'),
+            ),
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBand(
+                name=self.BANDS,
+                description=self.tr(
+                    'Selected Bands (defaults to all bands selected)'),
+                defaultValue=None,
+                parentLayerParameterName=self.INPUT,
+                optional=True,
+                allowMultiple=True,
+            )
+        )
+
+        crs_param = QgsProcessingParameterCrs(
+            name=self.CRS,
+            description=self.tr('Target CRS (default to original CRS)'),
+            optional=True,
+        )
+
+        res_param = QgsProcessingParameterNumber(
+            name=self.RESOLUTION,
+            description=self.tr(
+                'Target resolution in meters (default to native resolution)'),
+            type=QgsProcessingParameterNumber.Double,
+            optional=True,
+            minValue=0,
+            maxValue=100000
+        )
+
+        self.addParameter(
+            QgsProcessingParameterExtent(
+                name=self.EXTENT,
+                description=self.tr(
+                    'Processing extent (default to the entire image)'),
+                optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterFile(
+                name=self.TEMPLATE,
+                description=self.tr(
+                    'Input shapefile path for cosine similarity'),
+            defaultValue=os.path.join(cwd,'assets',self.DEFAULT_TEMPLATE),
+            ),
+        )
+
+
+        self.addParameter(
+            QgsProcessingParameterFolderDestination(
+                self.OUTPUT,
+                self.tr(
+                    "Output directory (choose the location that the image features will be saved)"),
+            defaultValue=tmp_wd,
+            )
+        )
+
+
+        for param in (crs_param, res_param):
+            param.setFlags(
+                param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+            self.addParameter(param)
+
+
+
+    def processAlgorithm(self, parameters, context, feedback):
+        """
+        Here is where the processing itself takes place.
+        """
+        self.process_geo_parameters(parameters, context, feedback)
+        self.process_common_shp(parameters, context, feedback)
+
+        self.input_bands = [i_band -1 for i_band in self.selected_bands]
+        fit_raster = self.get_fit_raster()
+
+        self.inf_raster(fit_raster)
+
+        return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
+
+
+    def get_fit_raster(self):
+
+        with rasterio.open(self.rlayer_path) as ds:
+            gdf = self.gdf.to_crs(ds.crs)
+            pixel_values = []
+
+            transform = ds.transform
+            crs = ds.crs
+            win = windows.from_bounds(
+                    self.extent.xMinimum(), 
+                    self.extent.yMinimum(), 
+                    self.extent.xMaximum(), 
+                    self.extent.yMaximum(), 
+                    transform=transform
+                    )
+            raster = ds.read(window=win)
+            transform = ds.window_transform(win)
+            raster = raster[self.input_bands,:,:]
+
+            for index, data in gdf.iterrows():
+                # Get the coordinates of the point in the raster's pixel space
+                x, y = data.geometry.x, data.geometry.y
+
+                # Convert point coordinates to pixel coordinates within the window
+                col, row = ~transform * (x, y)  # Convert from map coordinates to pixel coordinates
+                col, row = int(col), int(row)
+                pixel_values.append(list(raster[:,row, col]))
+
+            return np.asarray(pixel_values)
+
+
+    def inf_raster(self, fit_raster):
+
+        with rasterio.open(self.rlayer_path) as ds:
+
+            transform = ds.transform
+            crs = ds.crs
+            win = windows.from_bounds(
+                    self.extent.xMinimum(), 
+                    self.extent.yMinimum(), 
+                    self.extent.xMaximum(), 
+                    self.extent.yMaximum(), 
+                    transform=transform
+                    )
+            raster = ds.read(window=win)
+            transform = ds.window_transform(win)
+            raster = raster[self.input_bands,:,:]
+
+            raster = np.transpose(raster, (1,2,0))
+
+            template = torch.from_numpy(fit_raster).to(torch.float32)
+            template = torch.mean(template, dim=0)
+        
+            feat_img = torch.from_numpy(raster)
+            cos = nn.CosineSimilarity(dim=-1, eps=1e-6)
+        
+            sim = cos(feat_img,template)
+            sim = sim.unsqueeze(-1)
+            sim = sim.numpy()
+            height, width, channels = sim.shape
+                        
+            with rasterio.open(self.dst_path, 'w', driver='GTiff',
+                               height=height, width=width, count=channels, dtype=self.out_dtype,
+                               crs=crs, transform=transform) as dst_ds:
+                dst_ds.write(np.transpose(sim, (2, 0, 1)))
+
+
+
+    def process_common_shp(self, parameters, context, feedback):
+
+        output_dir = self.parameterAsString(
+            parameters, self.OUTPUT, context)
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        self.template = self.parameterAsFile(
+            parameters, self.TEMPLATE, context)
+
+        gdf = gpd.read_file(self.template)
+        gdf = gdf.to_crs(self.crs.toWkt())
+
+        feedback.pushInfo(f'before extent: {len(gdf)}')
+        bounds = box(
+                self.extent.xMinimum(), 
+                self.extent.yMinimum(), 
+                self.extent.xMaximum(), 
+                self.extent.yMaximum(), 
+                )
+        self.gdf = gdf[gdf.within(bounds)]
+        feedback.pushInfo(f'after extent: {len(self.gdf)}')
+
+        if len(self.gdf) == 0:
+            feedback.pushWarning("No template points within extent !")
+            return False
+
+        rlayer_basename = os.path.basename(self.rlayer_path)
+        rlayer_name, ext = os.path.splitext(rlayer_basename)
+
+        ### Handle args that differ between clustering and projection methods
+        if self.TYPE == 'similarity':
+            self.out_dtype = 'float32'
+            self.dst_path, self.layer_name = get_unique_filename(self.output_dir, f'{self.TYPE}.tif', f'{rlayer_name} similarity')
+        else:
+            self.out_dtype = 'uint8'
+            self.dst_path, self.layer_name = get_unique_filename(self.output_dir, f'{self.TYPE}.tif', f'{rlayer_name} classification')
+
+
+    # used to handle any thread-sensitive cleanup which is required by the algorithm.
+    def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
+        return {}
 
 if __name__ == "__main__":
 
