@@ -487,6 +487,7 @@ class SKAlgorithm(IAMAPAlgorithm):
                     maxValue=1024
                 )
             )
+            default_index = self.method_opt.index('PCA')
         else :
             self.method_opt = get_sklearn_algorithms_with_methods(cluster, clust_methods)
             self.addParameter(
@@ -500,6 +501,7 @@ class SKAlgorithm(IAMAPAlgorithm):
                     maxValue=1024
                 )
             )
+            default_index = self.method_opt.index('KMeans')
 
         print(self.method_opt)
         self.addParameter (
@@ -507,7 +509,7 @@ class SKAlgorithm(IAMAPAlgorithm):
                 name = self.METHOD,
                 description = self.tr(
                     'Sklearn algorithm used'),
-                defaultValue = 0,
+                defaultValue = default_index,
                 options = self.method_opt,
             )
         )
