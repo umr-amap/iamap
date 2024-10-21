@@ -26,8 +26,10 @@ from rasterio.enums import Resampling
 import sklearn.decomposition as decomposition
 import sklearn.cluster as cluster
 from sklearn.base import BaseEstimator
+from sklearn.preprocessing import StandardScaler
 
-from .misc import get_unique_filename, calculate_chunk_size
+if __name__ != "__main__":
+    from .misc import get_unique_filename, calculate_chunk_size
 
 
 def get_sklearn_algorithms_with_methods(module, required_methods):
@@ -60,12 +62,13 @@ def get_arguments(module, algorithm_name):
     for param_name, param in parameters.items():
         # Skip 'self'
         if param_name != 'self':
-            if param.default == inspect.Parameter.empty:
-                required_kwargs[param_name] = None  # Placeholder for the required value
-            else:
-                default_kwargs[param_name] = param.default
+            # if param.default == None:
+            #     required_kwargs[param_name] = None  # Placeholder for the required value
+            # else:
+            default_kwargs[param_name] = param.default
     
-    return required_kwargs, default_kwargs
+    # return required_kwargs, default_kwargs
+    return default_kwargs
 
 
 def get_iter(model, fit_raster):
@@ -398,7 +401,7 @@ class SKAlgorithm(IAMAPAlgorithm):
     SAVE_MODEL = 'SAVE_MODEL'
     COMPRESS = 'COMPRESS'
     RANDOM_SEED = 'RANDOM_SEED'
-    TMP_DIR = 'iamap_proj'
+    TMP_DIR = 'iamap_reduction'
     TYPE = 'proj'
     
 
@@ -467,7 +470,7 @@ class SKAlgorithm(IAMAPAlgorithm):
         )
 
         proj_methods = ['fit', 'transform']
-        clust_methods = ['fit']
+        clust_methods = ['fit', 'fit_predict']
         if self.TYPE == 'proj':
             method_opt1 = get_sklearn_algorithms_with_methods(decomposition, proj_methods)
             method_opt2 = get_sklearn_algorithms_with_methods(cluster, proj_methods)
@@ -570,7 +573,7 @@ class SKAlgorithm(IAMAPAlgorithm):
         self.process_geo_parameters(parameters, context, feedback)
         self.process_common_sklearn(parameters, context, feedback)
 
-        fit_raster = self.get_fit_raster(feedback)
+        fit_raster, scaler = self.get_fit_raster(feedback)
 
         rlayer_basename = os.path.basename(self.rlayer_path)
         rlayer_name, ext = os.path.splitext(rlayer_basename)
@@ -588,20 +591,32 @@ class SKAlgorithm(IAMAPAlgorithm):
         parameters['OUTPUT_RASTER']=self.dst_path
 
         try:
-            required_args, default_args = get_arguments(decomposition, self.method_name)
+            default_args = get_arguments(decomposition, self.method_name)
         except AttributeError:
-            required_args, default_args = get_arguments(cluster, self.method_name)
+            default_args = get_arguments(cluster, self.method_name)
 
-        kwargs = self.update_kwargs(required_args, default_args)
+        kwargs = self.update_kwargs(default_args)
+
+        ## some clustering algorithms need the entire dataset.
+        do_fit_predict = False
 
         try:
             model = instantiate_sklearn_algorithm(decomposition, self.method_name, **kwargs)
         except AttributeError:
             model = instantiate_sklearn_algorithm(cluster, self.method_name, **kwargs)
+            ## if model does not have a 'predict()' method, then we do a fit_predict in one go 
+            if not hasattr(model, 'predict'):
+                do_fit_predict = True
+        except:
+            feedback.pushWarning(f'{self.method_name} not properly initialized ! Try passing custom parameters')
+            return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
 
+        if do_fit_predict:
+            proj_img, model = self.fit_predict(model, feedback)
 
-        iter = get_iter(model, fit_raster)
-        model = self.fit_model(model, fit_raster, iter, feedback)
+        else:
+            iter = get_iter(model, fit_raster)
+            model = self.fit_model(model, fit_raster, iter, feedback)
 
         feedback.pushInfo(f'Fitting done, saving model\n')
         save_file = f'{self.method_name}.pkl'.lower()
@@ -609,8 +624,9 @@ class SKAlgorithm(IAMAPAlgorithm):
             out_path = os.path.join(self.output_dir, save_file)
             joblib.dump(model, out_path)
 
-        feedback.pushInfo(f'Inference over raster\n')
-        self.infer_model(model, feedback)
+        if not do_fit_predict:
+            feedback.pushInfo(f'Inference over raster\n')
+            self.infer_model(model, feedback, scaler)
 
         return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
 
@@ -658,6 +674,8 @@ class SKAlgorithm(IAMAPAlgorithm):
             raster = np.transpose(raster, (1,2,0))
             raster = raster[:,:,self.input_bands]
             fit_raster = raster.reshape(-1, raster.shape[-1])
+            scaler = StandardScaler()
+            scaler.fit(fit_raster)
 
             if self.subset:
 
@@ -674,13 +692,10 @@ class SKAlgorithm(IAMAPAlgorithm):
                 # remove nans
                 fit_raster = fit_raster[~np.isnan(fit_raster).any(axis=1)]
 
-                feedback.pushInfo(f"Mean raster : {np.mean(raster)}")
-                feedback.pushInfo(f"Standart dev : {np.std(raster)}")
-                fit_raster = (fit_raster-np.mean(raster))/np.std(raster)
-                feedback.pushInfo(f"Mean raster normalized : {np.mean(fit_raster)}")
-                feedback.pushInfo(f"Standart dev normalized : {np.std(fit_raster)}")
+            fit_raster = scaler.transform(fit_raster)
+            np.nan_to_num(fit_raster) # NaN to zero after normalisation
 
-        return fit_raster
+        return fit_raster, scaler
 
     def fit_model(self, model, fit_raster, iter,feedback):
 
@@ -721,7 +736,10 @@ class SKAlgorithm(IAMAPAlgorithm):
             raster = raster[:,:,self.input_bands]
 
 
-            raster = (raster-np.mean(raster))/np.std(raster)
+            # raster = (raster-np.mean(raster))/np.std(raster)
+            scaler = StandardScaler()
+
+            raster = scaler.fit_transform(raster)
             np.nan_to_num(raster) # NaN to zero after normalisation
 
             proj_img = model.fit_predict(raster.reshape(-1, raster.shape[-1]))
@@ -741,10 +759,10 @@ class SKAlgorithm(IAMAPAlgorithm):
                 dst_ds.write(np.transpose(proj_img, (2, 0, 1)))
             feedback.pushInfo(f'Export to geotif done\n')
 
-        return proj_img, model
+        return model
 
 
-    def infer_model(self, model, feedback):
+    def infer_model(self, model, feedback, scaler=None):
 
         with rasterio.open(self.rlayer_path) as ds:
 
@@ -763,10 +781,16 @@ class SKAlgorithm(IAMAPAlgorithm):
             raster = raster[:,:,self.input_bands]
 
 
-            raster = (raster-np.mean(raster))/np.std(raster)
-            np.nan_to_num(raster) # NaN to zero after normalisation
+            inf_raster = raster.reshape(-1, raster.shape[-1])
+            if scaler:
+                inf_raster = scaler.transform(inf_raster)
+            np.nan_to_num(inf_raster) # NaN to zero after normalisation
 
-            proj_img = model.transform(raster.reshape(-1, raster.shape[-1]))
+            if self.TYPE == 'cluster':
+                proj_img = model.predict(inf_raster)
+
+            else:
+                proj_img = model.transform(inf_raster)
 
             proj_img = proj_img.reshape((raster.shape[0], raster.shape[1],-1))
             height, width, channels = proj_img.shape
@@ -782,18 +806,14 @@ class SKAlgorithm(IAMAPAlgorithm):
                 dst_ds.write(np.transpose(proj_img, (2, 0, 1)))
             feedback.pushInfo(f'Export to geotif done\n')
 
-    def update_kwargs(self, kwargs_dict, default_kwargs):
+    def update_kwargs(self, kwargs_dict):
 
         if 'n_clusters' in kwargs_dict.keys():
             kwargs_dict['n_clusters'] = self.main_param
         if 'n_components' in kwargs_dict.keys():
             kwargs_dict['n_components'] = self.main_param
-        if 'min_samples' in kwargs_dict.keys():
-            kwargs_dict['min_samples'] = self.main_param
-        if 'bandwitdth' in kwargs_dict.keys():
-            kwargs_dict['bandwitdth'] = self.main_param
 
-        if 'random_state' in default_kwargs.keys():
+        if 'random_state' in kwargs_dict.keys():
             kwargs_dict['random_state'] = self.seed
 
         return kwargs_dict
@@ -804,16 +824,23 @@ class SKAlgorithm(IAMAPAlgorithm):
         return {}
 
 
-        # if self.TYPE != 'proj' and (not hasattr(model,'predict')):
-        #     feedback.pushWarning(f'{self.method_name} does not support separate fit and prediction, doing all in one go.')
-        #     feedback.pushInfo(f'fit+predict')
-        #     del fit_raster
-        #     dst_path, layer_name = self.fit_predict(model, feedback)
-        #     parameters['OUTPUT_RASTER']=dst_path
-        #     return {'OUTPUT_RASTER':dst_path, 'OUTPUT_LAYER_NAME':layer_name}
+if __name__ == "__main__":
 
 
-            # else:
-            #     proj_img = model.predict(raster.reshape(-1, raster.shape[-1]))
-            #     print(proj_img)
-            #     print('predict')
+    methods = ['fit_predict', 'partial_fit'] 
+    algos = get_sklearn_algorithms_with_methods(cluster, methods)
+    print(algos)
+    methods = ['predict', 'fit'] 
+    algos = get_sklearn_algorithms_with_methods(cluster, methods)
+    print(algos)
+
+    for algo in algos :
+        args = get_arguments(cluster,algo)
+        print(algo, args)
+
+
+    methods = ['transform', 'fit'] 
+    algos = get_sklearn_algorithms_with_methods(decomposition, methods)
+    for algo in algos :
+        args = get_arguments(decomposition,algo)
+        print(algo, args)
