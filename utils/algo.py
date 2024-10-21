@@ -704,7 +704,7 @@ class SKAlgorithm(IAMAPAlgorithm):
 
             if self.subset:
 
-                feedback.pushInfo(f'Using a random subset of {self.subset} pixels, random seed is {RANDOM_SEED}')
+                feedback.pushInfo(f'Using a random subset of {self.subset} pixels, random seed is {self.seed}')
 
                 fit_raster = raster.reshape(-1, raster.shape[-1])
                 nsamples = fit_raster.shape[0]
