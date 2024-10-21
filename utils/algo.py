@@ -1029,7 +1029,6 @@ class SHPAlgorithm(IAMAPAlgorithm):
         self.process_geo_parameters(parameters, context, feedback)
         self.process_common_shp(parameters, context, feedback)
 
-        self.input_bands = [i_band -1 for i_band in self.selected_bands]
         fit_raster = self.get_fit_raster()
 
         self.inf_raster(fit_raster)
@@ -1111,6 +1110,8 @@ class SHPAlgorithm(IAMAPAlgorithm):
             parameters, self.OUTPUT, context)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        self.input_bands = [i_band -1 for i_band in self.selected_bands]
 
         self.template = self.parameterAsFile(
             parameters, self.TEMPLATE, context)
