@@ -1,4 +1,5 @@
 import os
+import ast
 import tempfile
 import numpy as np
 import inspect
@@ -16,6 +17,7 @@ from qgis.core import (Qgis,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterExtent,
+                       QgsProcessingParameterString,
                        QgsProcessingParameterCrs,
                        QgsProcessingParameterDefinition,
                        )
@@ -401,6 +403,7 @@ class SKAlgorithm(IAMAPAlgorithm):
     SAVE_MODEL = 'SAVE_MODEL'
     COMPRESS = 'COMPRESS'
     RANDOM_SEED = 'RANDOM_SEED'
+    SK_PARAM = 'SK_PARAM'
     TMP_DIR = 'iamap_reduction'
     TYPE = 'proj'
     
@@ -503,7 +506,6 @@ class SKAlgorithm(IAMAPAlgorithm):
             )
             default_index = self.method_opt.index('KMeans')
 
-        print(self.method_opt)
         self.addParameter (
             QgsProcessingParameterEnum(
                 name = self.METHOD,
@@ -511,6 +513,16 @@ class SKAlgorithm(IAMAPAlgorithm):
                     'Sklearn algorithm used'),
                 defaultValue = default_index,
                 options = self.method_opt,
+            )
+        )
+
+        self.addParameter (
+            QgsProcessingParameterString(
+                name = self.SK_PARAM,
+                description = self.tr(
+                    'Arguments for the initialisation of the algorithm. If empty this goes to sklearn default. It will overwrite cluster or components arguments.'),
+                defaultValue = '',
+                optional=True,
             )
         )
 
@@ -647,6 +659,13 @@ class SKAlgorithm(IAMAPAlgorithm):
         method_idx = self.parameterAsEnum(
             parameters, self.METHOD, context)
         self.method_name = self.method_opt[method_idx]
+
+        str_kwargs = self.parameterAsString(
+                parameters, self.SK_PARAM, context)
+        if str_kwargs != '':
+            self.passed_kwargs = ast.literal_eval(str_kwargs)
+        else:
+            self.passed_kwargs = {}
 
         self.input_bands = [i_band -1 for i_band in self.selected_bands]
 
@@ -817,6 +836,10 @@ class SKAlgorithm(IAMAPAlgorithm):
 
         if 'random_state' in kwargs_dict.keys():
             kwargs_dict['random_state'] = self.seed
+
+        for key, value in self.passed_kwargs.items():
+            if key in kwargs_dict.keys():
+                kwargs_dict[key] = value
 
         return kwargs_dict
 
