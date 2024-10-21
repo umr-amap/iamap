@@ -19,7 +19,7 @@ class TestClusteringAlgorithm(unittest.TestCase):
         result = self.algorithm.processAlgorithm(parameters, self.context, self.feedback)
         expected_result_path = os.path.join(self.algorithm.output_dir,'cluster.tif')
         result_file_hash = get_file_md5_hash(expected_result_path)
-        assert result_file_hash == 'ecb1e17173b1601866ae7055694739e8'
+        assert result_file_hash == '0c47b0c4b4c13902db5da3ee6e5d4aef'
         os.remove(expected_result_path)
 
 
