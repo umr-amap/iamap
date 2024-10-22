@@ -107,6 +107,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
     EXTENT = 'EXTENT'
     OUTPUT = 'OUTPUT'
     RESOLUTION = 'RESOLUTION'
+    RANDOM_SEED = 'RANDOM_SEED'
     CRS = 'CRS'
     COMPRESS = 'COMPRESS'
     TMP_DIR = 'iamap_tmp'
@@ -117,7 +118,27 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
-        cwd = Path(__file__).parent.absolute()
+        self.init_input_raster()
+        self.init_seed()
+
+        compress_param = QgsProcessingParameterBoolean(
+            name=self.COMPRESS,
+            description=self.tr(
+                'Compress final result to JP2'),
+            defaultValue=True,
+            optional=True,
+        )
+
+        for param in (
+                compress_param,
+                ):
+            param.setFlags(
+                param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+            self.addParameter(param)
+
+
+    def init_input_output_raster(self):
+        self.cwd = Path(__file__).parent.absolute()
         tmp_wd = os.path.join(tempfile.gettempdir(), self.TMP_DIR)
 
         self.addParameter(
@@ -125,7 +146,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
                 name=self.INPUT,
                 description=self.tr(
                     'Input raster layer or image file path'),
-            defaultValue=os.path.join(cwd,'assets','test.tif'),
+            # defaultValue=os.path.join(self.cwd,'assets','test.tif'),
             ),
         )
 
@@ -156,15 +177,6 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
             maxValue=100000
         )
 
-        compress_param = QgsProcessingParameterBoolean(
-            name=self.COMPRESS,
-            description=self.tr(
-                'Compress final result to JP2'),
-            defaultValue=True,
-            optional=True,
-        )
-
-
         self.addParameter(
             QgsProcessingParameterExtent(
                 name=self.EXTENT,
@@ -183,25 +195,28 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
             )
         )
 
-        self.out_dtype_opt = ['float32', 'int8']
-        dtype_param = QgsProcessingParameterEnum(
-                name=self.OUT_DTYPE,
-                description=self.tr(
-                    'Data type of exported features (int8 saves space)'),
-                options=self.out_dtype_opt,
-                defaultValue=0,
-                )
-
-
         for param in (
                 crs_param, 
                 res_param, 
-                dtype_param,
-                compress_param,
                 ):
             param.setFlags(
                 param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
             self.addParameter(param)
+
+    def init_seed(self):
+        seed_param = QgsProcessingParameterNumber(
+            name=self.RANDOM_SEED,
+            description=self.tr(
+                'Random seed'),
+            type=QgsProcessingParameterNumber.Integer,
+            defaultValue=42,
+            minValue=0,
+            maxValue=100000
+        )
+        seed_param.setFlags(
+            seed_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(seed_param)
+
 
 
     def process_geo_parameters(self,parameters, context, feedback):
@@ -414,7 +429,6 @@ class SKAlgorithm(IAMAPAlgorithm):
     METHOD = 'METHOD'
     SAVE_MODEL = 'SAVE_MODEL'
     COMPRESS = 'COMPRESS'
-    RANDOM_SEED = 'RANDOM_SEED'
     SK_PARAM = 'SK_PARAM'
     TMP_DIR = 'iamap_reduction'
     TYPE = 'proj'
@@ -425,64 +439,8 @@ class SKAlgorithm(IAMAPAlgorithm):
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
-        cwd = Path(__file__).parent.parent.absolute()
-        tmp_wd = os.path.join(tempfile.gettempdir(),self.TMP_DIR)
-
-        self.addParameter(
-            QgsProcessingParameterRasterLayer(
-                name=self.INPUT,
-                description=self.tr(
-                    'Input raster layer or image file path'),
-            defaultValue=os.path.join(cwd,'assets','test.tif'),
-            ),
-        )
-
-        self.addParameter(
-            QgsProcessingParameterBand(
-                name=self.BANDS,
-                description=self.tr(
-                    'Selected Bands (defaults to all bands selected)'),
-                defaultValue=None,
-                parentLayerParameterName=self.INPUT,
-                optional=True,
-                allowMultiple=True,
-            )
-        )
-
-        crs_param = QgsProcessingParameterCrs(
-            name=self.CRS,
-            description=self.tr('Target CRS (default to original CRS)'),
-            optional=True,
-        )
-
-        res_param = QgsProcessingParameterNumber(
-            name=self.RESOLUTION,
-            description=self.tr(
-                'Target resolution in meters (default to native resolution)'),
-            type=QgsProcessingParameterNumber.Double,
-            optional=True,
-            minValue=0,
-            maxValue=100000
-        )
-
-        seed_param = QgsProcessingParameterNumber(
-            name=self.RANDOM_SEED,
-            description=self.tr(
-                'Random seed'),
-            type=QgsProcessingParameterNumber.Integer,
-            defaultValue=42,
-            minValue=0,
-            maxValue=100000
-        )
-
-        self.addParameter(
-            QgsProcessingParameterExtent(
-                name=self.EXTENT,
-                description=self.tr(
-                    'Processing extent (default to the entire image)'),
-                optional=True
-            )
-        )
+        self.init_input_output_raster()
+        self.init_seed()
 
         proj_methods = ['fit', 'transform']
         clust_methods = ['fit', 'fit_predict']
@@ -538,19 +496,6 @@ class SKAlgorithm(IAMAPAlgorithm):
             )
         )
 
-        # self.addParameter(
-        #     QgsProcessingParameterNumber(
-        #         name = self.THRESOLD_PCA,
-        #         description = self.tr (
-        #             'Thresold for displaying contribution of each variables when using PCA (between 0 and 1)'
-        #         ),
-        #         type = QgsProcessingParameterNumber.Double,
-        #         minValue = 0,
-        #         defaultValue = 0.5,
-        #         maxValue = 1
-        #     )
-        # )
-
         subset_param = QgsProcessingParameterNumber(
                 name=self.SUBSET,
                 description=self.tr(
@@ -568,23 +513,8 @@ class SKAlgorithm(IAMAPAlgorithm):
                 defaultValue=True
                 )
 
-
-        self.addParameter(
-            QgsProcessingParameterFolderDestination(
-                self.OUTPUT,
-                self.tr(
-                    "Output directory (choose the location that the image features will be saved)"),
-            # defaultValue=os.path.join(cwd,'models'),
-            defaultValue=tmp_wd,
-            )
-        )
-
-
         for param in (
-                crs_param, 
-                res_param, 
                 subset_param, 
-                seed_param,
                 save_param
                 ):
             param.setFlags(
@@ -930,13 +860,6 @@ class SHPAlgorithm(IAMAPAlgorithm):
     Common class for algorithms relying on shapefile data.
     """
 
-    INPUT = 'INPUT'
-    BANDS = 'BANDS'
-    EXTENT = 'EXTENT'
-    LOAD = 'LOAD'
-    OUTPUT = 'OUTPUT'
-    RESOLUTION = 'RESOLUTION'
-    CRS = 'CRS'
     TEMPLATE = 'TEMPLATE'
     RANDOM_SAMPLES = 'RANDOM_SAMPLES'
     TMP_DIR = 'iamap_sim'
@@ -949,91 +872,9 @@ class SHPAlgorithm(IAMAPAlgorithm):
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
-        cwd = Path(__file__).parent.parent.absolute()
-        tmp_wd = os.path.join(tempfile.gettempdir(),self.TMP_DIR)
-
-        self.addParameter(
-            QgsProcessingParameterRasterLayer(
-                name=self.INPUT,
-                description=self.tr(
-                    'Input raster layer or image file path'),
-            defaultValue=os.path.join(cwd,'assets','test.tif'),
-            ),
-        )
-
-        self.addParameter(
-            QgsProcessingParameterBand(
-                name=self.BANDS,
-                description=self.tr(
-                    'Selected Bands (defaults to all bands selected)'),
-                defaultValue=None,
-                parentLayerParameterName=self.INPUT,
-                optional=True,
-                allowMultiple=True,
-            )
-        )
-
-        crs_param = QgsProcessingParameterCrs(
-            name=self.CRS,
-            description=self.tr('Target CRS (default to original CRS)'),
-            optional=True,
-        )
-
-        res_param = QgsProcessingParameterNumber(
-            name=self.RESOLUTION,
-            description=self.tr(
-                'Target resolution in meters (default to native resolution)'),
-            type=QgsProcessingParameterNumber.Double,
-            optional=True,
-            minValue=0,
-            maxValue=100000
-        )
-
-        samples_param = QgsProcessingParameterNumber(
-            name=self.RANDOM_SAMPLES,
-            description=self.tr(
-                'Random samples taken if input is not in point geometry'),
-            type=QgsProcessingParameterNumber.Integer,
-            optional=True,
-            minValue=0,
-            defaultValue=500,
-            maxValue=100_000
-        )
-
-        self.addParameter(
-            QgsProcessingParameterExtent(
-                name=self.EXTENT,
-                description=self.tr(
-                    'Processing extent (default to the entire image)'),
-                optional=True
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterFile(
-                name=self.TEMPLATE,
-                description=self.tr(
-                    'Input shapefile path for cosine similarity'),
-            defaultValue=os.path.join(cwd,'assets',self.DEFAULT_TEMPLATE),
-            ),
-        )
-
-
-        self.addParameter(
-            QgsProcessingParameterFolderDestination(
-                self.OUTPUT,
-                self.tr(
-                    "Output directory (choose the location that the image features will be saved)"),
-            defaultValue=tmp_wd,
-            )
-        )
-
-
-        for param in (crs_param, res_param, samples_param):
-            param.setFlags(
-                param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-            self.addParameter(param)
-
+        self.init_input_output_raster()
+        self.init_seed()
+        self.init_input_shp()
 
 
     def processAlgorithm(self, parameters, context, feedback):
@@ -1048,6 +889,31 @@ class SHPAlgorithm(IAMAPAlgorithm):
         self.inf_raster(fit_raster)
 
         return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
+
+    def init_input_shp(self):
+        samples_param = QgsProcessingParameterNumber(
+            name=self.RANDOM_SAMPLES,
+            description=self.tr(
+                'Random samples taken if input is not in point geometry'),
+            type=QgsProcessingParameterNumber.Integer,
+            optional=True,
+            minValue=0,
+            defaultValue=500,
+            maxValue=100_000
+        )
+
+        self.addParameter(
+            QgsProcessingParameterFile(
+                name=self.TEMPLATE,
+                description=self.tr(
+                    'Input shapefile path'),
+            # defaultValue=os.path.join(self.cwd,'assets',self.DEFAULT_TEMPLATE),
+            ),
+        )
+
+        samples_param.setFlags(
+            samples_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(samples_param)
 
 
     def get_fit_raster(self):
@@ -1125,6 +991,9 @@ class SHPAlgorithm(IAMAPAlgorithm):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
+        self.seed = self.parameterAsInt(
+            parameters, self.RANDOM_SEED, context)
+
         self.input_bands = [i_band -1 for i_band in self.selected_bands]
 
         self.template = self.parameterAsFile(
@@ -1137,7 +1006,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
 
         feedback.pushInfo(f'before sampling: {len(gdf)}')
         ## If gdf is not point geometry, we take random samples in it
-        gdf = get_random_samples_in_gdf(gdf, random_samples)
+        gdf = get_random_samples_in_gdf(gdf, random_samples, seed=self.seed)
         feedback.pushInfo(f'after samples:\n {len(gdf)}')
 
         used_shp_path = os.path.join(self.output_dir, 'used.shp')
