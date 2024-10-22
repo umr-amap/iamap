@@ -996,7 +996,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
             type=QgsProcessingParameterNumber.Integer,
             optional=True,
             minValue=0,
-            defaultValue=1_000,
+            defaultValue=500,
             maxValue=100_000
         )
 
@@ -1135,8 +1135,14 @@ class SHPAlgorithm(IAMAPAlgorithm):
         gdf = gpd.read_file(self.template)
         gdf = gdf.to_crs(self.crs.toWkt())
 
+        feedback.pushInfo(f'before sampling: {len(gdf)}')
         ## If gdf is not point geometry, we take random samples in it
         gdf = get_random_samples_in_gdf(gdf, random_samples)
+        feedback.pushInfo(f'after samples:\n {len(gdf)}')
+
+        used_shp_path = os.path.join(self.output_dir, 'used.shp')
+        feedback.pushInfo(f'saving used dataframe to: {used_shp_path}')
+        gdf.to_file(used_shp_path)
 
 
         feedback.pushInfo(f'before extent: {len(gdf)}')
