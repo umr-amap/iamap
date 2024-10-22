@@ -28,6 +28,7 @@ from rasterio import windows
 from rasterio.enums import Resampling
 
 import geopandas as gpd
+import pandas as pd
 from shapely.geometry import box
 
 import torch
@@ -42,6 +43,7 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 
 if __name__ != "__main__":
     from .misc import get_unique_filename, calculate_chunk_size
+    from .geo import get_random_samples_in_gdf
 
 
 def get_sklearn_algorithms_with_methods(module, required_methods):
@@ -936,6 +938,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
     RESOLUTION = 'RESOLUTION'
     CRS = 'CRS'
     TEMPLATE = 'TEMPLATE'
+    RANDOM_SAMPLES = 'RANDOM_SAMPLES'
     TMP_DIR = 'iamap_sim'
     DEFAULT_TEMPLATE = 'template.shp'
     TYPE = 'similarity'
@@ -986,6 +989,17 @@ class SHPAlgorithm(IAMAPAlgorithm):
             maxValue=100000
         )
 
+        samples_param = QgsProcessingParameterNumber(
+            name=self.RANDOM_SAMPLES,
+            description=self.tr(
+                'Random samples taken if input is not in point geometry'),
+            type=QgsProcessingParameterNumber.Integer,
+            optional=True,
+            minValue=0,
+            defaultValue=1_000,
+            maxValue=100_000
+        )
+
         self.addParameter(
             QgsProcessingParameterExtent(
                 name=self.EXTENT,
@@ -1015,7 +1029,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
         )
 
 
-        for param in (crs_param, res_param):
+        for param in (crs_param, res_param, samples_param):
             param.setFlags(
                 param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
             self.addParameter(param)
@@ -1115,9 +1129,15 @@ class SHPAlgorithm(IAMAPAlgorithm):
 
         self.template = self.parameterAsFile(
             parameters, self.TEMPLATE, context)
+        random_samples = self.parameterAsInt(
+            parameters, self.RANDOM_SAMPLES, context)
 
         gdf = gpd.read_file(self.template)
         gdf = gdf.to_crs(self.crs.toWkt())
+
+        ## If gdf is not point geometry, we take random samples in it
+        gdf = get_random_samples_in_gdf(gdf, random_samples)
+
 
         feedback.pushInfo(f'before extent: {len(gdf)}')
         bounds = box(
@@ -1138,11 +1158,12 @@ class SHPAlgorithm(IAMAPAlgorithm):
 
         ### Handle args that differ between clustering and projection methods
         if self.TYPE == 'similarity':
-            self.out_dtype = 'float32'
             self.dst_path, self.layer_name = get_unique_filename(self.output_dir, f'{self.TYPE}.tif', f'{rlayer_name} similarity')
         else:
-            self.out_dtype = 'uint8'
-            self.dst_path, self.layer_name = get_unique_filename(self.output_dir, f'{self.TYPE}.tif', f'{rlayer_name} classification')
+            self.dst_path, self.layer_name = get_unique_filename(self.output_dir, f'{self.TYPE}.tif', f'{rlayer_name} ml')
+
+        ## default to float32 until overriden if ML algo
+        self.out_dtype = 'float32'
 
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.

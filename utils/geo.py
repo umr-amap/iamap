@@ -2,6 +2,7 @@ from typing import Callable, Union
 import sys
 import rasterio
 import geopandas as gpd
+import pandas as pd
 import numpy as np
 import warnings
 from rasterio.io import MemoryFile
@@ -130,4 +131,34 @@ def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True, subset=1_00
 
     src.close()
     return means, sds
+
+
+def get_random_samples_in_gdf(gdf, num_samples):
+    ## if input is not point based, we take random samples in it
+    if not all(gdf.geometry.geom_type == "Point"):
+        # Take a random sample of the data
+        # gdf = gdf.sample(n=random_samples)
+        # Calculate the area of each polygon
+        gdf['area'] = gdf.geometry.area
+
+        # Total area
+        total_area = gdf['area'].sum()
+
+        # Calculate the proportion of samples for each polygon based on its area
+        gdf['sample_size'] = (gdf['area'] / total_area * 100).astype(int)
+
+        # Initialize a list to store sampled polygons
+        sampled_polygons_list = []
+
+        # Sample polygons proportional to their size
+        for idx, row in gdf.iterrows():
+            # Ensure you don't exceed the population size
+            num_samples = min(row['sample_size'], len(gdf))
+            
+            # Append the samples to the list
+            sampled_polygons_list.append(gdf.sample(n=num_samples, replace=False))
+
+        # Combine the sampled polygons
+        gdf = gpd.GeoDataFrame(pd.concat(sampled_polygons_list, ignore_index=True), crs=gdf.crs)
+    return gdf
 

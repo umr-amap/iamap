@@ -58,7 +58,3 @@ class SimilarityAlgorithm(SHPAlgorithm):
 
     def icon(self):
         return 'E'
-
-
-
-
