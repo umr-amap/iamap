@@ -137,22 +137,31 @@ def get_random_samples_in_gdf(gdf, num_samples, seed=42):
     ## if input is not point based, we take random samples in it
     if not all(gdf.geometry.geom_type == "Point"):
 
+        
+        non_geometry_columns = gdf.drop(columns='geometry')
+
         # Calculate the area of each polygon
-        gdf['area'] = gdf.geometry.area
-        total_area = gdf['area'].sum()
+        gdf['iamap_area'] = gdf.geometry.area
+        total_area = gdf['iamap_area'].sum()
 
         # Calculate the proportion of samples for each polygon based on its area
-        gdf['sample_size'] = (gdf['area'] / total_area * num_samples).astype(int)
+        gdf['iamap_sample_size'] = (gdf['iamap_area'] / total_area * num_samples).astype(int)
 
-        # Initialize a list to store the number of samples per polygon
-        n_samples = []
-
+        series = []
         # Sample polygons proportional to their size
         ## see https://geopandas.org/en/stable/docs/user_guide/sampling.html#Variable-number-of-points
         for idx, row in gdf.iterrows():
-            n_samples.append(row['sample_size'])
-        
-        gdf = gdf.sample_points(size=n_samples, rng=seed).explode()
+            sampled_points = gdf.sample_points(size=row['iamap_sample_size'], rng=seed).explode(ignore_index=True)
+            tmp_gdf = gpd.GeoDataFrame(non_geometry_columns, geometry=sampled_points.geometry, crs=gdf.crs)
+            series.append(tmp_gdf)
+
+        point_gdf = pd.concat(series)
+        print(point_gdf)
+        return point_gdf
             
     return gdf
 
+if __name__ == "__main__":
+    
+    gdf = gpd.read_file('assets/ml_poly.shp')
+    gdf = get_random_samples_in_gdf(gdf, 100)
