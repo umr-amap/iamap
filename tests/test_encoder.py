@@ -1,5 +1,6 @@
 import os
-import hashlib
+import tempfile
+from pathlib import Path
 import unittest
 import pytest
 from qgis.core import (
@@ -16,6 +17,8 @@ from ..encoder import EncoderAlgorithm
 from ..utils.misc import get_file_md5_hash
 
 
+INPUT = os.path.join(Path(__file__).parent.parent.absolute(), 'assets', 'test.tif')
+OUTPUT = os.path.join(tempfile.gettempdir(), "iamap_test")
 
 class TestEncoderAlgorithm(unittest.TestCase):
 
@@ -34,9 +37,9 @@ class TestEncoderAlgorithm(unittest.TestCase):
                 'CUDA_ID': 0, 
                 'EXTENT': None, 
                 'FEAT_OPTION': True, 
-                'INPUT': '/home/tresson/.local/share/QGIS/QGIS3/profiles/default/python/plugins/iamap/assets/test.tif', 
+                'INPUT': INPUT,
                 'MERGE_METHOD': 0, 
-                'OUTPUT': '/tmp/iamap_features', 
+                'OUTPUT': OUTPUT,
                 'PAUSES': 0, 
                 'QUANT': True, 
                 'REMOVE_TEMP_FILES': True, 
@@ -59,10 +62,6 @@ class TestEncoderAlgorithm(unittest.TestCase):
         ## different rasterio versions lead to different hashes ? 
         ## GPU and quantization as well
         possible_hashes = [
-                # '018b6fc5d88014a7e515824d95ca8686', 
-                # '94658648037138c64159ae457c3928dd',
-                # '496ac2e9b92f62d16c8c8f1a0fa07009',
-                # 'a6230b57bcf0050aa6f21107a16a5548',
                 '0fb32cc57a0dd427d9f0165ec6d5418f',
                 '48c3a78773dbc2c4c7bb7885409284ab',
                 '431e034b842129679b99a067f2bd3ba4',
