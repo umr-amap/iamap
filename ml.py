@@ -37,6 +37,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 
 from .utils.misc import get_unique_filename
+from .utils.geo import get_random_samples_in_gdf
 from .utils.algo import (
                         SHPAlgorithm,
                         get_sklearn_algorithms_with_methods,
@@ -54,6 +55,9 @@ class MLAlgorithm(SHPAlgorithm):
     """
 
     GT_COL = 'GT_COL'
+    DO_KFOLDS = 'DO_KFOLDS'
+    FOLD_COL = 'FOLD_COL'
+    NFOLDS = 'NFOLDS'
     TEMPLATE_TEST = 'TEMPLATE_TEST'
     METHOD = 'METHOD'
     TMP_DIR = 'iamap_ml'
@@ -65,65 +69,9 @@ class MLAlgorithm(SHPAlgorithm):
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
-        cwd = Path(__file__).parent.absolute()
-        tmp_wd = os.path.join(tempfile.gettempdir(),self.TMP_DIR)
-
-        self.addParameter(
-            QgsProcessingParameterRasterLayer(
-                name=self.INPUT,
-                description=self.tr(
-                    'Input raster layer or image file path'),
-            defaultValue=os.path.join(cwd,'assets','test.tif'),
-            ),
-        )
-
-        self.addParameter(
-            QgsProcessingParameterBand(
-                name=self.BANDS,
-                description=self.tr(
-                    'Selected Bands (defaults to all bands selected)'),
-                defaultValue=None,
-                parentLayerParameterName=self.INPUT,
-                optional=True,
-                allowMultiple=True,
-            )
-        )
-
-        crs_param = QgsProcessingParameterCrs(
-            name=self.CRS,
-            description=self.tr('Target CRS (default to original CRS)'),
-            optional=True,
-        )
-
-        res_param = QgsProcessingParameterNumber(
-            name=self.RESOLUTION,
-            description=self.tr(
-                'Target resolution in meters (default to native resolution)'),
-            type=QgsProcessingParameterNumber.Double,
-            optional=True,
-            minValue=0,
-            maxValue=100000
-        )
-
-        samples_param = QgsProcessingParameterNumber(
-            name=self.RANDOM_SAMPLES,
-            description=self.tr(
-                'Random samples taken if input is not in point geometry'),
-            type=QgsProcessingParameterNumber.Integer,
-            optional=True,
-            minValue=0,
-            defaultValue=100,
-            maxValue=100_000
-        )
-
-        self.addParameter(
-            QgsProcessingParameterExtent(
-                name=self.EXTENT,
-                description=self.tr(
-                    'Processing extent (default to the entire image)'),
-                optional=True
-            )
-        )
+        self.init_input_output_raster()
+        self.init_seed()
+        self.init_input_shp()
 
         self.method_opt = self.get_algorithms()
         default_index = self.method_opt.index('RandomForestClassifier')
@@ -143,7 +91,7 @@ class MLAlgorithm(SHPAlgorithm):
                 name=self.TEMPLATE,
                 description=self.tr(
                     'Input shapefile path for training data set for random forest (if no test data_set, will be devised in train and test)'),
-            defaultValue=os.path.join(cwd,'assets',self.DEFAULT_TEMPLATE),
+            # defaultValue=os.path.join(self.cwd,'assets',self.DEFAULT_TEMPLATE),
             ),
         )
         
@@ -157,27 +105,47 @@ class MLAlgorithm(SHPAlgorithm):
         )
 
 
-        self.addParameter(
-            QgsProcessingParameterFolderDestination(
-                self.OUTPUT,
-                self.tr(
-                    "Output directory (choose the location that the image features will be saved)"),
-            defaultValue=tmp_wd,
-            )
-        )
-        
-        
         self.addParameter (
             QgsProcessingParameterString(
                 name = self.GT_COL,
                 description = self.tr(
-                    'Name of the column you want random forest to work on'),
+                    'Name of the column containing ground truth values.'),
                 defaultValue = 'Type',
             )
         )
 
+        self.addParameter (
+            QgsProcessingParameterBoolean(
+                name = self.DO_KFOLDS,
+                description = self.tr(
+                    'Perform cross-validation'),
+                defaultValue = True,
+            )
+        )
+        self.addParameter (
+            QgsProcessingParameterString(
+                name = self.FOLD_COL,
+                description = self.tr(
+                    'Name of the column defining folds in case of cross-validation. If none is selected, random sampling is used.'),
+                defaultValue = '',
+                optional=True,
+            )
+        )
 
-        for param in (crs_param, res_param, samples_param):
+        nfold_param = QgsProcessingParameterNumber(
+            name=self.NFOLDS,
+            description=self.tr(
+                'Number of folds performed'),
+            type=QgsProcessingParameterNumber.Integer,
+            optional=True,
+            minValue=2,
+            defaultValue=5,
+            maxValue=10
+        )
+
+        for param in (
+                nfold_param,
+                ):
             param.setFlags(
                 param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
             self.addParameter(param)
@@ -189,6 +157,15 @@ class MLAlgorithm(SHPAlgorithm):
         """
         self.process_geo_parameters(parameters, context, feedback)
         self.process_common_shp(parameters, context, feedback)
+        self.process_ml_shp(parameters, context, feedback)
+        self.process_ml_options(parameters, context, feedback)
+
+        if self.test_gdf:
+            self.get_fit_raster()
+
+        if self.do_kfold:
+            pass
+
         return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
 
         # fit_raster = self.get_fit_raster()
@@ -197,22 +174,24 @@ class MLAlgorithm(SHPAlgorithm):
 
         # return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
 
+
     def process_ml_shp(self, parameters, context, feedback):
 
         template_test = self.parameterAsFile(
             parameters, self.TEMPLATE_TEST, context)
 
-        if template_test :
+        self.test_gdf=None
+
+        if template_test != '' :
             random_samples = self.parameterAsInt(
                 parameters, self.RANDOM_SAMPLES, context)
 
             gdf = gpd.read_file(template_test)
             gdf = gdf.to_crs(self.crs.toWkt())
 
-            ## if input is not point based, we take random samples in it
-            if not all(gdf.geometry.geom_type == "Point"):
-                # Take a random sample of the data
-                gdf = gdf.sample(n=random_samples, replace=False)
+            feedback.pushInfo(f'before samples: {len(gdf)}')
+            ## get random samples if geometry is not point based
+            gdf = get_random_samples_in_gdf(gdf, random_samples)
 
             feedback.pushInfo(f'before extent: {len(gdf)}')
             bounds = box(
@@ -227,6 +206,28 @@ class MLAlgorithm(SHPAlgorithm):
             if len(self.test_gdf) == 0:
                 feedback.pushWarning("No template points within extent !")
                 return False
+
+    def process_ml_options(self, parameters, context, feedback):
+
+        self.do_kfold = self.parameterAsBoolean(
+            parameters, self.DO_KFOLDS, context)
+        self.gt_col = self.parameterAsString(
+            parameters, self.GT_COL, context)
+        fold_col = self.parameterAsString(
+            parameters, self.FOLD_COL, context)
+        nfolds = self.parameterAsInt(
+            parameters, self.NFOLDS, context)
+
+        ## If no test set is provided and the option to perform kfolds is true,
+        ## we perform kfolds
+        ## If a fold column is provided, this defines the folds. Otherwise, random split
+        if self.test_gdf == None and self.do_kfold:
+            if fold_col != '':
+                self.gdf['fold'] = self.gdf[fold_col]
+            else:
+                self.gdf['fold'] = np.random.randint(1, nfolds + 1, size=len(self.gdf))
+                print(self.gdf)
+
 
 
     def get_algorithms(self):
