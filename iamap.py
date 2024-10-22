@@ -58,7 +58,7 @@ class IAMap(QObject):
         )
         self.actionRF = QAction(
             QIcon_RandomforestTool,
-            "Use Random Forest algorithm",
+            "Fit Machine Learning algorithm",
             self.iface.mainWindow()
         )
         self.actionEncoder.setObjectName("mActionEncoder")
@@ -76,7 +76,7 @@ class IAMap(QObject):
         self.actionSimilarity.setToolTip(
             "Compute similarity")
         self.actionRF.setToolTip(
-            "Use Random Forest ")
+            "Fit ML model")
 
         self.actionEncoder.triggered.connect(self.encodeImage)
         self.actionReducer.triggered.connect(self.reduceImage)
@@ -201,7 +201,7 @@ class IAMap(QObject):
     def rfImage(self):
         '''
         '''
-        result = processing.execAlgorithmDialog('iamap:Random_forest', {})
+        result = processing.execAlgorithmDialog('iamap:ml', {})
         print(result)
                 # Check if algorithm execution was successful
         if result:

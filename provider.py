@@ -4,7 +4,7 @@ from .encoder import EncoderAlgorithm
 from .reduction import ReductionAlgorithm
 from .clustering import ClusterAlgorithm
 from .similarity import SimilarityAlgorithm
-from .random_forest import RFAlgorithm
+from .ml import MLAlgorithm
 from .icons import QIcon_EncoderTool
 
 
@@ -15,7 +15,7 @@ class IAMapProvider(QgsProcessingProvider):
         self.addAlgorithm(ReductionAlgorithm())
         self.addAlgorithm(ClusterAlgorithm())
         self.addAlgorithm(SimilarityAlgorithm())
-        self.addAlgorithm(RFAlgorithm())
+        self.addAlgorithm(MLAlgorithm())
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
 
