@@ -305,7 +305,6 @@ def get_packages_to_install(device):
 
     requirements_path = os.path.join(PLUGIN_ROOT_DIR, 'requirements.txt')
     packages_to_install = []
-    print(device)
 
     if device == 'cpu':
         pass
