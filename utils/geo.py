@@ -133,7 +133,7 @@ def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True, subset=1_00
     return means, sds
 
 
-def get_random_samples_in_gdf(gdf, num_samples):
+def get_random_samples_in_gdf(gdf, num_samples, seed=42):
     ## if input is not point based, we take random samples in it
     if not all(gdf.geometry.geom_type == "Point"):
 
@@ -142,7 +142,7 @@ def get_random_samples_in_gdf(gdf, num_samples):
         total_area = gdf['area'].sum()
 
         # Calculate the proportion of samples for each polygon based on its area
-        gdf['sample_size'] = (gdf['area'] / total_area * 100).astype(int)
+        gdf['sample_size'] = (gdf['area'] / total_area * num_samples).astype(int)
 
         # Initialize a list to store the number of samples per polygon
         n_samples = []
@@ -152,7 +152,7 @@ def get_random_samples_in_gdf(gdf, num_samples):
         for idx, row in gdf.iterrows():
             n_samples.append(row['sample_size'])
         
-        gdf = gdf.sample_points(size=n_samples).explode()
+        gdf = gdf.sample_points(size=n_samples, rng=seed).explode()
             
     return gdf
 
