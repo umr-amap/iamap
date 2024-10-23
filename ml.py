@@ -38,7 +38,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 
 from .utils.misc import get_unique_filename
-from .utils.geo import get_random_samples_in_gdf
+from .utils.geo import get_random_samples_in_gdf, get_unique_col_name
 from .utils.algo import (
                         SHPAlgorithm,
                         get_sklearn_algorithms_with_methods,
@@ -48,7 +48,14 @@ from .utils.algo import (
 
 import sklearn.ensemble as ensemble
 import sklearn.neighbors as neighbors
-
+from sklearn.base import ClassifierMixin, RegressorMixin
+def check_model_type(model):
+    if isinstance(model, ClassifierMixin):
+        return "classification"
+    elif isinstance(model, RegressorMixin):
+        return "regression"
+    else:
+        return "unknown"
 
 
 class MLAlgorithm(SHPAlgorithm):
