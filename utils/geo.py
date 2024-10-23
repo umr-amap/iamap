@@ -161,6 +161,18 @@ def get_random_samples_in_gdf(gdf, num_samples, seed=42):
             
     return gdf
 
+def get_unique_col_name(gdf, base_name='fold'):
+    column_name = base_name
+    counter = 1
+
+    # Check if the column already exists, if yes, keep updating the name
+    while column_name in gdf.columns:
+        column_name = f'{base_name}{counter}'
+        counter += 1
+
+    return column_name
+
+
 if __name__ == "__main__":
     
     gdf = gpd.read_file('assets/ml_poly.shp')
