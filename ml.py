@@ -193,19 +193,26 @@ class MLAlgorithm(SHPAlgorithm):
         self.process_ml_shp(parameters, context, feedback)
         self.process_ml_options(parameters, context, feedback)
 
-        if self.test_gdf:
-            self.get_fit_raster()
+        if self.test_gdf is not None:
+            self.train_test_loop(feedback)
 
         if self.do_kfold:
-            pass
+            for fold in sorted(self.gdf[self.fold_col].unique()):
+                feedback.pushInfo(f'==== Fold {fold} ====')
+                self.test_gdf = self.gdf.loc[self.gdf[self.fold_col] == fold]
+                self.train_gdf = self.gdf.loc[self.gdf[self.fold_col] != fold]
+                self.train_test_loop(feedback)
 
         return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
 
-        # fit_raster = self.get_fit_raster()
 
-        # # self.inf_raster(fit_raster)
+    def train_test_loop(self, feedback):
+        train_set, train_gts = self.get_raster(mode='train')
+        test_set, test_gts = self.get_raster(mode='test')
 
-        # return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
+        self.model.fit(train_set, train_gts)
+        predictions = self.model.predict(test_set)
+        self.get_metrics(test_gts,predictions, feedback)
 
 
     def process_ml_shp(self, parameters, context, feedback):
@@ -251,8 +258,6 @@ class MLAlgorithm(SHPAlgorithm):
         nfolds = self.parameterAsInt(
             parameters, self.NFOLDS, context)
 
-        ## If no test set is provided and the option to perform kfolds is true,
-        ## we perform kfolds
         str_kwargs = self.parameterAsString(
                 parameters, self.SK_PARAM, context)
 
@@ -260,13 +265,23 @@ class MLAlgorithm(SHPAlgorithm):
             self.passed_kwargs = ast.literal_eval(str_kwargs)
         else:
             self.passed_kwargs = {}
+
+        ## If no test set is provided and the option to perform kfolds is true, we perform kfolds
         ## If a fold column is provided, this defines the folds. Otherwise, random split
+
+        ## check that no column with name 'fold' exists, otherwise we use 'fold1' etc..
+        self.fold_col = get_unique_col_name(self.gdf, 'fold')
+
         if self.test_gdf == None and self.do_kfold:
-            if fold_col != '':
-                self.gdf['fold'] = self.gdf[fold_col]
+            if fold_col.strip() != '' :
+                self.gdf[self.fold_col] = self.gdf[fold_col]
             else:
-                self.gdf['fold'] = np.random.randint(1, nfolds + 1, size=len(self.gdf))
-                print(self.gdf)
+                self.gdf[self.fold_col] = np.random.randint(1, nfolds + 1, size=len(self.gdf))
+
+        ## Else, self.gdf is the train set
+        else:
+            self.train_gdf = self.gdf
+
         method_idx = self.parameterAsEnum(
             parameters, self.METHOD, context)
         self.method_name = self.method_opt[method_idx]
@@ -283,6 +298,43 @@ class MLAlgorithm(SHPAlgorithm):
         except AttributeError:
             self.model = instantiate_sklearn_algorithm(neighbors, self.method_name, **kwargs)
 
+    def get_raster(self, mode='train'):
+
+        if mode == 'train':
+            gdf = self.train_gdf
+        else:
+            gdf = self.test_gdf
+
+        with rasterio.open(self.rlayer_path) as ds:
+
+            gdf = gdf.to_crs(ds.crs)
+            pixel_values = []
+            gts = []
+
+            transform = ds.transform
+            win = windows.from_bounds(
+                    self.extent.xMinimum(), 
+                    self.extent.yMinimum(), 
+                    self.extent.xMaximum(), 
+                    self.extent.yMaximum(), 
+                    transform=transform
+                    )
+            raster = ds.read(window=win)
+            transform = ds.window_transform(win)
+            raster = raster[self.input_bands,:,:]
+
+            for index, data in gdf.iterrows():
+                # Get the coordinates of the point in the raster's pixel space
+                x, y = data.geometry.x, data.geometry.y
+
+                # Convert point coordinates to pixel coordinates within the window
+                col, row = ~transform * (x, y)  # Convert from map coordinates to pixel coordinates
+                col, row = int(col), int(row)
+                pixel_values.append(list(raster[:,row, col]))
+                gts.append(data[self.gt_col])
+
+
+        return np.asarray(pixel_values), np.asarray(gts)
 
 
     def update_kwargs(self, kwargs_dict):
