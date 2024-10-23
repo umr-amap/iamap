@@ -58,33 +58,13 @@ Keep in mind that the more points you place the better the results will be.
 
 
 
-
-
-Using a new encoder
---------------------
-If you use Windows and you want to use a new encoder, you first need to create it in the OSGEO4W shell.
-For that, you can open OSGEO4W shell and run the following commands (assuming that "name" is the name of your encoder of choice) :
-::
-    python
-    import timm
-    #print(timm.__version__) if you want to see which timm version you are currently using
-    model = timm.create_model(name, pretrained=True)
-    print(model)  #to verify it was indeed created
-    exit()
-
-After those lines of code you should be able to use the new model by going into the "backbone choice" option in the encoder interface and typing
-the name of the model you want to use.
-
-As timm is a library regularly updated, be sure that the version you use is compatible with the model you want to use.
-
-
-
 Changing the parameters of the Random Forest
 -----------------------------------------------
 If you want to change the parameters of the random forest (such as the random state, number of trees, etc...), go to the random_forest.py file of this plugin.
 
 You can then go to the line 278 and 292 of this code which should look this :
 ::
+
     rf_classifier = RandomForestClassifier(n_estimators=100, min_samples_split=4, random_state=42)
 
 You can then change the parameters of the random forest freely. Please make sure to use the same parameters in both of those two lines of code
