@@ -37,5 +37,5 @@ source_suffix = {
 
 html_theme = 'pydata_sphinx_theme'
 html_static_path = ['_static']
-html_favicon = "./../../icons/encoder_tool.svg"
+html_favicon = "./../../icons/encoder.svg"
 
