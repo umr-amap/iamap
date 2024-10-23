@@ -194,7 +194,8 @@ class MLAlgorithm(SHPAlgorithm):
         self.process_ml_options(parameters, context, feedback)
 
         if self.test_gdf is not None:
-            self.train_test_loop(feedback)
+            metrics_dict = self.train_test_loop(feedback)
+            self.best_model = self.model
 
         if self.do_kfold:
             for fold in sorted(self.gdf[self.fold_col].unique()):
@@ -212,7 +213,7 @@ class MLAlgorithm(SHPAlgorithm):
 
         self.model.fit(train_set, train_gts)
         predictions = self.model.predict(test_set)
-        self.get_metrics(test_gts,predictions, feedback)
+        return self.get_metrics(test_gts,predictions, feedback)
 
 
     def process_ml_shp(self, parameters, context, feedback):
@@ -246,6 +247,7 @@ class MLAlgorithm(SHPAlgorithm):
             if len(self.test_gdf) == 0:
                 feedback.pushWarning("No template points within extent !")
                 return False
+
 
     def process_ml_options(self, parameters, context, feedback):
 
@@ -349,38 +351,33 @@ class MLAlgorithm(SHPAlgorithm):
     def get_metrics(self, test_gts, predictions, feedback):
 
         task_type = check_model_type(self.model)
+        metrics_dict = {}
 
         if task_type == 'classification':
             # Evaluate the model
-            accuracy = accuracy_score(test_gts, predictions)
-            precision = precision_score(test_gts, predictions, average='weighted')  # Modify `average` for multiclass if necessary
-            recall = recall_score(test_gts, predictions, average='weighted')
-            f1 = f1_score(test_gts, predictions, average='weighted')
-            conf_matrix = confusion_matrix(test_gts, predictions)
-            class_report = classification_report(test_gts, predictions)
+            metrics_dict['accuracy'] = accuracy_score(test_gts, predictions)
+            metrics_dict['precision'] = precision_score(test_gts, predictions, average='weighted')  # Modify `average` for multiclass if necessary
+            metrics_dict['recall'] = recall_score(test_gts, predictions, average='weighted')
+            metrics_dict['f1'] = f1_score(test_gts, predictions, average='weighted')
+            metrics_dict['conf_matrix'] = confusion_matrix(test_gts, predictions)
+            metrics_dict['class_report'] = classification_report(test_gts, predictions)
 
-
-            feedback.pushInfo(f'Accuracy:\t {accuracy}')
-            feedback.pushInfo(f'Precision:\t {precision}')
-            feedback.pushInfo(f'Recall:\t {recall}')
-            feedback.pushInfo(f'F1-Score:\t {f1}')
-            feedback.pushInfo(f'Confusion Matrix:\n {conf_matrix}')
-            feedback.pushInfo(f'Classification Report:\n {class_report}')
 
         elif task_type == 'regression':
-            pass
-            mae = mean_absolute_error(test_gts, predictions)
-            mse = mean_squared_error(test_gts, predictions)
-            rmse = np.sqrt(mse)
-            r2 = r2_score(test_gts, predictions)
 
-            feedback.pushInfo(f'MAE:\t {mae}')
-            feedback.pushInfo(f'MSE:\t {mse}')
-            feedback.pushInfo(f'RMSE:\t {rmse}')
-            feedback.pushInfo(f'R2 Score:\t {r2}')
-        
+            metrics_dict['mae'] = mean_absolute_error(test_gts, predictions)
+            metrics_dict['mse'] = mean_squared_error(test_gts, predictions)
+            metrics_dict['rmse'] = np.sqrt(metrics_dict['mse'])
+            metrics_dict['r2'] = r2_score(test_gts, predictions)
+
         else:
             feedback.pushWarning('Unable to evaluate the model !!')
+
+        for key, value in metrics_dict.items():
+            feedback.pushInfo(f'{key}:\t {value}')
+
+        return metrics_dict
+        
 
 
     def get_algorithms(self):
