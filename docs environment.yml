@@ -7,4 +7,4 @@ dependencies:
   - myst-parser
   - pip:
     - pydata-sphinx-theme
-    - sphynx_favicon
+    - sphinx_favicon
