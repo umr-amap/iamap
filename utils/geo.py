@@ -137,26 +137,28 @@ def get_random_samples_in_gdf(gdf, num_samples, seed=42):
     ## if input is not point based, we take random samples in it
     if not all(gdf.geometry.geom_type == "Point"):
 
-        
-        non_geometry_columns = gdf.drop(columns='geometry')
-
-        # Calculate the area of each polygon
+        ## Calculate the area of each polygon
+        ## to determine the number of samples for each category
         gdf['iamap_area'] = gdf.geometry.area
         total_area = gdf['iamap_area'].sum()
-
-        # Calculate the proportion of samples for each polygon based on its area
         gdf['iamap_sample_size'] = (gdf['iamap_area'] / total_area * num_samples).astype(int)
 
         series = []
         # Sample polygons proportional to their size
         ## see https://geopandas.org/en/stable/docs/user_guide/sampling.html#Variable-number-of-points
         for idx, row in gdf.iterrows():
-            sampled_points = gdf.sample_points(size=row['iamap_sample_size'], rng=seed).explode(ignore_index=True)
-            tmp_gdf = gpd.GeoDataFrame(non_geometry_columns, geometry=sampled_points.geometry, crs=gdf.crs)
-            series.append(tmp_gdf)
 
-        point_gdf = pd.concat(series)
-        print(point_gdf)
+            sampled_points = gdf.sample_points(size=row['iamap_sample_size'], rng=seed).explode(ignore_index=True)
+
+            for point in sampled_points:
+                new_row = row.copy()
+                new_row.geometry = point
+                series.append(new_row)
+
+        point_gdf = gpd.GeoDataFrame(series)
+        del point_gdf['iamap_area']
+        del point_gdf['iamap_sample_size']
+
         return point_gdf
             
     return gdf
@@ -176,4 +178,6 @@ def get_unique_col_name(gdf, base_name='fold'):
 if __name__ == "__main__":
     
     gdf = gpd.read_file('assets/ml_poly.shp')
+    print(gdf)
     gdf = get_random_samples_in_gdf(gdf, 100)
+    print(len(gdf))
