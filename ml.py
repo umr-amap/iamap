@@ -428,6 +428,8 @@ class MLAlgorithm(SHPAlgorithm):
         for key, value in self.passed_kwargs.items():
             if key in kwargs_dict.keys():
                 kwargs_dict[key] = value
+        
+        kwargs_dict['random_state'] = self.seed
 
         return kwargs_dict
 
