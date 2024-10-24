@@ -187,9 +187,11 @@ class IAMap(QObject):
             if 'OUTPUT_RASTER' in result:
                 output_raster_path = result['OUTPUT_RASTER']
                 output_layer_name = result['OUTPUT_LAYER_NAME']
+                used_shp = result['USED_SHP']
 
                 # Add the output raster layer to the map canvas
                 self.iface.addRasterLayer(str(output_raster_path), output_layer_name)
+                self.iface.addVectorLayer(str(used_shp), 'used points', "ogr")
             else:
                 # Handle missing or unexpected output
                 print('Output raster not found in algorithm result.')
@@ -209,9 +211,11 @@ class IAMap(QObject):
             if 'OUTPUT_RASTER' in result:
                 output_raster_path = result['OUTPUT_RASTER']
                 output_layer_name = result['OUTPUT_LAYER_NAME']
+                used_shp = result['USED_SHP']
 
                 # Add the output raster layer to the map canvas
                 self.iface.addRasterLayer(str(output_raster_path), output_layer_name)
+                self.iface.addVectorLayer(str(used_shp), 'used points', "ogr")
             else:
                 # Handle missing or unexpected output
                 print('Output raster not found in algorithm result.')

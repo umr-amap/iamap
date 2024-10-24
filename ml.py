@@ -221,7 +221,7 @@ class MLAlgorithm(SHPAlgorithm):
 
         self.infer_model(feedback)
 
-        return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
+        return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name, 'USED_SHP':self.used_shp_path}
 
 
     def train_test_loop(self, feedback):
@@ -368,6 +368,9 @@ class MLAlgorithm(SHPAlgorithm):
         ## Else, self.gdf is the train set
         else:
             self.train_gdf = self.gdf
+
+        feedback.pushInfo(f'saving modified dataframe to: {self.used_shp_path}')
+        self.gdf.to_file(self.used_shp_path)
 
 
     def get_raster(self, mode='train'):

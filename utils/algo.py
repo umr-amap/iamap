@@ -888,7 +888,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
 
         self.inf_raster(fit_raster)
 
-        return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
+        return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name, 'USED_SHP':self.used_shp_path}
 
     def init_input_shp(self):
         samples_param = QgsProcessingParameterNumber(
@@ -1009,9 +1009,9 @@ class SHPAlgorithm(IAMAPAlgorithm):
         gdf = get_random_samples_in_gdf(gdf, random_samples, seed=self.seed)
         feedback.pushInfo(f'after samples:\n {len(gdf)}')
 
-        used_shp_path = os.path.join(self.output_dir, 'used.shp')
-        feedback.pushInfo(f'saving used dataframe to: {used_shp_path}')
-        gdf.to_file(used_shp_path)
+        self.used_shp_path = os.path.join(self.output_dir, 'used.shp')
+        feedback.pushInfo(f'saving used dataframe to: {self.used_shp_path}')
+        gdf.to_file(self.used_shp_path)
 
 
         feedback.pushInfo(f'before extent: {len(gdf)}')
