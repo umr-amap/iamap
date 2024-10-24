@@ -71,7 +71,7 @@ class MLAlgorithm(SHPAlgorithm):
     DEFAULT_TEMPLATE = 'ml_poly.shp'
     TYPE = 'ml'
 
-    def initAlgorithm(self):
+    def initAlgorithm(self, config=None):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
@@ -493,7 +493,7 @@ class MLAlgorithm(SHPAlgorithm):
         return help_str
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
-    def postProcessAlgorithm(self) -> Dict[str, Any]:
+    def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
         return {}
 
 

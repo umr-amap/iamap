@@ -111,7 +111,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
     TMP_DIR = 'iamap_tmp'
     
 
-    def initAlgorithm(self):
+    def initAlgorithm(self, config=None):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
@@ -403,7 +403,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         return dst_path
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
-    def postProcessAlgorithm(self) -> Dict[str, Any]:
+    def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
         return {}
 
 
@@ -426,7 +426,7 @@ class SKAlgorithm(IAMAPAlgorithm):
     TYPE = 'proj'
     
 
-    def initAlgorithm(self):
+    def initAlgorithm(self, config=None):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
@@ -838,7 +838,7 @@ class SKAlgorithm(IAMAPAlgorithm):
             # feedback.pushInfo(f'Silouhette Values : \n{silhouette_values(fit_raster, model.labels_)}')
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
-    def postProcessAlgorithm(self) -> Dict[str, Any]:
+    def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
         return {}
 
 
@@ -855,7 +855,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
     TYPE = 'similarity'
     
 
-    def initAlgorithm(self):
+    def initAlgorithm(self, config=None):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
@@ -1030,7 +1030,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
 
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
-    def postProcessAlgorithm(self) -> Dict[str, Any]:
+    def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
         return {}
 
 if __name__ == "__main__":
