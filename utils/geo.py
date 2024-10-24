@@ -148,14 +148,15 @@ def get_random_samples_in_gdf(gdf, num_samples, seed=42):
         ## see https://geopandas.org/en/stable/docs/user_guide/sampling.html#Variable-number-of-points
         for idx, row in gdf.iterrows():
 
-            sampled_points = gdf.sample_points(size=row['iamap_sample_size'], rng=seed).explode(ignore_index=True)
+            sampled_points = gdf.loc[gdf.index == idx].sample_points(size=row['iamap_sample_size'], rng=seed).explode(ignore_index=True)
 
             for point in sampled_points:
                 new_row = row.copy()
                 new_row.geometry = point
                 series.append(new_row)
 
-        point_gdf = gpd.GeoDataFrame(series)
+        point_gdf = gpd.GeoDataFrame(series, crs=gdf.crs)
+        point_gdf.index = [i for i in range(len(point_gdf))]
         del point_gdf['iamap_area']
         del point_gdf['iamap_sample_size']
 
@@ -180,4 +181,5 @@ if __name__ == "__main__":
     gdf = gpd.read_file('assets/ml_poly.shp')
     print(gdf)
     gdf = get_random_samples_in_gdf(gdf, 100)
+    print(gdf)
     print(len(gdf))
