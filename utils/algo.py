@@ -1030,7 +1030,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
 
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
-    def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
+    def postProcessAlgorithm(self) -> Dict[str, Any]:
         return {}
 
 if __name__ == "__main__":
