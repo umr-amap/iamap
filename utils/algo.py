@@ -709,7 +709,6 @@ class SKAlgorithm(IAMAPAlgorithm):
             np.nan_to_num(raster) # NaN to zero after normalisation
 
             proj_img = model.fit_predict(raster.reshape(-1, raster.shape[-1]))
-            print('predict')
 
             proj_img = proj_img.reshape((raster.shape[0], raster.shape[1],-1))
             height, width, channels = proj_img.shape
