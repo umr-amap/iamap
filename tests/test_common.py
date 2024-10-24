@@ -59,7 +59,7 @@ class TestSimAlgorithm(TestReductionAlgorithm):
 class TestMLAlgorithm(TestReductionAlgorithm):
     algorithm = MLAlgorithm()
     default_parameters = {'INPUT': INPUT,'OUTPUT': OUTPUT,'TEMPLATE':TEMPLATE_RF,'GT_COL': GT_COL}
-    possible_hashes = ['514fc247e4765ca34895a3d6cb9bffd6']
+    possible_hashes = ['bd22d66180347e043fca58d494876184']
     out_name = 'ml.tif'
 
 if __name__ == "__main__":

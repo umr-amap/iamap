@@ -223,7 +223,6 @@ class MLAlgorithm(SHPAlgorithm):
                 ## confusion matrix is a np array that does not fit in a json
                 best_metrics_dict.pop('conf_matrix', None)
                 best_metrics_dict.pop('class_report', None)
-                print(best_metrics_dict)
                 json.dump(best_metrics_dict, json_file, indent=4)
 
         self.infer_model(feedback)
@@ -296,7 +295,7 @@ class MLAlgorithm(SHPAlgorithm):
 
             feedback.pushInfo(f'before samples: {len(gdf)}')
             ## get random samples if geometry is not point based
-            gdf = get_random_samples_in_gdf(gdf, random_samples)
+            gdf = get_random_samples_in_gdf(gdf, random_samples, seed=self.seed)
 
             feedback.pushInfo(f'before extent: {len(gdf)}')
             bounds = box(
@@ -374,6 +373,7 @@ class MLAlgorithm(SHPAlgorithm):
             if fold_col.strip() != '' :
                 self.gdf[self.fold_col] = self.gdf[fold_col]
             else:
+                np.random.seed(self.seed)
                 self.gdf[self.fold_col] = np.random.randint(1, nfolds + 1, size=len(self.gdf))
         ## Else, self.gdf is the train set
         else:
