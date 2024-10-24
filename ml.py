@@ -198,11 +198,28 @@ class MLAlgorithm(SHPAlgorithm):
             self.best_model = self.model
 
         if self.do_kfold:
+            best_metric = 0
             for fold in sorted(self.gdf[self.fold_col].unique()):
                 feedback.pushInfo(f'==== Fold {fold} ====')
                 self.test_gdf = self.gdf.loc[self.gdf[self.fold_col] == fold]
                 self.train_gdf = self.gdf.loc[self.gdf[self.fold_col] != fold]
-                self.train_test_loop(feedback)
+                metrics_dict = self.train_test_loop(feedback)
+
+                if 'accuracy' in metrics_dict.keys():
+                    used_metric = metrics_dict['accuracy']
+                if 'r2' in metrics_dict.keys():
+                    used_metric = metrics_dict['accuracy']
+                if used_metric >= best_metric:
+                    best_metric = used_metric
+                    self.best_model = self.model
+
+        if (self.test_gdf is None) and not self.do_kfold:
+            train_set, train_gts = self.get_raster(mode='train')
+            self.model.fit(train_set, train_gts)
+            feedback.pushWarning(f'No test set was provided and no cross-validation is done, unable to assess model quality !')
+            self.best_model = self.model
+
+        self.infer_model(feedback)
 
         return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
 
@@ -214,6 +231,45 @@ class MLAlgorithm(SHPAlgorithm):
         self.model.fit(train_set, train_gts)
         predictions = self.model.predict(test_set)
         return self.get_metrics(test_gts,predictions, feedback)
+
+
+    def infer_model(self, feedback):
+
+        with rasterio.open(self.rlayer_path) as ds:
+
+            transform = ds.transform
+            crs = ds.crs
+            win = windows.from_bounds(
+                    self.extent.xMinimum(), 
+                    self.extent.yMinimum(), 
+                    self.extent.xMaximum(), 
+                    self.extent.yMaximum(), 
+                    transform=transform
+                    )
+            raster = ds.read(window=win)
+            transform = ds.window_transform(win)
+            raster = np.transpose(raster, (1,2,0))
+            raster = raster[:,:,self.input_bands]
+
+
+            inf_raster = raster.reshape(-1, raster.shape[-1])
+            np.nan_to_num(inf_raster) # NaN to zero after normalisation
+
+            proj_img = self.best_model.predict(inf_raster)
+
+            proj_img = proj_img.reshape((raster.shape[0], raster.shape[1],-1))
+            height, width, channels = proj_img.shape
+
+            feedback.pushInfo(f'Export to geotif\n')
+            with rasterio.open(self.dst_path, 'w', driver='GTiff',
+                               height=height, 
+                               width=width, 
+                               count=channels, 
+                               dtype=self.out_dtype,
+                               crs=crs, 
+                               transform=transform) as dst_ds:
+                dst_ds.write(np.transpose(proj_img, (2, 0, 1)))
+            feedback.pushInfo(f'Export to geotif done\n')
 
 
     def process_ml_shp(self, parameters, context, feedback):
@@ -300,6 +356,7 @@ class MLAlgorithm(SHPAlgorithm):
         except AttributeError:
             self.model = instantiate_sklearn_algorithm(neighbors, self.method_name, **kwargs)
 
+
     def get_raster(self, mode='train'):
 
         if mode == 'train':
@@ -361,6 +418,7 @@ class MLAlgorithm(SHPAlgorithm):
             metrics_dict['f1'] = f1_score(test_gts, predictions, average='weighted')
             metrics_dict['conf_matrix'] = confusion_matrix(test_gts, predictions)
             metrics_dict['class_report'] = classification_report(test_gts, predictions)
+            self.out_dtype = 'int8'
 
 
         elif task_type == 'regression':
