@@ -1,11 +1,9 @@
-import os
 import ast
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any
 import joblib
 import json
-import tempfile
 
 import rasterio
 from rasterio import windows
@@ -13,30 +11,15 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import box
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import (Qgis,
-                       QgsGeometry,
+from qgis.core import (
                        QgsProcessingParameterBoolean,
-                       QgsProcessingParameterFile,
                        QgsProcessingParameterEnum,
-                       QgsCoordinateTransform,
-                       QgsProcessingException,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingParameterRasterLayer,
-                       QgsProcessingParameterFolderDestination,
+                       QgsProcessingParameterVectorLayer,
                        QgsProcessingParameterString,
-                       QgsProcessingParameterBand,
                        QgsProcessingParameterNumber,
-                       QgsProcessingParameterExtent,
-                       QgsProcessingParameterCrs,
-                       QgsProcessingParameterDefinition,
+                       QgsProcessingParameterDefinition
                        )
-import torch
-import torch.nn as nn
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
 
-from .utils.misc import get_unique_filename
 from .utils.geo import get_random_samples_in_gdf, get_unique_col_name
 from .utils.algo import (
                         SHPAlgorithm,
@@ -120,7 +103,7 @@ class MLAlgorithm(SHPAlgorithm):
 
 
         self.addParameter(
-            QgsProcessingParameterFile(
+            QgsProcessingParameterVectorLayer(
                 name=self.TEMPLATE,
                 description=self.tr(
                     'Input shapefile path for training data set for random forest (if no test data_set, will be devised in train and test)'),
@@ -129,7 +112,7 @@ class MLAlgorithm(SHPAlgorithm):
         )
         
         self.addParameter(
-            QgsProcessingParameterFile(
+            QgsProcessingParameterVectorLayer(
                 name=self.TEMPLATE_TEST,
                 description=self.tr(
                     'Input shapefile path for test dataset.'),

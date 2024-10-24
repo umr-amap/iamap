@@ -18,10 +18,11 @@ from qgis.core import (Qgis,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterFile,
+                       QgsProcessingParameterVectorLayer,
                        QgsProcessingParameterExtent,
                        QgsProcessingParameterString,
                        QgsProcessingParameterCrs,
-                       QgsProcessingParameterDefinition,
+                       QgsProcessingParameterDefinition, QgsProcessingParameterVectorLayer,
                        )
 import rasterio
 from rasterio import windows
@@ -903,7 +904,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterFile(
+            QgsProcessingParameterVectorLayer(
                 name=self.TEMPLATE,
                 description=self.tr(
                     'Input shapefile path'),
