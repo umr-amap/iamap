@@ -7,13 +7,15 @@ from qgis.core import (
         QgsProcessingFeedback,
         )
 
+from ..ml import MLAlgorithm
 from ..similarity import SimilarityAlgorithm
 from ..clustering import ClusterAlgorithm
 from ..reduction import ReductionAlgorithm
-from ..utils.misc import get_file_md5_hash
+from ..utils.misc import get_file_md5_hash, remove_files_with_extensions
 
 INPUT = os.path.join(Path(__file__).parent.parent.absolute(), 'assets', 'test.tif')
 OUTPUT = os.path.join(tempfile.gettempdir(), "iamap_test")
+EXTENSIONS_TO_RM = ['.tif', '.pkl', '.json', '.shp', '.shx', '.prj', '.dbf', '.cpg']
 
 class TestReductionAlgorithm(unittest.TestCase):
     """
@@ -36,8 +38,9 @@ class TestReductionAlgorithm(unittest.TestCase):
         result = self.algorithm.processAlgorithm(self.default_parameters, self.context, self.feedback)
         expected_result_path = os.path.join(self.algorithm.output_dir,self.out_name)
         result_file_hash = get_file_md5_hash(expected_result_path)
+        remove_files_with_extensions(self.algorithm.output_dir, EXTENSIONS_TO_RM)
         assert result_file_hash in self.possible_hashes
-        os.remove(expected_result_path)
+        
 
 
 class TestClusteringAlgorithm(TestReductionAlgorithm):
@@ -57,12 +60,24 @@ class TestSimAlgorithm(TestReductionAlgorithm):
     out_name = 'similarity.tif'
 
 
+class TestMLAlgorithm(TestReductionAlgorithm):
+    algorithm = MLAlgorithm()
+    default_parameters = {
+            'INPUT': INPUT,
+            'OUTPUT': OUTPUT,
+            'TEMPLATE': os.path.join(Path(__file__).parent.parent.absolute(), 'assets', 'ml_poly.shp'),
+            'GT_COL': 'Type',
+                  }
+    possible_hashes = ['514fc247e4765ca34895a3d6cb9bffd6']
+    out_name = 'ml.tif'
+
 if __name__ == "__main__":
 
     for algo in [
             TestReductionAlgorithm(),
             TestClusteringAlgorithm(),
             TestSimAlgorithm(),
+            TestMLAlgorithm(),
             ]:
         algo.setUp()
         print(algo.algorithm)
