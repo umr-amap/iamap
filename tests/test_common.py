@@ -16,16 +16,16 @@ from ..utils.misc import get_file_md5_hash, remove_files_with_extensions
 INPUT = os.path.join(Path(__file__).parent.parent.absolute(), 'assets', 'test.tif')
 OUTPUT = os.path.join(tempfile.gettempdir(), "iamap_test")
 EXTENSIONS_TO_RM = ['.tif', '.pkl', '.json', '.shp', '.shx', '.prj', '.dbf', '.cpg']
+TEMPLATE = os.path.join(Path(__file__).parent.parent.absolute(), 'assets', 'template.shp')
+TEMPLATE_RF = os.path.join(Path(__file__).parent.parent.absolute(), 'assets', 'ml_poly.shp')
+GT_COL = 'Type'
 
 class TestReductionAlgorithm(unittest.TestCase):
     """
     Base test class, other will inherit from this
     """
     algorithm = ReductionAlgorithm()
-    default_parameters = {
-            'INPUT': INPUT,
-            'OUTPUT': OUTPUT,
-                  }
+    default_parameters = {'INPUT': INPUT,'OUTPUT': OUTPUT}
     possible_hashes = ['d7a32c6b7a4cee1af9c73607561d7b25']
     out_name = 'proj.tif'
 
@@ -51,23 +51,14 @@ class TestClusteringAlgorithm(TestReductionAlgorithm):
 
 class TestSimAlgorithm(TestReductionAlgorithm):
     algorithm = SimilarityAlgorithm()
-    default_parameters = {
-            'INPUT': INPUT,
-            'OUTPUT': OUTPUT,
-            'TEMPLATE': os.path.join(Path(__file__).parent.parent.absolute(), 'assets', 'template.shp')
-                  }
+    default_parameters = {'INPUT': INPUT,'OUTPUT': OUTPUT,'TEMPLATE':TEMPLATE}
     possible_hashes = ['f76eb1f0469725b49fe0252cfe86829a']
     out_name = 'similarity.tif'
 
 
 class TestMLAlgorithm(TestReductionAlgorithm):
     algorithm = MLAlgorithm()
-    default_parameters = {
-            'INPUT': INPUT,
-            'OUTPUT': OUTPUT,
-            'TEMPLATE': os.path.join(Path(__file__).parent.parent.absolute(), 'assets', 'ml_poly.shp'),
-            'GT_COL': 'Type',
-                  }
+    default_parameters = {'INPUT': INPUT,'OUTPUT': OUTPUT,'TEMPLATE':TEMPLATE_RF,'GT_COL': GT_COL}
     possible_hashes = ['514fc247e4765ca34895a3d6cb9bffd6']
     out_name = 'ml.tif'
 
