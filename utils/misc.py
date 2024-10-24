@@ -2,6 +2,7 @@ import shutil
 import psutil
 import time
 import os
+from pathlib import Path
 import torch
 import logging
 import json
@@ -72,6 +73,11 @@ def remove_files(file_paths):
         except Exception as e:
             print(f"Error removing {file_path}: {e}")
 
+def remove_files_with_extensions(directory, extensions):
+    dir_path = Path(directory)
+    for ext in extensions:
+        for file in dir_path.glob(f'*{ext}'):
+            file.unlink()  # Removes the file
 
 def get_unique_filename(directory, filename, layer_name='merged features'):
     """
