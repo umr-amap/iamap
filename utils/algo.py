@@ -997,8 +997,9 @@ class SHPAlgorithm(IAMAPAlgorithm):
 
         self.input_bands = [i_band -1 for i_band in self.selected_bands]
 
-        self.template = self.parameterAsFile(
+        template = self.parameterAsVectorLayer(
             parameters, self.TEMPLATE, context)
+        self.template = template.dataProvider().dataSourceUri()
         random_samples = self.parameterAsInt(
             parameters, self.RANDOM_SAMPLES, context)
 

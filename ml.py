@@ -257,8 +257,9 @@ class MLAlgorithm(SHPAlgorithm):
 
     def process_ml_shp(self, parameters, context, feedback):
 
-        template_test = self.parameterAsFile(
+        template_test_layer = self.parameterAsVectorLayer(
             parameters, self.TEMPLATE_TEST, context)
+        template_test = template_test_layer.dataProvider().dataSourceUri()
 
         self.test_gdf=None
 
