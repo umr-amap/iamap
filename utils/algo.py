@@ -17,7 +17,6 @@ from qgis.core import (Qgis,
                        QgsProcessingParameterBand,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterEnum,
-                       QgsProcessingParameterFile,
                        QgsProcessingParameterVectorLayer,
                        QgsProcessingParameterExtent,
                        QgsProcessingParameterString,
@@ -29,7 +28,6 @@ from rasterio import windows
 from rasterio.enums import Resampling
 
 import geopandas as gpd
-import pandas as pd
 from shapely.geometry import box
 
 import torch
@@ -39,7 +37,7 @@ import sklearn.decomposition as decomposition
 import sklearn.cluster as cluster
 from sklearn.base import BaseEstimator
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import silhouette_score, silhouette_samples
+# from sklearn.metrics import silhouette_score, silhouette_samples
 
 
 if __name__ != "__main__":
@@ -71,7 +69,6 @@ def get_arguments(module, algorithm_name):
     
     # Retrieve the parameters of the __init__ method
     parameters = init_signature.parameters
-    required_kwargs = {}
     default_kwargs = {}
     
     for param_name, param in parameters.items():
@@ -114,7 +111,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
     TMP_DIR = 'iamap_tmp'
     
 
-    def initAlgorithm(self, config=None):
+    def initAlgorithm(self):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
@@ -276,14 +273,9 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         # 0 for meters, 6 for degrees, 9 for unknown
         UNIT_METERS = 0
         UNIT_DEGREES = 6
-        if rlayer.crs().mapUnits() == UNIT_DEGREES: # Qgis.DistanceUnit.Degrees:
-            layer_units = 'degrees'
-        else:
-            layer_units = 'meters'
         # if res is not provided, get res info from rlayer
         if np.isnan(res) or res == 0:
             res = rlayer.rasterUnitsPerPixelX()  # rasterUnitsPerPixelY() is negative
-            target_units = layer_units
         else:
             # when given res in meters by users, convert crs to utm if the original crs unit is degree
             if crs.mapUnits() != UNIT_METERS: # Qgis.DistanceUnit.Meters:
@@ -293,7 +285,6 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
                 else:
                     raise QgsProcessingException(
                         f"Resampling of image with the CRS of {crs.authid()} in meters is not supported.")
-            target_units = 'meters'
             # else:
             #     res = (rlayer_extent.xMaximum() -
             #            rlayer_extent.xMinimum()) / rlayer.width()
@@ -412,7 +403,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         return dst_path
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
-    def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
+    def postProcessAlgorithm(self) -> Dict[str, Any]:
         return {}
 
 
@@ -435,7 +426,7 @@ class SKAlgorithm(IAMAPAlgorithm):
     TYPE = 'proj'
     
 
-    def initAlgorithm(self, config=None):
+    def initAlgorithm(self):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
@@ -528,7 +519,7 @@ class SKAlgorithm(IAMAPAlgorithm):
         Here is where the processing itself takes place.
         """
         self.process_geo_parameters(parameters, context, feedback)
-        self.process_common_sklearn(parameters, context, feedback)
+        self.process_common_sklearn(parameters, context)
 
         fit_raster, scaler = self.get_fit_raster(feedback)
 
@@ -537,11 +528,9 @@ class SKAlgorithm(IAMAPAlgorithm):
 
         ### Handle args that differ between clustering and projection methods
         if self.TYPE == 'proj':
-            module = decomposition
             self.out_dtype = 'float32'
             self.dst_path, self.layer_name = get_unique_filename(self.output_dir, f'{self.TYPE}.tif', f'{rlayer_name} reduction')
         else:
-            module = cluster
             self.out_dtype = 'uint8'
             self.dst_path, self.layer_name = get_unique_filename(self.output_dir, f'{self.TYPE}.tif', f'{rlayer_name} cluster')
 
@@ -590,7 +579,7 @@ class SKAlgorithm(IAMAPAlgorithm):
         return {'OUTPUT_RASTER':self.dst_path, 'OUTPUT_LAYER_NAME':self.layer_name}
 
 
-    def process_common_sklearn(self,parameters, context, feedback):
+    def process_common_sklearn(self,parameters, context):
 
         self.subset = self.parameterAsInt(
             parameters, self.SUBSET, context)
@@ -627,7 +616,6 @@ class SKAlgorithm(IAMAPAlgorithm):
         with rasterio.open(self.rlayer_path) as ds:
 
             transform = ds.transform
-            crs = ds.crs
             win = windows.from_bounds(
                     self.extent.xMinimum(), 
                     self.extent.yMinimum(), 
@@ -850,7 +838,7 @@ class SKAlgorithm(IAMAPAlgorithm):
             # feedback.pushInfo(f'Silouhette Values : \n{silhouette_values(fit_raster, model.labels_)}')
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
-    def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
+    def postProcessAlgorithm(self) -> Dict[str, Any]:
         return {}
 
 
@@ -867,7 +855,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
     TYPE = 'similarity'
     
 
-    def initAlgorithm(self, config=None):
+    def initAlgorithm(self):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
@@ -923,7 +911,6 @@ class SHPAlgorithm(IAMAPAlgorithm):
             pixel_values = []
 
             transform = ds.transform
-            crs = ds.crs
             win = windows.from_bounds(
                     self.extent.xMinimum(), 
                     self.extent.yMinimum(), 

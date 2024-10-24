@@ -1,7 +1,6 @@
 import os
 import ast
 import numpy as np
-from pathlib import Path
 from typing import Dict, Any
 import joblib
 import json
@@ -72,7 +71,7 @@ class MLAlgorithm(SHPAlgorithm):
     DEFAULT_TEMPLATE = 'ml_poly.shp'
     TYPE = 'ml'
 
-    def initAlgorithm(self, config=None):
+    def initAlgorithm(self):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
@@ -192,7 +191,7 @@ class MLAlgorithm(SHPAlgorithm):
         if self.do_kfold:
             best_metric = 0
             best_metrics_dict = {}
-            for fold in sorted(self.gdf[self.fold_col].unique()):
+            for fold in sorted(self.gdf[self.fold_col].unique()): # pyright: ignore[reportAttributeAccessIssue]
                 feedback.pushInfo(f'==== Fold {fold} ====')
                 self.test_gdf = self.gdf.loc[self.gdf[self.fold_col] == fold]
                 self.train_gdf = self.gdf.loc[self.gdf[self.fold_col] != fold]
@@ -494,7 +493,7 @@ class MLAlgorithm(SHPAlgorithm):
         return help_str
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
-    def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
+    def postProcessAlgorithm(self) -> Dict[str, Any]:
         return {}
 
 
