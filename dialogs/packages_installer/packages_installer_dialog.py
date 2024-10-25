@@ -182,7 +182,13 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
     def closeEvent(self, event: QCloseEvent):
         self.aborted = True
         if self._check_packages_installation_and_log():
-            event.accept()
+            res = QMessageBox.information(self.iface.mainWindow(),
+                                       f'{PLUGIN_NAME} - Installation done !',
+                                       'Restart QGIS for the plugin to load properly.',
+                                       QMessageBox.Ok)
+            if res == QMessageBox.Ok:
+                log_msg = 'User accepted to restart QGIS'
+                event.accept()
             return
 
         res = QMessageBox.question(self.iface.mainWindow(),
@@ -288,7 +294,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.pushButton_install_packages.setEnabled(not packages_ok)
 
         if packages_ok:
-            msg1 = f'All required packages are importable! You can close this window now!'
+            msg1 = f'All required packages are importable! You can close this window now! Be sure to restart QGIS.'
             self.log(msg1)
             return True
 
@@ -462,27 +468,27 @@ class IAMapEmpty(QObject):
 
         self.actionEncoder = QAction(
             QIcon_EncoderTool,
-            "Deep Learning Image Encoder",
+            "Install dependencies and restart QGIS ! - Deep Learning Image Encoder",
             self.iface.mainWindow()
         )
         self.actionReducer = QAction(
             QIcon_ReductionTool,
-            "Reduce dimensions",
+            "Install dependencies and restart QGIS ! - Reduce dimensions",
             self.iface.mainWindow()
         )
         self.actionCluster = QAction(
             QIcon_ClusterTool,
-            "Cluster raster",
+            "Install dependencies and restart QGIS ! - Cluster raster",
             self.iface.mainWindow()
         )
         self.actionSimilarity = QAction(
             QIcon_SimilarityTool,
-            "Compute similarity",
+            "Install dependencies and restart QGIS ! - Compute similarity",
             self.iface.mainWindow()
         )
         self.actionRF = QAction(
             QIcon_RandomforestTool,
-            "Fit Machine Learning algorithm",
+            "Install dependencies and restart QGIS ! - Fit Machine Learning algorithm",
             self.iface.mainWindow()
         )
         self.actionEncoder.setObjectName("mActionEncoder")
@@ -492,15 +498,15 @@ class IAMapEmpty(QObject):
         self.actionRF.setObjectName("mactionRF")
 
         self.actionEncoder.setToolTip(
-            "Encode a raster with a deep learning backbone")
+            "Install dependencies and restart QGIS ! - Encode a raster with a deep learning backbone")
         self.actionReducer.setToolTip(
-            "Reduce raster dimensions")
+            "Install dependencies and restart QGIS ! - Reduce raster dimensions")
         self.actionCluster.setToolTip(
-            "Cluster raster")
+            "Install dependencies and restart QGIS ! - Cluster raster")
         self.actionSimilarity.setToolTip(
-            "Compute similarity")
+            "Install dependencies and restart QGIS ! - Compute similarity")
         self.actionRF.setToolTip(
-            "Fit ML model")
+            "Install dependencies and restart QGIS ! - Fit ML model")
 
         # self.actionEncoder.triggered.connect()
         # self.actionReducer.triggered.connect()
@@ -528,4 +534,3 @@ class IAMapEmpty(QObject):
         del self.actionSimilarity
         del self.actionRF
         del self.toolbar
-        QgsApplication.processingRegistry().removeProvider(self.provider)

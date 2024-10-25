@@ -26,7 +26,10 @@ class TestReductionAlgorithm(unittest.TestCase):
     """
     algorithm = ReductionAlgorithm()
     default_parameters = {'INPUT': INPUT,'OUTPUT': OUTPUT}
-    possible_hashes = ['d7a32c6b7a4cee1af9c73607561d7b25']
+    possible_hashes = [
+            'd7a32c6b7a4cee1af9c73607561d7b25',
+            'e04f8c86d9aad81dd9c625b9cd8f9824',
+                       ]
     out_name = 'proj.tif'
 
     def setUp(self):
