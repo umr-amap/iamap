@@ -20,6 +20,7 @@ from qgis.core import (
                        QgsProcessingParameterDefinition
                        )
 
+from .icons import QIcon_RandomforestTool
 from .utils.geo import get_random_samples_in_gdf, get_unique_col_name
 from .utils.algo import (
                         SHPAlgorithm,
@@ -549,4 +550,4 @@ class MLAlgorithm(SHPAlgorithm):
         return self.tr(f"Fit a Machine Learning model using input template. Only RandomForestClassifier is throughfully tested. \n{self.get_help_sk_methods()}")
 
     def icon(self):
-        return 'E'
+        return QIcon_RandomforestTool

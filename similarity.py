@@ -1,5 +1,6 @@
 from qgis.PyQt.QtCore import QCoreApplication
 from .utils.algo import SHPAlgorithm
+from .icons import QIcon_SimilarityTool
 
 
 
@@ -57,4 +58,4 @@ class SimilarityAlgorithm(SHPAlgorithm):
         return self.tr("Compute Cosine similarity between features")
 
     def icon(self):
-        return 'E'
+        return QIcon_SimilarityTool

@@ -1,6 +1,7 @@
 from qgis.PyQt.QtCore import QCoreApplication
 
 from .utils.algo import SKAlgorithm
+from .icons import QIcon_ClusterTool
 
 class ClusterAlgorithm(SKAlgorithm):
     """
@@ -60,4 +61,4 @@ class ClusterAlgorithm(SKAlgorithm):
         return self.tr(f"Cluster a raster. Only KMeans is thoughfully tested. Other algorithms are implemented as is by sklearn. {self.get_help_sk_methods()}")
 
     def icon(self):
-        return 'E'
+        return QIcon_ClusterTool

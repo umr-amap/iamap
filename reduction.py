@@ -35,6 +35,8 @@ from sklearn.cluster import KMeans
 
 from .utils.misc import get_unique_filename
 from .utils.algo import SKAlgorithm
+
+from .icons import QIcon_ReductionTool
 #from umap.umap_ import UMAP
 
 
@@ -95,6 +97,4 @@ class ReductionAlgorithm(SKAlgorithm):
         return self.tr(f"Reduce the dimension of deep learning features. Only PCA is thoughfully tested. Other algorithms are implemented as is by sklearn. {self.get_help_sk_methods()}")
 
     def icon(self):
-        return 'E'
-
-
+        return QIcon_ReductionTool

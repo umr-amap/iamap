@@ -64,6 +64,8 @@ from .tg.utils import stack_samples, BoundingBox
 from .tg.samplers import NoBordersGridGeoSampler, Units
 from .tg.transforms import AugmentationSequential
 
+from .icons import QIcon_EncoderTool
+
 
 
 
@@ -877,5 +879,5 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         return self.tr("Generate image features using a deep learning backbone.")
 
     def icon(self):
-        return 'E'
+        return QIcon_EncoderTool
 
