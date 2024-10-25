@@ -21,4 +21,3 @@ def quantize_model(model, device):
             model, {nn.Linear}, dtype=torch.qint8
         )
     return model
-

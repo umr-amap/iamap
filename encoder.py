@@ -426,6 +426,17 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         data_config = timm.data.resolve_model_data_config(model)
         _, h, w, = data_config['input_size']
 
+        if torch.cuda.is_available() and self.use_gpu:
+            if self.cuda_id + 1 > torch.cuda.device_count():
+                self.cuda_id = torch.cuda.device_count() - 1
+            cuda_device = f'cuda:{self.cuda_id}'
+            device = f'cuda:{self.cuda_id}'
+        else:
+            self.batch_size = 1
+            device = 'cpu'
+
+        feedback.pushInfo(f'Device id: {device}')
+
         if self.quantization:
 
             try :
@@ -437,7 +448,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             except :
 
                 feedback.pushInfo(f'quantization impossible, using original model.')
-
 
         transform = AugmentationSequential(
                 T.ConvertImageDtype(torch.float32), # change dtype for normalize to be possible
@@ -467,16 +477,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             self.load_feature = False
             feedback.pushWarning(f'\n !!!No available patch sample inside the chosen extent!!! \n')
 
-        if torch.cuda.is_available() and self.use_gpu:
-            if self.cuda_id + 1 > torch.cuda.device_count():
-                self.cuda_id = torch.cuda.device_count() - 1
-            cuda_device = f'cuda:{self.cuda_id}'
-            device = f'cuda:{self.cuda_id}'
-        else:
-            self.batch_size = 1
-            device = 'cpu'
-
-        feedback.pushInfo(f'Device id: {device}')
 
         feedback.pushInfo(f'model to dedvice')
         model.to(device=device)
