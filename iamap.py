@@ -223,26 +223,3 @@ class IAMap(QObject):
             # Handle algorithm execution failure or cancellation
             print('Algorithm execution was not successful.')
         # processing.execAlgorithmDialog('', {})
-
-
-
-    def close_all_dialogs(self):
-        # Get the main QGIS window (QgisInterface)
-        qgis_main_window = self.iface.mainWindow()
-
-        # Get all open dialogs associated with the main window
-        open_dialogs = qgis_main_window.findChildren(QDialog)
-
-        # Iterate through the open dialogs and close them
-        for dialog in open_dialogs:
-            # Check if the dialog is visible (to avoid closing hidden dialogs)
-            if dialog.isVisible():
-                # Close the dialog
-                dialog.close()
-
-
-
-
-
-
-
