@@ -1,0 +1,10 @@
+name: iamap
+channels:
+  - conda-forge
+
+dependencies:
+  - python
+  - myst-parser
+  - pip:
+    - pydata-sphinx-theme
+    - sphinx_favicon
