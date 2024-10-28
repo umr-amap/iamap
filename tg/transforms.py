@@ -178,4 +178,3 @@ class _NCropGenerator(K.random_generator.CropGenerator):
             "input_size": out[0]["input_size"],
             "output_size": out[0]["output_size"],
         }
-

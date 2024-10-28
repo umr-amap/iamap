@@ -1,4 +1,4 @@
-# modified from torchgeo code 
+# modified from torchgeo code
 
 """Base classes for all :mod:`torchgeo` datasets."""
 
@@ -390,10 +390,10 @@ class RasterDataset(GeoDataset):
         .. versionchanged:: 0.5
            *root* was renamed to *paths*.
         """
-        print('pre super.__init__')
+        print("pre super.__init__")
         super().__init__(transforms)
 
-        print('post super.__init__')
+        print("post super.__init__")
         self.paths = paths
         self.bands = bands or self.all_bands
         self.cache = cache
@@ -403,7 +403,7 @@ class RasterDataset(GeoDataset):
         filename_regex = re.compile(self.filename_regex, re.VERBOSE)
         for filepath in self.files:
             match = re.match(filename_regex, os.path.basename(filepath))
-            print('regex')
+            print("regex")
             if match is not None:
                 try:
                     with rasterio.open(filepath) as src:
@@ -578,7 +578,6 @@ class RasterDataset(GeoDataset):
             return vrt
         else:
             return src
-
 
 
 class IntersectionDataset(GeoDataset):
@@ -882,4 +881,3 @@ class UnionDataset(GeoDataset):
         self._res = new_res
         self.datasets[0].res = new_res
         self.datasets[1].res = new_res
-

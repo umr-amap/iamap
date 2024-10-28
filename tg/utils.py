@@ -1,4 +1,4 @@
-# modified from torchgeo code 
+# modified from torchgeo code
 
 """Common dataset utilities."""
 
@@ -31,7 +31,6 @@ __all__ = (
     "concat_samples",
     "merge_samples",
 )
-
 
 
 @dataclass(frozen=True)
@@ -308,7 +307,6 @@ def disambiguate_timestamp(date_str: str, format: str) -> tuple[float, float]:
     return mint.timestamp(), maxt.timestamp()
 
 
-
 def _list_dict_to_dict_list(samples: Iterable[dict[Any, Any]]) -> dict[Any, list[Any]]:
     """Convert a list of dictionaries to a dictionary of lists.
 
@@ -415,7 +413,6 @@ def merge_samples(samples: Iterable[dict[Any, Any]]) -> dict[Any, Any]:
     return collated
 
 
-
 def rasterio_loader(path: str) -> np.typing.NDArray[np.int_]:
     """Load an image file using rasterio.
 
@@ -430,8 +427,6 @@ def rasterio_loader(path: str) -> np.typing.NDArray[np.int_]:
         # NonGeoClassificationDataset expects images returned with channels last (HWC)
         array = array.transpose(1, 2, 0)
     return array
-
-
 
 
 def path_is_vsi(path: str) -> bool:
@@ -458,19 +453,15 @@ def path_is_vsi(path: str) -> bool:
     return "://" in path or path.startswith("/vsi")
 
 
-
 """Common sampler utilities."""
 
 
-
 @overload
-def _to_tuple(value: Union[tuple[int, int], int]) -> tuple[int, int]:
-    ...
+def _to_tuple(value: Union[tuple[int, int], int]) -> tuple[int, int]: ...
 
 
 @overload
-def _to_tuple(value: Union[tuple[float, float], float]) -> tuple[float, float]:
-    ...
+def _to_tuple(value: Union[tuple[float, float], float]) -> tuple[float, float]: ...
 
 
 def _to_tuple(value: Union[tuple[float, float], float]) -> tuple[float, float]:

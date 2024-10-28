@@ -3,17 +3,18 @@ from qgis.PyQt.QtCore import QCoreApplication
 from .utils.algo import SKAlgorithm
 from .icons import QIcon_ClusterTool
 
+
 class ClusterAlgorithm(SKAlgorithm):
-    """
-    """
-    TYPE = 'cluster'
-    TMP_DIR = 'iamap_cluster'
+    """ """
+
+    TYPE = "cluster"
+    TMP_DIR = "iamap_cluster"
 
     def tr(self, string):
         """
         Returns a translatable string with the self.tr() function.
         """
-        return QCoreApplication.translate('Processing', string)
+        return QCoreApplication.translate("Processing", string)
 
     def createInstance(self):
         return ClusterAlgorithm()
@@ -26,21 +27,21 @@ class ClusterAlgorithm(SKAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'cluster'
+        return "cluster"
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('Clustering')
+        return self.tr("Clustering")
 
     def group(self):
         """
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr('')
+        return self.tr("")
 
     def groupId(self):
         """
@@ -50,7 +51,7 @@ class ClusterAlgorithm(SKAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return ''
+        return ""
 
     def shortHelpString(self):
         """
@@ -58,7 +59,9 @@ class ClusterAlgorithm(SKAlgorithm):
         should provide a basic description about what the algorithm does and the
         parameters and outputs associated with it..
         """
-        return self.tr(f"Cluster a raster. Only KMeans is thoughfully tested. Other algorithms are implemented as is by sklearn. {self.get_help_sk_methods()}")
+        return self.tr(
+            f"Cluster a raster. Only KMeans is thoughfully tested. Other algorithms are implemented as is by sklearn. {self.get_help_sk_methods()}"
+        )
 
     def icon(self):
         return QIcon_ClusterTool
