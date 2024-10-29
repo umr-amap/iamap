@@ -1,5 +1,7 @@
+import os
 from typing import Callable, Union
 import rasterio
+import rasterio.errors
 import geopandas as gpd
 import numpy as np
 from rasterio.merge import merge
@@ -180,6 +182,41 @@ def get_unique_col_name(gdf, base_name="fold"):
 
     return column_name
 
+
+def validate_geotiff(output_file, expected_output_size=4428850, expected_wh=(60,24)):
+    """
+    tests geotiff validity by opening with rasterio,
+    checking if the file weights as expected and has the correct width and height.
+    Additionaly, it is checked if there is more than one value in the raster.
+    """
+
+    expected_size_min = .8*expected_output_size
+    expected_size_max = 1.2*expected_output_size
+    # 1. Check if the output file is a valid GeoTIFF
+    try:
+        with rasterio.open(output_file) as src:
+            assert src.meta['driver'] == 'GTiff', "File is not a valid GeoTIFF."
+            width = src.width
+            height = src.height
+            # 2. Read the data and check width/height
+            assert width == expected_wh[0], f"Expected width {expected_wh[0]}, got {width}."
+            assert height == expected_wh[1], f"Expected height {expected_wh[1]}, got {height}."
+            # 3. Read the data and check for unique values
+            data = src.read(1)  # Read the first band
+            unique_values = np.unique(data)
+
+            assert len(unique_values) > 1, "The GeoTIFF contains only one unique value."
+
+    except rasterio.errors.RasterioIOError:
+        print("The file could not be opened as a GeoTIFF, indicating it is invalid.")
+        assert False
+
+    # 4. Check if the file size is within the expected range
+    file_size = os.path.getsize(output_file)
+    assert expected_size_min <= file_size <= expected_size_max, (
+        f"File size {file_size} is outside the expected range."
+    )
+    return
 
 if __name__ == "__main__":
     gdf = gpd.read_file("assets/ml_poly.shp")

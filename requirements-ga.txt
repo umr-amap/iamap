@@ -1,0 +1,14 @@
+geopandas >= 0.14.4
+scikit-learn >= 1.5.1
+psutil >= 5.0.0
+# from torchgeo
+rasterio >= 1.2
+rtree >= 0.9
+einops >= 0.3
+fiona >= 1.8.19
+kornia >= 0.6.9
+numpy >= 1.19.3
+pyproj >= 3.3
+shapely >= 1.7.1
+timm >= 0.4.12
+pytest

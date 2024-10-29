@@ -1,0 +1,118 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - github-actions
+  pull_request:
+    branches:
+      - github-actions
+
+jobs:
+  build:
+    name: ${{ matrix.os }}, Python 3.${{ matrix.python-minor-version }}, QGIS 3.${{ matrix.qgis-minor-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        # os: [ubuntu-latest , macos-latest , windows-latest]
+        # python-minor-version: [11, 12]
+        # qgis-minor-version: [34, 36, 38]
+        os: [windows-latest]
+        python-minor-version: [11]
+        qgis-minor-version: [38]
+          
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        python-version: 3.${{ matrix.python-minor-version }}
+        channels: conda-forge
+        auto-update-conda: true
+    
+    - name: Set Python Encoding for Windows
+      if: matrix.os == 'windows-latest'
+      run: | 
+        set PYTHONIOENCODING=utf-8
+        set PYTHONLEGACYWINDOWSSTDIO=utf-8
+
+
+    - name: Install Mamba in Base Environment
+      run: conda install -n test -c conda-forge mamba --yes
+
+    - name: Set up Environment and Install Dependencies
+      run: |
+        mamba create -n pytest python=3.${{ matrix.python-minor-version }} qgis=3.${{ matrix.qgis-minor-version }} --yes
+        mamba install -n pytest --file requirements.txt --yes
+        mamba install -n pytest pytest --yes
+      shell: bash -el {0}
+
+    - name: Run Tests
+      run: |
+        conda run -n pytest pytest
+      shell: bash -el {0}
+          
+    # steps:
+    # - name: Checkout
+      # uses: actions/checkout@v3
+
+    # - name: Set up Miniconda
+      # uses: conda-incubator/setup-miniconda@v3
+      # with:
+        # python-version: 3.${{matrix.python-minor-version}}
+        # channels: conda-forge
+
+    # - name: Install Mamba
+      # run: |
+        # conda init
+        # conda install -n test -c conda-forge mamba
+    # - name: Init Mamba shell
+      # if: matrix.os == 'windows-latest'
+      # run: |
+        # eval "$(mamba.exe shell hook --shell powershell)"
+        # mamba shell init --shell powershell
+        # mamba shell reinit --shell powershell
+      # shell: bash -el {0}
+
+    # - name: Set up Environment and Install Dependencies
+      # run: |
+        # conda activate test
+        # mamba create -n pytest python=3.${{matrix.python-minor-version}} qgis=3.${{matrix.qgis-minor-version}} --yes
+        # mamba activate pytest
+        # mamba install --file requirements.txt --yes
+        # mamba install pytest --yes
+      # shell: bash -el {0}
+    # - name: Set up Conda
+    #   # uses: conda-incubator/setup-miniconda@v3
+    #   uses: mamba-org/setup-micromamba@v1
+    #   # with:
+    #     # python-version: 3.${{matrix.python-minor-version}}
+    #     # channels: conda-forge
+    # - run: |
+    #     mamba init
+    #     mamba activate test
+    #     # conda install qgis=3.${{matrix.qgis-minor-version}}
+    #     mamba install qgis=3.${{matrix.qgis-minor-version}}
+    #     mamba install --file requirements.txt
+    #     mamba install pytest
+    #   shell: bash -el {0}
+
+    # - name: Check Path in windows
+    #   if: matrix.os == 'windows-latest'
+    #   run: |
+    #     conda activate test
+    #     $conda_env_path = (Split-Path -Path (Split-Path -Path (Get-Command python).Path))
+        
+    #     # Update PATH to include the "Library\bin" directory for the conda environment
+    #     Add-Content -Path $Env:GITHUB_ENV -Value "PATH=$conda_env_path\Library\bin;$Env:PATH"
+    #   shell: powershell
+
+    # - name: Tests
+    #   run: |
+    #     mamba activate test
+    #     pytest tests/
+    #   shell: bash -el {0}

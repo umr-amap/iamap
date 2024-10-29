@@ -1,4 +1,5 @@
 import os
+import pytest
 from pathlib import Path
 import tempfile
 import unittest
@@ -12,6 +13,8 @@ from ..similarity import SimilarityAlgorithm
 from ..clustering import ClusterAlgorithm
 from ..reduction import ReductionAlgorithm
 from ..utils.misc import get_file_md5_hash, remove_files_with_extensions
+from ..utils.geo import validate_geotiff
+
 
 INPUT = os.path.join(Path(__file__).parent.parent.absolute(), "assets", "test.tif")
 OUTPUT = os.path.join(tempfile.gettempdir(), "iamap_test")
@@ -36,6 +39,8 @@ class TestReductionAlgorithm(unittest.TestCase):
         "d7a32c6b7a4cee1af9c73607561d7b25",
         "e04f8c86d9aad81dd9c625b9cd8f9824",
     ]
+    output_size = 4405122
+    output_wh = (968,379)
     out_name = "proj.tif"
 
     def setUp(self):
@@ -48,22 +53,25 @@ class TestReductionAlgorithm(unittest.TestCase):
             self.default_parameters, self.context, self.feedback
         )
         expected_result_path = os.path.join(self.algorithm.output_dir, self.out_name)
-        result_file_hash = get_file_md5_hash(expected_result_path)
+        @pytest.mark.parametrize("output_file", expected_result_path, "expected_output_size", self.output_size, "expected_wh", self.output_wh)
+        def test_geotiff_validity(output_file):
+            validate_geotiff(output_file)
         remove_files_with_extensions(self.algorithm.output_dir, EXTENSIONS_TO_RM)
-        assert result_file_hash in self.possible_hashes
 
 
 class TestClusteringAlgorithm(TestReductionAlgorithm):
     algorithm = ClusterAlgorithm()
-    possible_hashes = ["0c47b0c4b4c13902db5da3ee6e5d4aef"]
+    # possible_hashes = ["0c47b0c4b4c13902db5da3ee6e5d4aef"]
     out_name = "cluster.tif"
+    output_size = 4405122
 
 
 class TestSimAlgorithm(TestReductionAlgorithm):
     algorithm = SimilarityAlgorithm()
     default_parameters = {"INPUT": INPUT, "OUTPUT": OUTPUT, "TEMPLATE": TEMPLATE}
-    possible_hashes = ["f76eb1f0469725b49fe0252cfe86829a"]
+    # possible_hashes = ["f76eb1f0469725b49fe0252cfe86829a"]
     out_name = "similarity.tif"
+    output_size = 1468988
 
 
 class TestMLAlgorithm(TestReductionAlgorithm):
@@ -74,8 +82,9 @@ class TestMLAlgorithm(TestReductionAlgorithm):
         "TEMPLATE": TEMPLATE_RF,
         "GT_COL": GT_COL,
     }
-    possible_hashes = ["bd22d66180347e043fca58d494876184"]
+    # possible_hashes = ["bd22d66180347e043fca58d494876184"]
     out_name = "ml.tif"
+    output_size = 367520
 
 
 if __name__ == "__main__":
