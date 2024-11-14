@@ -3,14 +3,12 @@ from .utils.algo import SHPAlgorithm
 from .icons import QIcon_SimilarityTool
 
 
-
 class SimilarityAlgorithm(SHPAlgorithm):
-
     def tr(self, string):
         """
         Returns a translatable string with the self.tr() function.
         """
-        return QCoreApplication.translate('Processing', string)
+        return QCoreApplication.translate("Processing", string)
 
     def createInstance(self):
         return SimilarityAlgorithm()
@@ -23,21 +21,21 @@ class SimilarityAlgorithm(SHPAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'similarity'
+        return "similarity"
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('Similarity')
+        return self.tr("Similarity")
 
     def group(self):
         """
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr('')
+        return self.tr("")
 
     def groupId(self):
         """
@@ -47,7 +45,7 @@ class SimilarityAlgorithm(SHPAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return ''
+        return ""
 
     def shortHelpString(self):
         """

@@ -1,0 +1,46 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main, dev
+  pull_request:
+    branches:
+      - main, dev
+
+jobs:
+  build:
+    name: ${{ matrix.os }}, Python 3.${{ matrix.python-minor-version }}, QGIS 3.${{ matrix.qgis-minor-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        ## Windows automatic testing is not functionnig yet
+        os: [ubuntu-latest , macos-latest]
+        # os: [ubuntu-latest , macos-latest , windows-latest]
+        python-minor-version: [11, 12]
+        qgis-minor-version: [34, 36, 38]
+          
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        python-version: 3.${{ matrix.python-minor-version }}
+        channels: conda-forge
+        auto-update-conda: true
+
+    - name: Set up Environment and Install Dependencies
+      run: |
+        conda create -n pytest python=3.${{ matrix.python-minor-version }} qgis=3.${{ matrix.qgis-minor-version }} --yes
+        conda install -n pytest --file requirements.txt --yes
+        conda install -n pytest pytest --yes
+      shell: bash -el {0}
+
+    - name: Run Tests
+      run: |
+        conda run -n pytest pytest tests/
+      shell: bash -el {0}

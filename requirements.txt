@@ -6,7 +6,7 @@ psutil >= 5.0.0
 # torchgeo == 0.5.2
 # from torchgeo
 rasterio >= 1.2
-rtree <= 0.9
+rtree >= 1
 einops >= 0.3
 fiona >= 1.8.19
 kornia >= 0.6.9

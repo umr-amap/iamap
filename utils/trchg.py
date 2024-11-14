@@ -4,8 +4,8 @@ from collections.abc import Iterator
 from torchgeo.datasets import BoundingBox
 from torchgeo.samplers.utils import tile_to_chips
 
-class NoBordersGridGeoSampler(GridGeoSampler):
 
+class NoBordersGridGeoSampler(GridGeoSampler):
     def __iter__(self) -> Iterator[BoundingBox]:
         """
         Modification of original Torchgeo sampler to avoid overlapping borders of a dataset.

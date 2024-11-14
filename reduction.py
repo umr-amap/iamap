@@ -1,55 +1,20 @@
-import os
-import tempfile
-import numpy as np
-from pathlib import Path
-from typing import Dict, Any
-import joblib
-import pandas as pd
-import psutil
-import json
-
-
-import rasterio
-from rasterio import windows
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import (Qgis,
-                       QgsGeometry,
-                       QgsProcessingParameterBoolean,
-                       QgsProcessingParameterEnum,
-                       QgsCoordinateTransform,
-                       QgsProcessingException,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingParameterRasterLayer,
-                       QgsProcessingParameterFolderDestination,
-                       QgsProcessingParameterBand,
-                       QgsProcessingParameterNumber,
-                       QgsProcessingParameterExtent,
-                       QgsProcessingParameterCrs,
-                       QgsProcessingParameterDefinition,
-                       )
 
 
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA, IncrementalPCA
-from sklearn.cluster import KMeans
-
-from .utils.misc import get_unique_filename
 from .utils.algo import SKAlgorithm
 
 from .icons import QIcon_ReductionTool
-#from umap.umap_ import UMAP
-
+# from umap.umap_ import UMAP
 
 
 class ReductionAlgorithm(SKAlgorithm):
-    """
-    """
+    """ """
 
     def tr(self, string):
         """
         Returns a translatable string with the self.tr() function.
         """
-        return QCoreApplication.translate('Processing', string)
+        return QCoreApplication.translate("Processing", string)
 
     def createInstance(self):
         return ReductionAlgorithm()
@@ -62,21 +27,21 @@ class ReductionAlgorithm(SKAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'reduction'
+        return "reduction"
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('Dimension Reduction')
+        return self.tr("Dimension Reduction")
 
     def group(self):
         """
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr('')
+        return self.tr("")
 
     def groupId(self):
         """
@@ -86,7 +51,7 @@ class ReductionAlgorithm(SKAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return ''
+        return ""
 
     def shortHelpString(self):
         """
@@ -94,7 +59,9 @@ class ReductionAlgorithm(SKAlgorithm):
         should provide a basic description about what the algorithm does and the
         parameters and outputs associated with it..
         """
-        return self.tr(f"Reduce the dimension of deep learning features. Only PCA is thoughfully tested. Other algorithms are implemented as is by sklearn. {self.get_help_sk_methods()}")
+        return self.tr(
+            f"Reduce the dimension of deep learning features. Only PCA is thoughfully tested. Other algorithms are implemented as is by sklearn. {self.get_help_sk_methods()}"
+        )
 
     def icon(self):
         return QIcon_ReductionTool

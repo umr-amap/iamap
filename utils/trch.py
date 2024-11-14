@@ -3,11 +3,10 @@ import torch.nn as nn
 
 
 def quantize_model(model, device):
-
     ## Dynamique quantization is not supported on CUDA, hence static conversion
-    if 'cuda' in device:
+    if "cuda" in device:
         # set quantization config for server (x86)
-        model.qconfig = torch.quantization.get_default_config('fbgemm')
+        model.qconfig = torch.quantization.get_default_config("fbgemm")
 
         # insert observers
         torch.quantization.prepare(model, inplace=True)

@@ -267,7 +267,6 @@ class GridGeoSampler(GeoSampler):
 
 
 class NoBordersGridGeoSampler(GridGeoSampler):
-
     def __iter__(self) -> Iterator[BoundingBox]:
         """
         Modification of original Torchgeo sampler to avoid overlapping borders of a dataset.
