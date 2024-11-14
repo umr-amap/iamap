@@ -1,3 +1,4 @@
+import sys
 import processing
 from PyQt5.QtWidgets import QAction, QToolBar
 from PyQt5.QtCore import pyqtSignal, QObject
@@ -91,6 +92,10 @@ class IAMap(QObject):
 
     def encodeImage(self):
         """ """
+        ## if os is windows, the python console is triggered.
+        ## This temporarly solves downloading issues via huggingface
+        if sys.platform == "win32":
+            self.iface.actionShowPythonDialog().trigger()
         result = processing.execAlgorithmDialog("iamap:encoder", {})
         print(result)
         # Check if algorithm execution was successful
