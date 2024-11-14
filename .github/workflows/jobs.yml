@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - github-actions
+      - main, dev
   pull_request:
     branches:
-      - github-actions
+      - main, dev
 
 jobs:
   build:
