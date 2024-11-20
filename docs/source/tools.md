@@ -61,7 +61,7 @@ The features produced by a deep learning encoder are often of high dimensionalit
 However, it can be cumbersome to deal with all these features and this high dimensionality feature space, especially when a majority are not really informative.
 Therefore, it is possible to reduce the dimensions of a raster using a variety of algorithms.
 We chose to rely on [scikit-learn](https://scikit-learn.org/) to provide the algorithms.
-All algorighms available in the [decomposition](https://scikit-learn.org/stable/api/sklearn.decomposition.html) and the [cluster](https://scikit-learn.org/stable/api/sklearn.cluster.html) module can be used.
+All algorighms available in the [decomposition](https://scikit-learn.org/stable/api/sklearn.decomposition.html) and the [cluster](https://scikit-learn.org/stable/api/sklearn.cluster.html) module that share a common API can be used.
 
 Different algorithms have different arguments that can be passed. You can provide these as a json string in the corresponding field.
 
@@ -79,7 +79,7 @@ Different algorithms have different arguments that can be passed. You can provid
 :align: center
 ```
 
-Features or reduced features can be clustered (_i.e._ unsupervised classification) using algorithms form the scikit-learn [cluster](https://scikit-learn.org/stable/api/sklearn.cluster.html) module.
+Features or reduced features can be clustered (_i.e._ unsupervised classification) using algorithms form the scikit-learn [cluster](https://scikit-learn.org/stable/api/sklearn.cluster.html) module that share a common API.
 
 Different algorithms have different arguments that can be passed. You can provide these as a json string in the corresponding field.
 
@@ -116,7 +116,7 @@ Here, additionnaly to an input raster, you have to provide a shapefile (or any f
 If the features you have seem informative, you can fit a Machine Learning model on it by providing ground truth points.
 Thus, you have to provide an input shapfile (or any format that will be read by geopandas) and the column corresponding to the ground truth values.
 Based on the algorithm you choose, these values will be interpreted as integers (classification) or floats (regression).
-All models provided by scikit-learn [ensemble](https://scikit-learn.org/stable/api/sklearn.ensemble.html) (_e.g._ Random Forests, Gradient Boosting) and [neighbors](https://scikit-learn.org/stable/api/sklearn.neighbors.html)(_e.g._ KNN) module are available.
+All models provided by scikit-learn [ensemble](https://scikit-learn.org/stable/api/sklearn.ensemble.html) (_e.g._ Random Forests, Gradient Boosting) and [neighbors](https://scikit-learn.org/stable/api/sklearn.neighbors.html)(_e.g._ KNN) module  that share a common API are available.
 
 ### Training and testing
 
