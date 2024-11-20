@@ -22,6 +22,40 @@ class QGISLogHandler(logging.Handler):
         msg = self.format(record)
         self.feedback.pushInfo(msg)
 
+def get_libspatialindex():
+    """
+    Get the libspatialindexes used by QGIS because rtree and QGIS can conflict
+    In doubt, we use qgis's one.
+    """
+
+    # current process pid (i.e. qgis)
+    pid = psutil.Process().pid
+    process = psutil.Process(pid)
+    matches = []
+    for mmap in process.memory_maps():
+        if "libspatialindex" in mmap.path:  # Replace with any library name you're targeting
+            print("libspatialindex")
+            print(mmap.path)
+            matches.append(mmap.path)
+
+    ## if only one, all good
+    if len(matches) == 1:
+        return matches[0]
+
+    ## else we do not use the one that comes with rtree
+    filtered_matches = [
+        path for path in matches
+        if "rtree" not in path.lower()
+    ]
+
+    if len(filtered_matches) == 1:
+        return filtered_matches[0]
+
+    if len(filtered_matches) == 0:
+        raise ValueError("No library found after filtering.")
+
+    return filtered_matches[-1] # should be QGIS's one in my tests so far ? 
+
 
 def get_model_size(model):
     torch.save(model.state_dict(), "temp.p")
