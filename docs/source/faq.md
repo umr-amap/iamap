@@ -11,6 +11,7 @@ You can create an overlap by selecting a stride smaller than the sampling size o
 ## How can I obtain a better resolution ?
 
 This plugin was developped with ViTs in mind as template models. These have spatialy explicit features and divide the image into patches of typially `16x16` or `14x14` pixels. By having a smaller sampling size, you will have better resolution but with less context for the model to work with.
+Using a model with smaller patch size will also in the end lead to a better resolution but these models are often heavier.
 
 ## Which model should I use ?
 
