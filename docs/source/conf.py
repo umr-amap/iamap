@@ -40,9 +40,6 @@ release = version
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 
-
-
-
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
@@ -65,3 +62,24 @@ source_suffix = {
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
 html_favicon = "./../../icons/favicon.svg"
+html_logo = "./../../icons/favicon.svg"
+
+html_theme_options = {
+    "header_links_before_dropdown": 6,
+    "sidebarwidth": 200,
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/umr-amap/iamap",
+            "icon": "fa-brands fa-github",
+        },
+    ],
+    "show_version_warning_banner": True,
+    "footer_start": ["copyright"],
+    "footer_center": ["sphinx-version"],
+    "secondary_sidebar_items": {
+        "**/*": ["page-toc", "edit-this-page", "sourcelink"],
+        "examples/no-sidebar": [],
+    },
+    }
+
