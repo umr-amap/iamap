@@ -278,9 +278,32 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         cmd_string = " ".join(cmd)
 
         for pck in packages:
-            if ("index-url") not in pck.version:
+            if (("index-url") not in pck.version) and (("rtree") not in pck.name):
                 cmd.append(f" {pck}")
                 cmd_string += f" {pck}"
+
+            elif "rtree" in pck.name :
+
+                cmd_rtree = [
+                    PYTHON_EXECUTABLE_PATH,
+                    "-m",
+                    "pip",
+                    "install",
+                    "-U",
+                    f"--target={PACKAGES_INSTALL_DIR}",
+                    f"--no-binary=rtree",
+                    "rtree",
+                ]
+                cmd_rtree_string = " ".join(cmd_rtree)
+
+                self.log(f"<em>Running command: \n  $ {cmd_rtree_string} </em>")
+                with subprocess.Popen(
+                    cmd_rtree,
+                    stdout=subprocess.PIPE,
+                    universal_newlines=True,
+                    stderr=subprocess.STDOUT,
+                ) as process:
+                    self._do_process_output_logging(process)
 
             elif pck.name == "torch":
                 torch_url = pck.version.split("index-url ")[-1]
