@@ -100,7 +100,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             QgsProcessingParameterRasterLayer(
                 name=self.INPUT,
                 description=self.tr("Input raster layer or image file path"),
-                defaultValue=os.path.join(cwd, "assets", "test.tif"),
+                # defaultValue=os.path.join(cwd, "assets", "test.tif"),
             ),
         )
 
