@@ -101,7 +101,9 @@ class TestEncoderAlgorithm(unittest.TestCase):
 
     def test_RasterDataset(self):
         self.algorithm.initAlgorithm()
-        parameters = {}
+        parameters = {
+            "INPUT": INPUT,
+                }
         self.algorithm.process_options(parameters, self.context, self.feedback)
         RasterDataset.filename_glob = self.algorithm.rlayer_name
         RasterDataset.all_bands = [
