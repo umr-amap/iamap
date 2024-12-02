@@ -37,6 +37,7 @@ import torch.nn as nn
 
 import sklearn.decomposition as decomposition
 import sklearn.cluster as cluster
+import sklearn.manifold as manifold
 from sklearn.base import BaseEstimator
 from sklearn.preprocessing import StandardScaler
 # from sklearn.metrics import silhouette_score, silhouette_samples
@@ -439,12 +440,15 @@ class SKAlgorithm(IAMAPAlgorithm):
 
         proj_methods = ["fit", "transform"]
         clust_methods = ["fit", "fit_predict"]
+        mani_methods = ["fit", "fit_transform"]
+
         if self.TYPE == "proj":
             method_opt1 = get_sklearn_algorithms_with_methods(
                 decomposition, proj_methods
             )
             method_opt2 = get_sklearn_algorithms_with_methods(cluster, proj_methods)
-            self.method_opt = method_opt1 + method_opt2
+            method_opt3 = get_sklearn_algorithms_with_methods(manifold, mani_methods)
+            self.method_opt = method_opt1 + method_opt2 + method_opt3
 
             self.addParameter(
                 QgsProcessingParameterNumber(
@@ -543,33 +547,33 @@ class SKAlgorithm(IAMAPAlgorithm):
 
         parameters["OUTPUT_RASTER"] = self.dst_path
 
-        try:
-            default_args = get_arguments(decomposition, self.method_name)
-        except AttributeError:
-            default_args = get_arguments(cluster, self.method_name)
+        for sk_module in [decomposition, cluster, manifold]:
+            try:
+                default_args = get_arguments(sk_module, self.method_name)
+                kwargs = self.update_kwargs(default_args)
+                model = instantiate_sklearn_algorithm(
+                    sk_module, self.method_name, **kwargs
+                )
+                break
+            except AttributeError:
+                continue
+            except Exception:
+                feedback.pushWarning(
+                    f"{self.method_name} not properly initialized ! Try passing custom parameters"
+                )
+                return {
+                    "OUTPUT_RASTER": self.dst_path,
+                    "OUTPUT_LAYER_NAME": self.layer_name,
+                }
+        else:
+            raise AttributeError("All attempts to call function failed.")
 
-        kwargs = self.update_kwargs(default_args)
 
         ## some clustering algorithms need the entire dataset.
         do_fit_predict = False
 
-        try:
-            model = instantiate_sklearn_algorithm(
-                decomposition, self.method_name, **kwargs
-            )
-        except AttributeError:
-            model = instantiate_sklearn_algorithm(cluster, self.method_name, **kwargs)
-            ## if model does not have a 'predict()' method, then we do a fit_predict in one go
-            if not hasattr(model, "predict"):
-                do_fit_predict = True
-        except Exception:
-            feedback.pushWarning(
-                f"{self.method_name} not properly initialized ! Try passing custom parameters"
-            )
-            return {
-                "OUTPUT_RASTER": self.dst_path,
-                "OUTPUT_LAYER_NAME": self.layer_name,
-            }
+        if not hasattr(model, "predict") and sk_module==cluster:
+            do_fit_predict = True
 
         if do_fit_predict:
             proj_img, model = self.fit_predict(model, feedback)
