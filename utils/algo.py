@@ -692,14 +692,15 @@ class SKAlgorithm(IAMAPAlgorithm):
             transform = ds.window_transform(win)
             raster = np.transpose(raster, (1, 2, 0))
             raster = raster[:, :, self.input_bands]
+            fit_raster = raster.reshape(-1, raster.shape[-1])
 
             # raster = (raster-np.mean(raster))/np.std(raster)
             scaler = StandardScaler()
 
-            raster = scaler.fit_transform(raster)
-            np.nan_to_num(raster)  # NaN to zero after normalisation
+            fit_raster = scaler.fit_transform(fit_raster)
+            np.nan_to_num(fit_raster)  # NaN to zero after normalisation
 
-            proj_img = model.fit_predict(raster.reshape(-1, raster.shape[-1]))
+            proj_img = model.fit_predict(fit_raster)
 
             proj_img = proj_img.reshape((raster.shape[0], raster.shape[1], -1))
             height, width, channels = proj_img.shape
