@@ -66,7 +66,7 @@ The features produced by a deep learning encoder are often of high dimensionalit
 However, it can be cumbersome to deal with all these features and this high dimensionality feature space, especially when a majority are not really informative.
 Therefore, it is possible to reduce the dimensions of a raster using a variety of algorithms.
 We chose to rely on [scikit-learn](https://scikit-learn.org/) to provide the algorithms.
-All algorighms available in the [decomposition](https://scikit-learn.org/stable/api/sklearn.decomposition.html) and the [cluster](https://scikit-learn.org/stable/api/sklearn.cluster.html) module that share a common API can be used.
+All algorighms available in the [decomposition](https://scikit-learn.org/stable/api/sklearn.decomposition.html), [manifold](https://scikit-learn.org/stable/api/sklearn.manifold.html) and the [cluster](https://scikit-learn.org/stable/api/sklearn.cluster.html) module that share a common API can be used.
 
 Different algorithms have different arguments that can be passed. You can provide these as a json string in the corresponding field.
 
