@@ -755,6 +755,7 @@ class SKAlgorithm(IAMAPAlgorithm):
 
         return model
 
+
     def infer_model(self, model, feedback, scaler=None):
         with rasterio.open(self.rlayer_path) as ds:
             transform = ds.transform
@@ -821,6 +822,7 @@ class SKAlgorithm(IAMAPAlgorithm):
         """
 
         proj_methods = ["fit", "transform"]
+        mani_methods = ["fit", "fit_transform"]
         clust_methods = ["fit", "fit_predict"]
         help_str = (
             "\n\n Here are the default arguments of the supported algorithms:\n\n"
@@ -837,6 +839,14 @@ class SKAlgorithm(IAMAPAlgorithm):
                 args = get_arguments(cluster, algo)
                 help_str += f"- {algo}:\n"
                 help_str += f"{args}\n"
+            algos = get_sklearn_algorithms_with_methods(manifold, proj_methods)
+            for algo in algos:
+                args = get_arguments(manifold, algo)
+                help_str += f"- {algo}:\n"
+                help_str += f"{args}\n"
+            ## add UMAP
+            help_str += f"- UMAP:\n"
+            help_str += f"{get_umap_kwargs()}\n"
 
         if self.TYPE == "cluster":
             algos = get_sklearn_algorithms_with_methods(cluster, clust_methods)
