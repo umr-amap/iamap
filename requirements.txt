@@ -12,3 +12,4 @@ pyproj >= 3.3
 shapely >= 1.7.1
 timm >= 0.4.12
 joblib >= 1.4.0
+umap-learn >= 0.5

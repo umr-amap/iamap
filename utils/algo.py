@@ -38,6 +38,7 @@ import torch.nn as nn
 import sklearn.decomposition as decomposition
 import sklearn.cluster as cluster
 import sklearn.manifold as manifold
+from umap import UMAP
 from sklearn.base import BaseEstimator
 from sklearn.preprocessing import StandardScaler
 # from sklearn.metrics import silhouette_score, silhouette_samples
@@ -70,6 +71,27 @@ def get_arguments(module, algorithm_name):
     AlgorithmClass = getattr(module, algorithm_name)
     # Get the signature of the __init__ method
     init_signature = inspect.signature(AlgorithmClass.__init__)
+
+    # Retrieve the parameters of the __init__ method
+    parameters = init_signature.parameters
+    default_kwargs = {}
+
+    for param_name, param in parameters.items():
+        # Skip 'self'
+        if param_name != "self":
+            # if param.default == None:
+            #     required_kwargs[param_name] = None  # Placeholder for the required value
+            # else:
+            default_kwargs[param_name] = param.default
+
+    # return required_kwargs, default_kwargs
+    return default_kwargs
+
+
+def get_umap_kwargs():
+    
+    # Get the signature of the __init__ method
+    init_signature = inspect.signature(UMAP.__init__)
 
     # Retrieve the parameters of the __init__ method
     parameters = init_signature.parameters
@@ -448,7 +470,7 @@ class SKAlgorithm(IAMAPAlgorithm):
             )
             method_opt2 = get_sklearn_algorithms_with_methods(cluster, proj_methods)
             method_opt3 = get_sklearn_algorithms_with_methods(manifold, mani_methods)
-            self.method_opt = method_opt1 + method_opt2 + method_opt3
+            self.method_opt = method_opt1 + method_opt2 + method_opt3 + ["UMAP"]
 
             self.addParameter(
                 QgsProcessingParameterNumber(
@@ -548,6 +570,13 @@ class SKAlgorithm(IAMAPAlgorithm):
         parameters["OUTPUT_RASTER"] = self.dst_path
 
         for sk_module in [decomposition, cluster, manifold]:
+
+            if self.method_name == "UMAP":
+                default_args = get_umap_kwargs()
+                kwargs = self.update_kwargs(default_args)
+                model = UMAP(**kwargs)
+                break
+
             try:
                 default_args = get_arguments(sk_module, self.method_name)
                 kwargs = self.update_kwargs(default_args)
