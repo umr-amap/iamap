@@ -69,3 +69,16 @@ import umap
 ```
 
 Then save the change, reload the plug-in and try again.
+
+
+## Major tilling efects
+
+After encoding, it is common to see tilling effect, however, sometimes, these effects are overwhelming (for instance if you can only see a color gradient on every tile and no local features).
+The issue might be a normalization issue, with every tile fed to the network being wrongfully normalized.
+The root of the problem may be the meta-data of your raster, check that the `STATISTICS_MEAN` and `STATISTICS_STDDEV` are correct, because these are the ones used by the plugin if they exist.
+
+The following command could potentially solve meta-data issues.
+
+```
+gdal_edit.py -stats your_file.tif
+```
