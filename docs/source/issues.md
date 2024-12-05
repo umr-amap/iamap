@@ -82,3 +82,9 @@ The following command could potentially solve meta-data issues.
 ```
 gdal_edit.py -stats your_file.tif
 ```
+
+## Conflicting requirements for UMAP
+
+`umap` has `numba` as a dependdencie, which may require `numpy < 2.0` and conflict with other librairies depending on how you installed them. According to `numba` developpers, this
+(should be resolved in comming numba releases)[https://github.com/numba/numba/issues/9708].
+In the mean time, you can use a conda environement or uninstall and reinstall numpy at a previous version.
