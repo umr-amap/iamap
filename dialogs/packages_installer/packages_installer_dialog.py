@@ -394,6 +394,7 @@ def get_pytorch_version(cuda_version):
     cuda_to_pytorch = {
         "11.8": " --index-url https://download.pytorch.org/whl/cu118",
         "12.1": "",
+        "12.2": "",
         "12.4": " --index-url https://download.pytorch.org/whl/cu124",
         "12.5": " --index-url https://download.pytorch.org/whl/cu124",
         "12.6": " --index-url https://download.pytorch.org/whl/cu124",
