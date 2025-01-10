@@ -58,6 +58,15 @@ This way, rtree and qgis will automatically share the same libspatialindex.
 If you have any idea on how to solve this issue properly, do participate in the [corresponding issue](https://github.com/umr-amap/iamap/issues/13).
 
 
+## `libspatialindex` error with geopandas
+
+On a fresh install, geopandas might not find the correct `libspatialindex`, then as for the previous error, you can install the `libspatialindex` on your system via
+
+```
+sudo apt-get install python3-rtree
+```
+
+
 ## UMAP crashes
 
 
