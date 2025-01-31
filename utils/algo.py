@@ -38,7 +38,14 @@ import torch.nn as nn
 import sklearn.decomposition as decomposition
 import sklearn.cluster as cluster
 import sklearn.manifold as manifold
-from umap import UMAP
+
+import_umap = True
+try :
+    from umap.umap_ import UMAP
+except ImportError:
+    import_umap = False
+
+
 from sklearn.base import BaseEstimator
 from sklearn.preprocessing import StandardScaler
 # from sklearn.metrics import silhouette_score, silhouette_samples
@@ -470,7 +477,9 @@ class SKAlgorithm(IAMAPAlgorithm):
             )
             method_opt2 = get_sklearn_algorithms_with_methods(cluster, proj_methods)
             method_opt3 = get_sklearn_algorithms_with_methods(manifold, mani_methods)
-            self.method_opt = method_opt1 + method_opt2 + method_opt3 + ["UMAP"]
+            self.method_opt = method_opt1 + method_opt2 + method_opt3
+            if import_umap:
+                self.method_opt = self.method_opt + ["UMAP"]
 
             self.addParameter(
                 QgsProcessingParameterNumber(
@@ -898,8 +907,9 @@ class SKAlgorithm(IAMAPAlgorithm):
                 help_str += f"- {algo}:\n"
                 help_str += f"{args}\n"
             ## add UMAP
-            help_str += f"- UMAP:\n"
-            help_str += f"{get_umap_kwargs()}\n"
+            if import_umap:
+                help_str += f"- UMAP:\n"
+                help_str += f"{get_umap_kwargs()}\n"
 
         if self.TYPE == "cluster":
             algos = get_sklearn_algorithms_with_methods(cluster, clust_methods)

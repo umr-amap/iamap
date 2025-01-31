@@ -1,5 +1,6 @@
-geopandas >= 0.14.4
+# umap-learn >= 0.5
 scikit-learn >= 1.5.1
+geopandas >= 0.14.4
 psutil >= 5.0.0
 # from torchgeo
 rasterio >= 1.2
@@ -12,4 +13,3 @@ pyproj >= 3.3
 shapely >= 1.7.1
 timm >= 0.4.12
 joblib >= 1.4.0
-umap-learn >= 0.5
