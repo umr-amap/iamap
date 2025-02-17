@@ -175,7 +175,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 "Frequencie at which temporary files should be cleaned up (zero means no cleanup)."
             ),
             type=QgsProcessingParameterNumber.Integer,
-            defaultValue=1000,
+            defaultValue=500,
             minValue=1,
             maxValue=10000,
         )
