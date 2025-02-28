@@ -7,6 +7,7 @@ import joblib
 from collections import Counter
 from pathlib import Path
 from typing import Dict, Any
+
 from qgis.core import (
     Qgis,
     QgsGeometry,
@@ -25,11 +26,23 @@ from qgis.core import (
     QgsProcessingParameterDefinition,
     QgsProcessingParameterVectorLayer,
 )
+
 import rasterio
 from rasterio import windows
 from rasterio.enums import Resampling
 
 import geopandas as gpd
+# SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# PLUGIN_ROOT_DIR = os.path.realpath(
+#     os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+# )
+# try:
+#     tmp = gpd.read_file(os.path.abspath(os.path.join(PLUGIN_ROOT_DIR, 'assets','ml.shp')))
+# except ValueError:
+#     gpd.options.io_engine = "fiona"
+#     print('Using fiona as gpd backend')
+
+gpd.options.io_engine = "fiona"
 from shapely.geometry import box
 
 import torch
