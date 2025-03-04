@@ -97,3 +97,14 @@ gdal_edit.py -stats your_file.tif
 `umap` has `numba` as a dependdencie, which may require `numpy < 2.0` and conflict with other librairies depending on how you installed them. According to `numba` developpers, this
 [should be resolved in comming numba releases](https://github.com/numba/numba/issues/9708).
 In the mean time, you can use a conda environement or uninstall and reinstall numpy at a previous version.
+
+## Rasterio error after 499 batches in Windows
+
+You can encounter an error like the following:
+
+```
+rasterio._err.CPLE_AppDefinedError: Deleting C:\Users\User\AppData\Local\Temp\iamap_features\9e156c7bae06cfb63493fc0f4a0f8225\merged_tmp.tif failed: Permission denied
+```
+
+The encoding algorithm merges temporary files periodically (by default 500). Afterwards it cleanes the old temp files to leave space. 
+This error is because you probably have deleting rights in the default temporary folder. Try to choose an other folder or to get in touch with your IT support.
