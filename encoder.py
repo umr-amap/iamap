@@ -627,7 +627,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                     
                 # overwritting merged_tmp.tif may be impossible in windows (e.g. if an antivirus is analysing the newly created data)
                 # then, merging and cleaning is impossible
-                except rasterio._err.CPLE_AppDefinedError as e :
+                except Exception as e :
                     feedback.pushWarning(f"Unable to cleaning temporary files ! Try to delete them latter at {self.output_subdir}")
 
                 self.all_encoding_done = True
