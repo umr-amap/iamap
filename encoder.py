@@ -617,12 +617,19 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
                 dst_path = Path(os.path.join(self.output_subdir, "merged_tmp.tif"))
 
-                merge_tiles(
-                    tiles=all_tiles,
-                    dst_path=dst_path,
-                    method=self.merge_method,
-                )
-                self.remove_temp_files()
+                try:
+                    merge_tiles(
+                        tiles=all_tiles,
+                        dst_path=dst_path,
+                        method=self.merge_method,
+                    )
+                    self.remove_temp_files()
+                    
+                # overwritting merged_tmp.tif may be impossible in windows (e.g. if an antivirus is analysing the newly created data)
+                # then, merging and cleaning is impossible
+                except rasterio._err.CPLE_AppDefinedError as e :
+                    feedback.pushWarning(f"Unable to cleaning temporary files ! Try to delete them latter at {self.output_subdir}")
+
                 self.all_encoding_done = True
 
             # Update the progress bar
