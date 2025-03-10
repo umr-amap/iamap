@@ -108,3 +108,21 @@ rasterio._err.CPLE_AppDefinedError: Deleting C:\Users\User\AppData\Local\Temp\ia
 
 The encoding algorithm merges temporary files periodically (by default 500). Afterwards it cleanes the old temp files to leave space. 
 This error is because you probably have deleting rights in the default temporary folder. Try to choose an other folder or to get in touch with your IT support.
+
+This error should be resolved but if you encounter similar issues, do mention it on the [relevant GitHub issue](https://github.com/umr-amap/iamap/issues/45)
+
+## Large bands on the feature raster
+
+
+```{image} ./_static/merge_band.png
+:alt: Band effet on feature raster
+:class: centered-image
+:width: 600px
+:align: center
+```
+
+If you see such bands on your raster, chances are that you have selected the `average` merge method.
+Regularly, infered tiles are merged together. If this does not form a rectangle, `rasterio` fills the remainder with a constant value.
+Afterwards, when larger tiles are merged together, the remainder is averaged with the following infered tiles.
+
+The easiest solution would be to change the merge method used. However, if you need to use the `average` merge method, then you could try to decrease the frequency at which tiles are merge together. Otherwise, you can set the merge frequency to a multiple of the number of tiles you'll have in a width of the raster such as to always have a rectangle.
