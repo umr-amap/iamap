@@ -2,7 +2,7 @@
 name=iamap
 description=Extract and manipulate deep learning features from rasters
 about= This plugin is still a work in progress, feel free to fill an issue on github.
-version=0.6.1
+version=0.6.2
 icon=icons/favicon.svg
 qgisMinimumVersion=3.12
 author=Paul Tresson, Pierre Lecoz, Hadrien Tulet
