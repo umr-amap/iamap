@@ -172,7 +172,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         tmp_files_cleanup_frq = QgsProcessingParameterNumber(
             name=self.TEMP_FILES_CLEANUP_FREQ,
             description=self.tr(
-                "Frequencie at which temporary files should be cleaned up (zero means no cleanup)."
+                "Frequency at which temporary files should be cleaned up (zero means no cleanup)."
             ),
             type=QgsProcessingParameterNumber.Integer,
             defaultValue=500,
@@ -247,6 +247,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
         )
         self.backbone_opt = [
+            "ViT small DINO patch 8",
             "ViT base DINO",
             "ViT tiny Imagenet (smallest)",
             "ViT base MAE",
@@ -254,6 +255,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             "--Empty--",
         ]
         self.timm_backbone_opt = [
+            "vit_samll_patch8_224.dino",
             "vit_base_patch16_224.dino",
             "vit_tiny_patch16_224.augreg_in21k",
             "vit_base_patch16_224.mae",
@@ -631,7 +633,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 # overwritting merged_tmp.tif may be impossible in windows (e.g. if an antivirus is analysing the newly created data)
                 # then, merging and cleaning is impossible
                 except Exception as e :
-                    feedback.pushWarning(f"Unable to cleaning temporary files ! Try to delete them latter at {self.output_subdir}")
+                    feedback.pushWarning(f"Unable to clean temporary files ! Try to delete them latter at {self.output_subdir}")
 
                 self.all_encoding_done = True
 
