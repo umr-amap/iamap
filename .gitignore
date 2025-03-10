@@ -15,3 +15,9 @@ models
 dinov2_base_518px_p14_reg4.lvd142m.pc22_subtrain2.8M_12n8A10040h115999it_over_125000_timm_compatible.pth
 docs/build
 symbology-style.db
+test.cpg
+test.dbf
+test.prj
+test.qix
+test.shp
+test.shx
