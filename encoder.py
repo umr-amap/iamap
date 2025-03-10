@@ -514,6 +514,8 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         ## will update if process is canceled by the user
         self.all_encoding_done = True
 
+        merged_files_counter = 0
+
         for current, sample in enumerate(dataloader):
             if current <= last_batch_done:
                 continue
@@ -615,7 +617,8 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 ]
                 all_tiles = [f for f in all_tiles if not f.startswith("merged")]
 
-                dst_path = Path(os.path.join(self.output_subdir, "merged_tmp.tif"))
+                dst_path = Path(os.path.join(self.output_subdir, f"{merged_files_counter}_merged_tmp.tif"))
+                merged_files_counter += 1
 
                 try:
                     merge_tiles(
