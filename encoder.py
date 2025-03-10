@@ -304,7 +304,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
         )
 
-        self.merge_options = ["average", "first", "min", "max", "sum", "count", "last"]
+        self.merge_options = ["first", "average", "min", "max", "sum", "count", "last"]
         merge_param = QgsProcessingParameterEnum(
             name=self.MERGE_METHOD,
             description=self.tr("Merge method at the end of inference."),
