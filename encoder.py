@@ -255,7 +255,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             "--Empty--",
         ]
         self.timm_backbone_opt = [
-            "vit_samll_patch8_224.dino",
+            "vit_small_patch8_224.dino",
             "vit_base_patch16_224.dino",
             "vit_tiny_patch16_224.augreg_in21k",
             "vit_base_patch16_224.mae",
