@@ -44,9 +44,8 @@ def merge_tiles(
     cf. https://amanbagrecha.github.io/posts/2022-07-31-merge-rasters-the-modern-way-using-python/index.html
     """
 
-    # file_handler = [rasterio.open(ds) for ds in tiles]
-    # extents = [ds.bounds for ds in file_handler]
-    extents = get_extents(tiles)
+    file_handler = [rasterio.open(ds) for ds in tiles]
+    extents = [ds.bounds for ds in file_handler]
     # Extract individual bounds
     lefts, bottoms, rights, tops = zip(*extents)
     union_extent = (
@@ -59,19 +58,18 @@ def merge_tiles(
     if method == "average":
         method = custom_method_avg
 
-    # memfile = MemoryFile()
     merge(
-        # sources=file_handler,  # list of dataset objects opened in 'r' mode
-        sources=tiles,  # try without rasterio.open
+        sources=file_handler,  # list of dataset objects opened in 'r' mode
         bounds=union_extent,  # tuple
         nodata=nodata,  # float
         dtype=dtype,  # dtype
-        # resampling=Resampling.nearest,
         method=method,  # strategy to combine overlapping rasters
-        # dst_path=memfile.name, # str or PathLike to save raster
         dst_path=dst_path,
-        # dst_kwds={'blockysize':512, 'blockxsize':512} # Dictionary
     )
+
+    # close datasets
+    for ds in file_handler:
+        ds.close()
 
 
 def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True, subset=1_000):

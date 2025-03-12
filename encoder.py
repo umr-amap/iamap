@@ -618,7 +618,8 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 ]
                 all_tiles = [f for f in all_tiles if not f.startswith("merged")]
 
-                dst_path = Path(os.path.join(self.output_subdir, f"{current}_merged_tmp.tif"))
+                # dst_path = Path(os.path.join(self.output_subdir, f"{current}_merged_tmp.tif"))
+                dst_path = Path(os.path.join(self.output_subdir, f"merged_tmp.tif"))
 
                 try:
                     merge_tiles(
@@ -631,7 +632,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 # overwritting merged_tmp.tif may be impossible in windows (e.g. if an antivirus is analysing the newly created data)
                 # then, merging and cleaning is impossible
                 except Exception as e :
-                    feedback.pushWarning(f"Unable to clean temporary files ! Try to delete them latter at {self.output_subdir}")
+                    feedback.pushWarning(f"Unable to clean temporary files ! Try to delete them latter at {self.output_subdir}\n{e}")
 
                 self.all_encoding_done = True
 
