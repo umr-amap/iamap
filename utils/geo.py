@@ -24,6 +24,13 @@ def custom_method_avg(merged_data, new_data, merged_mask, new_mask, **kwargs):
     np.logical_and(merged_mask, mask, out=mask)
     np.copyto(merged_data, new_data, where=mask, casting="unsafe")
 
+def get_extents(raster_files):
+    extents = []
+    for file in raster_files:
+        with rasterio.open(file, 'r') as src:
+            bounds = src.bounds
+            extents.append(bounds)
+    return extents
 
 def merge_tiles(
     tiles: list,
@@ -37,8 +44,9 @@ def merge_tiles(
     cf. https://amanbagrecha.github.io/posts/2022-07-31-merge-rasters-the-modern-way-using-python/index.html
     """
 
-    file_handler = [rasterio.open(ds) for ds in tiles]
-    extents = [ds.bounds for ds in file_handler]
+    # file_handler = [rasterio.open(ds) for ds in tiles]
+    # extents = [ds.bounds for ds in file_handler]
+    extents = get_extents(tiles)
     # Extract individual bounds
     lefts, bottoms, rights, tops = zip(*extents)
     union_extent = (
@@ -52,30 +60,18 @@ def merge_tiles(
         method = custom_method_avg
 
     # memfile = MemoryFile()
-    try:
-        merge(
-            sources=file_handler,  # list of dataset objects opened in 'r' mode
-            bounds=union_extent,  # tuple
-            nodata=nodata,  # float
-            dtype=dtype,  # dtype
-            # resampling=Resampling.nearest,
-            method=method,  # strategy to combine overlapping rasters
-            # dst_path=memfile.name, # str or PathLike to save raster
-            dst_path=dst_path,
-            # dst_kwds={'blockysize':512, 'blockxsize':512} # Dictionary
-        )
-    except TypeError:
-        merge(
-            datasets=file_handler,  # list of dataset objects opened in 'r' mode
-            bounds=union_extent,  # tuple
-            nodata=nodata,  # float
-            dtype=dtype,  # dtype
-            # resampling=Resampling.nearest,
-            method=method,  # strategy to combine overlapping rasters
-            # dst_path=memfile.name, # str or PathLike to save raster
-            dst_path=dst_path,
-            # dst_kwds={'blockysize':512, 'blockxsize':512} # Dictionary
-        )
+    merge(
+        # sources=file_handler,  # list of dataset objects opened in 'r' mode
+        sources=tiles,  # try without rasterio.open
+        bounds=union_extent,  # tuple
+        nodata=nodata,  # float
+        dtype=dtype,  # dtype
+        # resampling=Resampling.nearest,
+        method=method,  # strategy to combine overlapping rasters
+        # dst_path=memfile.name, # str or PathLike to save raster
+        dst_path=dst_path,
+        # dst_kwds={'blockysize':512, 'blockxsize':512} # Dictionary
+    )
 
 
 def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True, subset=1_000):
