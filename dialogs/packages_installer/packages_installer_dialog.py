@@ -260,7 +260,8 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         if process.returncode != 0:
             msg = (
                 f'<span style="color: {_ERROR_COLOR};"><b>'
-                f"pip installation failed! Consider installing it manually."
+                f"pip installation failed!"
+                f"You can try to upgrade python or install pip manually (https://pip.pypa.io/en/stable/installation/#get-pip-py)."
                 f"<b></span>"
             )
             self.log(msg)
