@@ -240,7 +240,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
             self.log("<em>Pip is installed, skipping installation...</em>\n")
             return
 
-        install_pip_command = [PYTHON_EXECUTABLE_PATH, "-m", "ensurepip"]
+        install_pip_command = [PYTHON_EXECUTABLE_PATH, "-m", "ensurepip", "--upgrade"]
         self.log(
             f'<em>Running command to install pip: \n  $ {" ".join(install_pip_command)} </em>'
         )
