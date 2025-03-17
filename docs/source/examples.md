@@ -1,11 +1,39 @@
 # Examples
 
+
+## Mapping Bamboo forests in Thailand
+
+
+The goal in this example is to map bamboo forests in Thailand using UAV RGB data.
+Here is the image with overlaping training points (the different colors correspond to different bamboo species):
+
+```{image} ./_static/examples/drone_train.png
+:alt: Image with training GT points
+:class: centered-image
+:width: 600px
+:align: center
+```
+
+And here is the image with overlaping test points (train and test set are separated to avoid spatial auto-correlation):
+
+```{image} ./_static/examples/drone_test.png
+:alt: Image with test GT points
+:class: centered-image
+:width: 600px
+:align: center
+```
+
+This image is fed through a ViT base DINO encoder (with default encoding parameters) before fitting a random forest (RF) classifier on the obtained features.
+We achieve 71% accuracy on this dataset alone. If we fit a RF directly on RGB data, we achieve only 45% accuracy. This shows that the encoder has produced meaningfull features used by the classifier afterwards.
+
+
+
 ## Mapping Cameroon forest types with Sentinel 2 data
 
 
 The goal in this example is to map different forest types using multispectral Sentinel 2 data.
 
-We have a raster and ... points that have been labelled by photo-interpretation.
+We have a raster and points labelled by photo-interpretation:
 
 ```{image} ./_static/examples/original_points.png
 :alt: Original image with GT points
@@ -13,12 +41,15 @@ We have a raster and ... points that have been labelled by photo-interpretation.
 :width: 600px
 :align: center
 ```
+One this image, the dark blue points correspond to open forests, green to swap forests and light blue to dense forests.
+This dataset was randomly split into 80-20% between a train and a test set to learn a RF classifier.
+The image was either fed into a deep learning (DL) backbone (ViT base DINO) or not.
 
 Here is a recap of the random forest accuracy given different pre- and post-processing of the encoder's features.
 
 | Using a DL encoder    | Pre-processing    | Post-processing   | Accuracy  |
 | :-----------          | :-----------      | :--------------   |---------: |
-| No                    | No                | No                |           |
+| No                    | No                | No                |0.88       |
 | Yes                   | No                | No                |0.75       |
 | No                    | 3D PCA            | No                |**0.93**   |
 | Yes                   | 3D PCA            | No                |0.86       |
@@ -52,8 +83,4 @@ And with pre-processing:
 ```
 
 
-## Mapping Bamboo forests in Thailand
-
-
-
-## Mapping Land Cover in La Réunion
+<!-- ## Mapping Land Cover in La Réunion -->
