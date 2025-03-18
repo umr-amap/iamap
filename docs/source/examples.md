@@ -83,4 +83,60 @@ And with pre-processing:
 ```
 
 
-<!-- ## Mapping Land Cover in La Réunion -->
+## Mapping Land Cover change in La Reunion island
+
+The objective is to characterize land cover change in La Reunion island based on the analysis of aerial IGN ortho-photography from 1950 and 2022.
+
+Data :
+- The collection of historical Orthophotos (1950) is accessible from the following website : https://geoservices.ign.fr/bdorthohisto
+The historical map is divided into a mosaic of 130 grayscale tiles, i.e. in a 1-band rasters, ranging from 0 to 255 to represent the light intensity.
+The resolution of each image is 50cm/pixel.
+
+- The collection of recent Orthophotos (2022) is accessible from the following website : https://geoservices.ign.fr/bdortho
+The recent map is divided into a mosaic of 130 color tiles, i.e. in RGB (Red, Green, Blue) 3-bands rasters where each band uses pixel value ranging from 0 to 255 to represent the corresponding color intensity. The resolution of each image is 20cm/pixel.
+
+- Preliminary step : a data transformation for the comparison 1950 / 2022 :
+The recent images resolution  (2022) is transformed  from 20cm/pixel to 50cm/pixel using QGIS in order to obtain the same resolution as the historical images (1950) . In addition, a conversion from color (RGB or 3-bands) to grayscale (1-band) is applied using QGIS plugin OTB (OTB  > feature extraction > radiometric indices >set band 3 2 1 and choice Bi index (Brightness index) . Thanks to these two steps the comparison between both maps can be done pixel by pixel.
+
+- Method
+Each image is fed through a ViT base DINO encoder before fitting a random forest (RF) classifier on the obtained features.
+
+
+- The Land Cover classes :
+A photo-identification is achieved on 30 randomly selected tiles for each dataset. The variability inherent to each class is accounted for by the identification of 10 polygones per landcover class.
+The different landcover classes are the following :
+- Agricultural
+- Low vegetation
+- Forest
+- Shade
+- Urban
+
+
+Here is the figure showing the classification results for 1950
+
+```{image} ./_static/examples/classif_1950.png
+:alt: Image 1
+:class: centered-image
+:width: 600px
+:align: center
+```
+
+
+Here is the figure showing the classification results for 2022
+
+```{image} ./_static/examples/classif_2022.png
+:alt: Image 2
+:class: centered-image
+:width: 600px
+:align: center
+```
+
+
+Here is the figure showing the land cover changes between 1950 and 2022
+
+```{image} ./_static/examples/landcover_change.png
+:alt: Image 3
+:class: centered-image
+:width: 600px
+:align: center
+```
