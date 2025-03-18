@@ -17,8 +17,8 @@ jobs:
       max-parallel: 6
       matrix:
         ## Windows automatic testing is not functionnig yet
-        os: [ubuntu-latest , macos-latest]
-        # os: [ubuntu-latest , macos-latest , windows-latest]
+        # os: [ubuntu-latest , macos-latest]
+        os: [ubuntu-latest , macos-latest , windows-latest]
         python-minor-version: [11, 12]
         qgis-minor-version: [34, 36, 38]
           
