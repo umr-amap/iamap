@@ -58,14 +58,25 @@ def merge_tiles(
     if method == "average":
         method = custom_method_avg
 
-    merge(
-        sources=file_handler,  # list of dataset objects opened in 'r' mode
-        bounds=union_extent,  # tuple
-        nodata=nodata,  # float
-        dtype=dtype,  # dtype
-        method=method,  # strategy to combine overlapping rasters
-        dst_path=dst_path,
-    )
+    try:
+        merge(
+            sources=file_handler,  # list of dataset objects opened in 'r' mode
+            bounds=union_extent,  # tuple
+            nodata=nodata,  # float
+            dtype=dtype,  # dtype
+            method=method,  # strategy to combine overlapping rasters
+            dst_path=dst_path,
+        )
+    ## different rasterio versions take different keyword args
+    except TypeError:
+        merge(
+            datasets=file_handler,  # list of dataset objects opened in 'r' mode
+            bounds=union_extent,  # tuple
+            nodata=nodata,  # float
+            dtype=dtype,  # dtype
+            method=method,  # strategy to combine overlapping rasters
+            dst_path=dst_path,
+        )
 
     # close datasets
     for ds in file_handler:
