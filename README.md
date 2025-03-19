@@ -1,6 +1,7 @@
 # iamap
 
 [Documentation](https://iamap.readthedocs.io/en/latest/)
+[Gitlab repo](https://forge.ird.fr/amap/iamap)
 
 ## Rationale
 
