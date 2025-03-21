@@ -95,15 +95,15 @@ The resolution of each image is 50cm/pixel.
 - The collection of recent Orthophotos (2022) is accessible from the following website : https://geoservices.ign.fr/bdortho
 The recent map is divided into a mosaic of 130 color tiles, i.e. in RGB (Red, Green, Blue) 3-bands rasters where each band uses pixel value ranging from 0 to 255 to represent the corresponding color intensity. The resolution of each image is 20cm/pixel.
 
-- Preliminary step : a data transformation for the comparison 1950 / 2022 :
+- Preliminary step : A data transformation for the comparison 1950 / 2022 :
 The recent images resolution  (2022) is transformed  from 20cm/pixel to 50cm/pixel using QGIS in order to obtain the same resolution as the historical images (1950) . In addition, a conversion from color (RGB or 3-bands) to grayscale (1-band) is applied using QGIS plugin OTB (OTB  > feature extraction > radiometric indices >set band 3 2 1 and choice Bi index (Brightness index) . Thanks to these two steps the comparison between both maps can be done pixel by pixel.
 
-- Method
+- Method :
 Each image is fed through a ViT base DINO encoder before fitting a random forest (RF) classifier on the obtained features.
 
 
 - The Land Cover classes :
-A photo-identification is achieved on 30 randomly selected tiles for each dataset. The variability inherent to each class is accounted for by the identification of 10 polygones per landcover class.
+A photo-identification is achieved on 30 randomly selected tiles for each dataset. The variability inherent to each class is accounted for by the identification of 10 polygones per landcover class for the training set and another 10 polygones per landcover class for the validation step (The training and validation sets are spatially separated to avoid spatial auto-correlation).
 The different landcover classes are the following :
 - Agricultural
 - Low vegetation
