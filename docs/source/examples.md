@@ -98,8 +98,9 @@ The recent map is divided into a mosaic of 130 color tiles, i.e. in RGB (Red, Gr
 - Preliminary step : A data transformation for the comparison 1950 / 2022 :
 The recent images resolution  (2022) is transformed  from 20cm/pixel to 50cm/pixel using QGIS in order to obtain the same resolution as the historical images (1950) . In addition, a conversion from color (RGB or 3-bands) to grayscale (1-band) is applied using QGIS plugin OTB (OTB  > feature extraction > radiometric indices >set band 3 2 1 and choice Bi index (Brightness index) . Thanks to these two steps the comparison between both maps can be done pixel by pixel.
 
-- Method :
-Each image is fed through a ViT base DINO encoder before fitting a random forest (RF) classifier on the obtained features.
+- Method : Preliminary test have been done to diffferenciate a variety of homogeneous patchs (such as forest, urban area, low vegetation) using the Haralick Texture metrics (ie 9 metrics from the R package GLCMTextures) with different sets of  parameters : the results were not satisfying.
+  Promising result were obtained with the features obtained from the ViT base DINO encoder
+Each image is then fed through a ViT base DINO encoder before fitting a random forest (RF) classifier on the obtained features.
 
 
 - The Land Cover classes :
