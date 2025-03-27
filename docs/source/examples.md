@@ -91,11 +91,10 @@ The objective is to characterize land cover change in La Reunion island based on
 
 The data used here comprises two datasets, one of historical orthophotos from 1950 and the other of recent orthophotos from 2022.
 
-The collection of historical orthophotos (1950) is accessible [from the following website](https://geoservices.ign.fr/bdorthohisto)
-The historical map is divided into a mosaic of 130 grayscale tiles of 50cm/pixel resolution.
-
-The collection of recent orthophotos (2022) is accessible from the [following website](https://geoservices.ign.fr/bdortho)
-The recent map is divided into a mosaic of 130 color tiles of 20cm/pixel resolution.
+| Date  | Tiles   | Modality            | Resolution   | Source  |
+| :---  | :---    | :--------           |:---------    | :-------| 
+| 1950  | 130     | Grayscale (uint8)   |50cm/pixel    |[IGN](https://geoservices.ign.fr/bdorthohisto)|
+| 2022  | 130     | RGB (uint8)         |20cm/pixel    |[IGN](https://geoservices.ign.fr/bdortho)|
 
 ### Pre-processing
 
