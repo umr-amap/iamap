@@ -87,24 +87,28 @@ And with pre-processing:
 
 The objective is to characterize land cover change in La Reunion island based on the analysis of aerial IGN ortho-photography from 1950 and 2022.
 
-Data :
-- The collection of historical Orthophotos (1950) is accessible [from the following website](https://geoservices.ign.fr/bdorthohisto)
-The historical map is divided into a mosaic of 130 grayscale tiles, i.e. in a 1-band rasters, ranging from 0 to 255 to represent the light intensity.
-The resolution of each image is 50cm/pixel.
+### Data
 
-- The collection of recent Orthophotos (2022) is accessible from the [following website](https://geoservices.ign.fr/bdortho)
-The recent map is divided into a mosaic of 130 color tiles, i.e. in RGB (Red, Green, Blue) 3-bands rasters where each band uses pixel value ranging from 0 to 255 to represent the corresponding color intensity. The resolution of each image is 20cm/pixel.
+The data used here comprises two datasets, one of historical orthophotos from 1950 and the other of recent orthophotos from 2022.
 
-- Preliminary step : A data transformation for the comparison 1950 / 2022 :
-The recent images resolution  (2022) is transformed  from 20cm/pixel to 50cm/pixel using QGIS in order to obtain the same resolution as the historical images (1950) . In addition, a conversion from color (RGB or 3-bands) to grayscale (1-band) is applied using QGIS plugin OTB (OTB  > feature extraction > radiometric indices >set band 3 2 1 and choice Bi index (Brightness index) . Thanks to these two steps the comparison between both maps can be done pixel by pixel.
+The collection of historical orthophotos (1950) is accessible [from the following website](https://geoservices.ign.fr/bdorthohisto)
+The historical map is divided into a mosaic of 130 grayscale tiles of 50cm/pixel resolution.
 
-- Method : Preliminary test have been done to diffferenciate a variety of homogeneous patchs (such as forest, urban area, low vegetation) using the Haralick Texture metrics (ie 9 metrics from the R package GLCMTextures) with different sets of  parameters : the results were not satisfying.
-  Promising result were obtained with the features obtained from the ViT base DINO encoder
-Each image is then fed through a ViT base DINO encoder before fitting a random forest (RF) classifier on the obtained features.
+The collection of recent orthophotos (2022) is accessible from the [following website](https://geoservices.ign.fr/bdortho)
+The recent map is divided into a mosaic of 130 color tiles of 20cm/pixel resolution.
 
+### Pre-processing
 
-- The Land Cover classes :
-A photo-identification is achieved on 30 randomly selected tiles for each dataset. The variability inherent to each class is accounted for by the identification of 10 polygones per landcover class for the training set and another 10 polygones per landcover class for the validation step (The training and validation sets are spatially separated to avoid spatial auto-correlation).
+The recent images resolution is transformed from 20cm/pixel to 50cm/pixel using QGIS in order to obtain the same resolution as the historical images. 
+In addition, a conversion from color (RGB or 3-bands) to grayscale (1-band) is applied using QGIS plugin [OTB](https://www.orfeo-toolbox.org/CookBook/QGISInterface.html) (`OTB  > feature extraction > radiometric indices >set band 3 2 1`, choosing Brightness index.
+Thanks to these two steps the comparison between both maps can be done pixel by pixel.
+
+### Land Cover classes :
+
+A photo-identification is achieved on 30 randomly selected tiles for each dataset. 
+The variability inherent to each class is accounted for by the identification of 10 polygons per landcover class for the training set and another 10 polygons per landcover class for the validation step. Training and validation sets are spatially separated to avoid spatial auto-correlation.
+The 10 polygons per class resulted in a dataset of XXX points (XXX in training and XXX in test dataset).
+
 The different landcover classes are the following :
 - Agricultural
 - Low vegetation
@@ -112,8 +116,18 @@ The different landcover classes are the following :
 - Shade
 - Urban
 
+### Processing
 
-Here is the figure showing the classification results for 1950
+Preliminary test have been done to diffferenciate a variety of homogeneous patchs (such as forest, urban area, low vegetation) using the Haralick Texture metrics (*i.e.* 9 metrics from the R package GLCMTextures) with different sets of parameters and using the resulting features to train a RF classifier but the results were not satisfying, motivating the use of a DL encoder.
+
+Images are fed through a ViT base DINO encoder with default parameters and the resulting features are used as input for a random forest classifier (XXX hyper-parameters).
+The RF achieves the following accuracy/kappa:
+
+XXX
+
+### Results
+
+Here are the classification results for 1950:
 
 ```{image} ./_static/examples/classif_1950.png
 :alt: Image 1
@@ -123,7 +137,7 @@ Here is the figure showing the classification results for 1950
 ```
 
 
-Here is the figure showing the classification results for 2022
+And the classification for 2022:
 
 ```{image} ./_static/examples/classif_2022.png
 :alt: Image 2
@@ -133,7 +147,8 @@ Here is the figure showing the classification results for 2022
 ```
 
 
-Here is the figure showing the land cover changes between 1950 and 2022
+
+Then, we can analyze land cover changes between 1950 and 2022:
 
 ```{image} ./_static/examples/landcover_change.png
 :alt: Image 3
