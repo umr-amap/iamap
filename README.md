@@ -1,9 +1,8 @@
-# <img src="./icons/favicon.svg" width=10% height=10%> IAMAP
+<img src="./icons/favicon.svg" width=10% height=10%> 
 
+# IAMAP
 
-[Documentation](https://iamap.readthedocs.io/en/latest/)
-
-[Gitlab repo (mirror)](https://forge.ird.fr/amap/iamap)
+[Documentation](https://iamap.readthedocs.io/en/latest/) [Gitlab repo (mirror)](https://forge.ird.fr/amap/iamap)
 
 ## Rationale
 
