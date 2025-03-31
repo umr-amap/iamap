@@ -10,6 +10,7 @@ from qgis.core import (
 
 import timm
 import torch
+import huggingface_hub
 
 # from torchgeo.datasets import RasterDataset
 from ..tg.datasets import RasterDataset
@@ -54,6 +55,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
             "OUT_DTYPE": 0,
         }
 
+    @pytest.mark.xfail(raises=huggingface_hub.errors.LocalEntryNotFoundError)
     def test_valid_parameters(self):
         self.algorithm.initAlgorithm()
         _ = self.algorithm.processAlgorithm(
@@ -66,6 +68,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
         os.remove(expected_result_path)
 
 
+    @pytest.mark.xfail(raises=huggingface_hub.errors.LocalEntryNotFoundError)
     def test_timm_create_model(self):
         archs = [
             "vit_base_patch16_224.dino",
