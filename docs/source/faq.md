@@ -24,6 +24,8 @@ The following figure shows a summary of what happens inside a ViT (adapted from 
 The input image is split into patches that become the input tokens of the transformer (with their relative position being encoded as well).An additional token (called "CLS token", for "class token") keeps track of general informations about the image while patch tokens describe the patch they are from (refined by the surronding context thanks to the attention mechanism).
 After several passes through transformer blocks, the resulting features can be used for a downstream task or in our case, kept and reassembled to be saved into a Geotiff.
 
+Then, the resolution of a resulting feature map in our plugin will depend on the *patch size* of the ViT used for encoding. If a model with a patch size of 14 is used, one pixel from the feature map will correspond to 14x14 pixels in the input raster. However, the resulting feature dimensions should be informative and take this 14x14 context as well as the surrounding patches into account.
+
 ## How does it handle more than three band images with pretrained models ?
 
 Our models are created using the `timm` librairy, which is widely used in deep learning research. [Here](https://timm.fast.ai/models#How-is-timm-able-to-use-pretrained-weights-and-handle-images-that-are-not-3-channel-RGB-images?) is the doc explaining how they handle non-RGB images when loading pre-trained models.
