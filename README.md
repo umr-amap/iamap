@@ -1,4 +1,6 @@
+<p align="center">
 <img src="./icons/favicon.svg" width=10% height=10%> 
+</p>
 
 # IAMAP
 
