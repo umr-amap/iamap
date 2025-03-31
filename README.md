@@ -47,7 +47,7 @@ Otherwise (for instance if you have several profiles), you can locate it by doin
 
 At first usage, a pop up should appear if necessary dependencies are not detected, that gives the option to install them automatically via `pip`.
 
-If this doesn't work, you can find more detailled instructions in the documentation.
+If this doesn't work, you can find [more detailled instructions in the documentation](https://iamap.readthedocs.io/en/latest/installation.html).
 
 Otherwise, feel free to submit an issue.
 
