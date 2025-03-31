@@ -5,7 +5,7 @@
 # IAMAP
 
 [![Documentation Status](https://app.readthedocs.org/projects/iamap/badge/)](https://iamap.readthedocs.io/en/latest/?badge=latest)
-[![CI](https://github.com/umr-amap/iamap/actions/workflows/job.yml/badge.svg)](https://github.com/umr-amap/iamap/actions/workflows/job.yml)
+[![CI](https://github.com/umr-amap/iamap/actions/workflows/jobs.yml/badge.svg)](https://github.com/umr-amap/iamap/actions/workflows/jobs.yml)
 [![GitLab Mirror](https://img.shields.io/badge/GitLab-Mirror-blue)](https://forge.ird.fr/amap/iamap)
 
 
