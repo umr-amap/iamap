@@ -106,7 +106,7 @@ Thanks to these two steps the comparison between both maps can be done pixel by 
 
 A photo-identification is achieved on 30 randomly selected tiles for each dataset. 
 The variability inherent to each class is accounted for by the identification of 10 polygons per landcover class for the training set and another 10 polygons per landcover class for the validation step. Training and validation sets are spatially separated to avoid spatial auto-correlation.
-The 10 polygons per class resulted in a dataset of XXX points (XXX in training and XXX in test dataset).
+<!-- The 10 polygons per class resulted in a dataset of XXX points (XXX in training and XXX in test dataset). -->
 
 The different landcover classes are the following :
 - Agricultural
@@ -119,10 +119,10 @@ The different landcover classes are the following :
 
 Preliminary test have been done to diffferenciate a variety of homogeneous patchs (such as forest, urban area, low vegetation) using the Haralick Texture metrics (*i.e.* 9 metrics from the R package GLCMTextures) with different sets of parameters and using the resulting features to train a RF classifier but the results were not satisfying, motivating the use of a DL encoder.
 
-Images are fed through a ViT base DINO encoder with default parameters and the resulting features are used as input for a random forest classifier (XXX hyper-parameters).
+Images are fed through a ViT base DINO encoder with default parameters and the resulting features are used as input for a random forest classifier (ntree=500, mtry=28).
 The RF achieves the following accuracy/kappa:
 
-XXX
+<!-- XXX -->
 
 ### Results
 

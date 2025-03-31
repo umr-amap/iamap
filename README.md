@@ -1,7 +1,8 @@
-# iamap
+# ![image](./icons/favicon.svg) IAMAP
 
 [Documentation](https://iamap.readthedocs.io/en/latest/)
-[Gitlab repo](https://forge.ird.fr/amap/iamap)
+
+[Gitlab repo (mirror)](https://forge.ird.fr/amap/iamap)
 
 ## Rationale
 
