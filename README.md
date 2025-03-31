@@ -1,4 +1,5 @@
-# ![image](./icons/favicon.svg) IAMAP
+# <img src="./icons/favicon.svg" width=20% height=20%> IAMAP
+
 
 [Documentation](https://iamap.readthedocs.io/en/latest/)
 
