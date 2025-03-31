@@ -1,5 +1,29 @@
 # FAQ
 
+
+## How does a ViT work ?
+
+Understanding the functionning of a ViT can help understand the outputs of the encoder algorithm in the plugin.
+ViTs (*Vi*sion *T*ransformers) are the leading deep learning architecture for image analysis since 2021. Their architecture is inspired by the original transformer architecture used in natural language processing (NLP). Transformers are for instance the architecture from ChatGPT etc.
+
+A transformer takes as input a series of tokens and projects them in a high-dimension feature space where their meaning is encoded. Additionnaly, the *attention mechanism* helps to encode how the different tokens relate to each others. 
+In NLP, these tokens can be words and ponctuation, with the attention mechanism helping to take the context into account.
+For instance, the word "Queen" will not have the same meaning depending if your are talking about Elizabeth II, chess or Freddy Mercury. 
+Then, the position of this token is updated in the feature space to better fit the meaning in the current context (for instance if the words "God save ...", "Gambit" or "Bohemian" are nearby).
+
+ViTs do the same with images but taking every pixel of an image as input in place of words would be prohibitly expensive. In 2021, [Dosovitskiy et al.](https://arxiv.org/abs/2010.11929) found that using patches of 16x16 pixels achieves good results in most computer vision tasks.
+The following figure shows a summary of what happens inside a ViT (adapted from Dosovitskiy et al. 2021).
+
+```{image} ./_static/Encoder_examples.png
+:alt: Summarized functionning of a ViT
+:class: centered-image
+:width: 500px
+:align: center
+```
+
+The input image is split into patches that become the input tokens of the transformer (with their relative position being encoded as well).An additional token (called "CLS token", for "class token") keeps track of general informations about the image while patch tokens describe the patch they are from (refined by the surronding context thanks to the attention mechanism).
+After several passes through transformer blocks, the resulting features can be used for a downstream task or in our case, kept and reassembled to be saved into a Geotiff.
+
 ## How does it handle more than three band images with pretrained models ?
 
 Our models are created using the `timm` librairy, which is widely used in deep learning research. [Here](https://timm.fast.ai/models#How-is-timm-able-to-use-pretrained-weights-and-handle-images-that-are-not-3-channel-RGB-images?) is the doc explaining how they handle non-RGB images when loading pre-trained models.
@@ -48,3 +72,4 @@ The algorithms that are proprely tested for now are PCA, UMAP, Kmeans, HDBSCAN a
 However, it is in our roadmap to test more extensively.
 
 The similarity tool however, is coded in pure pytorch and is tested automatically.
+

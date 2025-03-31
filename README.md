@@ -40,12 +40,9 @@ Otherwise (for instance if you have several profiles), you can locate it by doin
 
 At first usage, a pop up should appear if necessary dependencies are not detected, that gives the option to install them automatically via `pip`.
 
-You can find more detailled instructions in the documentation.
+If this doesn't work, you can find more detailled instructions in the documentation.
 
-For now, if you want to use a GPU you should install torch manualy following the instructions on https://pytorch.org/get-started/locally/
-
-Autommated GPU dependencies installation is in the works, you can try the `gpu-support` branch on this repo.
-
+Otherwise, feel free to submit an issue.
 
 ## Documentation
 
