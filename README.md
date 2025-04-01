@@ -55,6 +55,12 @@ Otherwise, feel free to submit an issue.
 
 Documentation is available [here](https://iamap.readthedocs.io/en/latest/).
 
+## Roadmap
+
+- [] Saving and using sklearn models in inference
+- [] Implementation of [Pangaea benchmark models](https://github.com/VMarsocci/pangaea-bench/tree/main)
+- [] Handling features of non-ViT-like models
+
 ## Contributing
 
 Feel free to fill an issue on GitHub or submit a PR. More detailled environment setup to come.
