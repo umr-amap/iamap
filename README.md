@@ -60,6 +60,7 @@ Documentation is available [here](https://iamap.readthedocs.io/en/latest/).
 - [ ] Saving and using sklearn models in inference
 - [ ] Implementation of [Pangaea benchmark models](https://github.com/VMarsocci/pangaea-bench/tree/main)
 - [ ] Handling features of non-ViT-like models
+- [ ] Publication on QGIS repo
 
 ## Contributing
 
