@@ -10,7 +10,7 @@ Welcome to iamap's documentation!
 Indices and tables
 ==================
 
-* :ref:`search`
+.. * :ref:`search`
 
 .. toctree::
    :maxdepth: 2
