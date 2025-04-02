@@ -120,7 +120,7 @@ The different landcover classes are the following :
 Preliminary test have been done to diffferenciate a variety of homogeneous patchs (such as forest, urban area, low vegetation) using the Haralick Texture metrics (*i.e.* 9 metrics from the R package GLCMTextures) with different sets of parameters and using the resulting features to train a RF classifier but the results were not satisfying, motivating the use of a DL encoder.
 
 Images are fed through a ViT base DINO encoder with default parameters and the resulting features are used as input for a random forest classifier (ntree=500, mtry=28).
-The RF achieves the following kappa: 0.973 for 1950 and 0.978 for 2022
+The RF achieves the following kappa: 0.973 for 1950 and 0.977 for 2022
 
 <!-- XXX -->
 
