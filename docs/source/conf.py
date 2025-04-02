@@ -65,8 +65,8 @@ html_favicon = "./../../icons/favicon.svg"
 html_logo = "./../../icons/favicon.svg"
 
 html_theme_options = {
-    "header_links_before_dropdown": 6,
-    "sidebarwidth": 200,
+    "header_links_before_dropdown": 7,
+    # "sidebarwidth": 200,
     "icon_links": [
         {
             "name": "GitHub",
@@ -75,11 +75,11 @@ html_theme_options = {
         },
     ],
     "show_version_warning_banner": True,
+    "show_nav_level": 3,
     "footer_start": ["copyright"],
     "footer_center": ["sphinx-version"],
-    "secondary_sidebar_items": {
-        "**/*": ["page-toc", "edit-this-page", "sourcelink"],
-        "examples/no-sidebar": [],
-    },
+    "secondary_sidebar_items": ["page-toc"],
     }
-
+html_sidebars = {
+  "**": []
+}
