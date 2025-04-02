@@ -32,7 +32,7 @@ Indices and tables
 
 .. note::
    
-   The iamap plugin is currently in active development. We will continue making improvements and welcome your feedback. If you have any questions or suggestions, please feel free to open an issue or discussion on our GitHub repository at `GitHub Issues <https://github.com/umr-amap/iamap/issues>`_ .
+   The iamap plugin is currently in active development. We will continue making improvements and welcome your feedback. If you have any questions or suggestions, please feel free `to open an issue or discussion on GitHub <https://github.com/umr-amap/iamap/issues>`_.
 
 
 
