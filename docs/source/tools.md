@@ -2,6 +2,10 @@
 
 This section describes the different tools available in the plugin.
 
+<!-- <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;"> -->
+<!--     <iframe src="https://www.youtube.com/watch?v=dQw4w9WgXcQ" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe> -->
+<!-- </div> -->
+
 ---------------------------------------
 ## Encoder
 
@@ -36,8 +40,9 @@ The parameters corresponding to a sha are saved in the `parameters.csv` files in
 
 The backend for handling datasets and dataloader is a fork from [torchgeo](https://torchgeo.readthedocs.io/).
 
-<!-- (!video)[./_static/encoder.webm] -->
-[![Watch the video](./_static/encoder_thumbnail.png)](./_static/encoder.webm)
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+    <iframe src="./_static/encoder.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
 
 
 
@@ -72,8 +77,9 @@ Different algorithms have different arguments that can be passed. You can provid
 
 > Not all of the algorithms have been tested and some may be heavy on computing or need particular input types.
 
-[![Watch the video](./_static/proj_thumbnail.png)](./_static/proj.webm)
-
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+    <iframe src="./_static/proj.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
 
 ---------------------------------------
 ## Clustering 
@@ -91,7 +97,9 @@ Different algorithms have different arguments that can be passed. You can provid
 
 > Not all of the algorithms have been tested and some may be heavy on computing or need particular input types.
 
-[![Watch the video](./_static/cluster_thumbnail.png)](./_static/cluster.webm)
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+    <iframe src="./_static/cluster.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
 
 ---------------------------------------
 ## Similarity
@@ -110,7 +118,9 @@ Here, additionnaly to an input raster, you have to provide a shapefile (or any f
 
 > If the geometry of your input is not points, it will automatically be sampled as points. You can check the sampling rate in the options.
 
-[![Watch the video](./_static/sim_thumbnail.png)](./_static/sim.webm)
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+    <iframe src="./_static/sim.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
 
 ---------------------------------------
 ## Machine Learning Algorithms
@@ -127,7 +137,9 @@ Thus, you have to provide an input shapfile (or any format that will be read by 
 Based on the algorithm you choose, these values will be interpreted as integers (classification) or floats (regression).
 All models provided by scikit-learn [ensemble](https://scikit-learn.org/stable/api/sklearn.ensemble.html) (_e.g._ Random Forests, Gradient Boosting) and [neighbors](https://scikit-learn.org/stable/api/sklearn.neighbors.html)(_e.g._ KNN) module  that share a common API are available.
 
-[![Watch the video](./_static/ml_thumbnail.png)](./_static/ml.webm)
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+    <iframe src="./_static/ml.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
 
 ### Training and testing
 
