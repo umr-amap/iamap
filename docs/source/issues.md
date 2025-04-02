@@ -1,4 +1,4 @@
-# Common issues
+# Known issues
 
 ## Similarity or Random Forest causes QGIS to crash
 
