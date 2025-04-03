@@ -9,10 +9,6 @@
 [![GitLab Mirror](https://img.shields.io/badge/GitLab-Mirror-blue)](https://forge.ird.fr/amap/iamap)
 
 
-
-<!-- [Documentation](https://iamap.readthedocs.io/en/latest/) [Gitlab repo (mirror)](https://forge.ird.fr/amap/iamap) -->
-<!-- https://app.readthedocs.org/projects/iamap/badge/ -->
-
 ## Rationale
 
 Deep learning is a powerful tool for image analysis. However several limits exist to it's full democratization and it's extension to remote sensing. Most notably, training of deep learning models requires lots of labelised data and computational power. In a lot of cases, labelised data is not easy to acquire and machines with high computational power are expensive.
