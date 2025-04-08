@@ -28,10 +28,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Set up Miniconda
-      uses: conda-incubator/setup-miniconda@v3
-    # - name: Set up micromamba
-    #   uses: mamba-org/setup-micromamba@v2
+    # - name: Set up Miniconda
+    #   uses: conda-incubator/setup-miniconda@v3
+    - name: Set up micromamba
+      uses: mamba-org/setup-micromamba@v2
       with:
         python-version: 3.${{ matrix.python-minor-version }}
         channels: conda-forge, nodefaults
@@ -39,12 +39,12 @@ jobs:
 
     - name: Set up Environment and Install Dependencies
       run: |
-        conda create -n pytest python=3.${{ matrix.python-minor-version }} qgis=3.${{ matrix.qgis-minor-version }} --yes
-        conda install -n pytest --file requirements.txt --yes
-        conda install -n pytest pytest --yes
+        mamba create -n pytest python=3.${{ matrix.python-minor-version }} qgis=3.${{ matrix.qgis-minor-version }} --yes
+        mamba install -n pytest --file requirements.txt --yes
+        mamba install -n pytest pytest --yes
       shell: bash -el {0}
 
     - name: Run Tests
       run: |
-        conda run -n pytest pytest tests/
+        mamaba run -n pytest pytest tests/
       shell: bash -el {0}
