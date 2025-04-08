@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - main, ga-windows
   pull_request:
     branches:
       - main, dev
@@ -17,10 +17,12 @@ jobs:
       max-parallel: 6
       matrix:
         ## Windows automatic testing is not functionnig yet
-        os: [ubuntu-latest , macos-latest]
-        # os: [ubuntu-latest , macos-latest , windows-latest]
-        python-minor-version: [11, 12]
-        qgis-minor-version: [34, 38, 40]
+        # os: [ubuntu-latest , macos-latest]
+        os: [windows-latest]
+        # python-minor-version: [11, 12]
+        python-minor-version: [12]
+        # qgis-minor-version: [34, 38, 40]
+        qgis-minor-version: [38]
           
     steps:
     - name: Checkout
@@ -30,7 +32,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: 3.${{ matrix.python-minor-version }}
-        channels: conda-forge
+        channels: conda-forge, nodefaults
         auto-update-conda: true
 
     - name: Set up Environment and Install Dependencies
