@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main, ga-windows
+      - ga-windows
   pull_request:
     branches:
       - main, dev
@@ -30,6 +30,8 @@ jobs:
 
     - name: Set up Miniconda
       uses: conda-incubator/setup-miniconda@v3
+    # - name: Set up micromamba
+    #   uses: mamba-org/setup-micromamba@v2
       with:
         python-version: 3.${{ matrix.python-minor-version }}
         channels: conda-forge, nodefaults
