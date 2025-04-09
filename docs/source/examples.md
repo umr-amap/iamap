@@ -1,5 +1,6 @@
-# Use Cases
+# Use cases
 
+This section showcases example use cases of the plugin.
 
 <!-- ## Mapping Bamboo forests in Thailand -->
 
