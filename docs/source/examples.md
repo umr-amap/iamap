@@ -1,30 +1,30 @@
-# Examples
+# Use Cases
 
 
-## Mapping Bamboo forests in Thailand
+<!-- ## Mapping Bamboo forests in Thailand -->
 
 
-The goal in this example is to map bamboo forests in Thailand using UAV RGB data.
-Here is the image with overlaping training points (the different colors correspond to different bamboo species):
+<!-- The goal in this example is to map bamboo forests in Thailand using UAV RGB data. -->
+<!-- Here is the image with overlaping training points (the different colors correspond to different bamboo species): -->
 
-```{image} ./_static/examples/drone_train.png
-:alt: Image with training GT points
-:class: centered-image
-:width: 600px
-:align: center
-```
+<!-- ```{image} ./_static/examples/drone_train.png -->
+<!-- :alt: Image with training GT points -->
+<!-- :class: centered-image -->
+<!-- :width: 600px -->
+<!-- :align: center -->
+<!-- ``` -->
 
-And here is the image with overlaping test points (train and test set are separated to avoid spatial auto-correlation):
+<!-- And here is the image with overlaping test points (train and test set are separated to avoid spatial auto-correlation): -->
 
-```{image} ./_static/examples/drone_test.png
-:alt: Image with test GT points
-:class: centered-image
-:width: 600px
-:align: center
-```
+<!-- ```{image} ./_static/examples/drone_test.png -->
+<!-- :alt: Image with test GT points -->
+<!-- :class: centered-image -->
+<!-- :width: 600px -->
+<!-- :align: center -->
+<!-- ``` -->
 
-This image is fed through a ViT base DINO encoder (with default encoding parameters) before fitting a random forest (RF) classifier on the obtained features.
-We achieve 71% accuracy on this dataset alone. If we fit a RF directly on RGB data, we achieve only 45% accuracy. This shows that the encoder has produced meaningfull features used by the classifier afterwards.
+<!-- This image is fed through a ViT base DINO encoder (with default encoding parameters) before fitting a random forest (RF) classifier on the obtained features. -->
+<!-- We achieve 71% accuracy on this dataset alone. If we fit a RF directly on RGB data, we achieve only 45% accuracy. This shows that the encoder has produced meaningfull features used by the classifier afterwards. -->
 
 
 
