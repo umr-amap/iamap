@@ -19,7 +19,6 @@ Indices and tables
    installation
    tools
    examples
-   tutorials
    faq
    issues
    aknowledgements

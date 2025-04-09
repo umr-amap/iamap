@@ -1,4 +1,4 @@
-# Tools
+# Tutorials
 
 This section describes the different tools available in the plugin.
 
