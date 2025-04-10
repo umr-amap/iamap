@@ -31,6 +31,10 @@ import torchvision.transforms as T
 import kornia.augmentation as K
 import timm
 
+from pangaea.encoders.base import Encoder
+from hydra.utils import instantiate
+from omegaconf import DictConfig, OmegaConf
+
 # from torchgeo.datasets import RasterDataset, BoundingBox,stack_samples
 # from torchgeo.samplers import GridGeoSampler, Units
 # from torchgeo.transforms import AugmentationSequential
@@ -50,7 +54,7 @@ from .utils.misc import (
     compute_md5_hash,
     log_parameters_to_csv,
 )
-from .utils.trch import quantize_model
+from .utils.trch import quantize_model, vit_first_layer_with_nchan
 from .utils.algo import IAMAPAlgorithm
 
 from .tg.datasets import RasterDataset
@@ -247,6 +251,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
         )
         self.backbone_opt = [
+            "SSL4EO MOCO",
             "ViT small DINO patch 8",
             "ViT base DINO",
             "ViT tiny Imagenet (smallest)",
@@ -255,6 +260,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             "--Empty--",
         ]
         self.timm_backbone_opt = [
+            Path(os.path.join(cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
             "vit_small_patch8_224.dino",
             "vit_base_patch16_224.dino",
             "vit_tiny_patch16_224.augreg_in21k",
@@ -368,7 +374,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             for i_band in range(1, self.rlayer.bandCount() + 1)
         ]
         # currently only support rgb bands
-        input_bands = [self.rlayer.bandName(i_band) for i_band in self.selected_bands]
+        self.input_bands = [self.rlayer.bandName(i_band) for i_band in self.selected_bands]
 
         feedback.pushInfo("create dataset")
         if self.crs == self.rlayer.crs():
@@ -376,7 +382,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 paths=self.rlayer_dir,
                 crs=None,
                 res=self.res,
-                bands=input_bands,
+                bands=self.input_bands,
                 cache=False,
             )
         else:
@@ -384,7 +390,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 paths=self.rlayer_dir,
                 crs=self.crs.toWkt(),
                 res=self.res,
-                bands=input_bands,
+                bands=self.input_bands,
                 cache=False,
             )
         extent_bbox = BoundingBox(
@@ -412,26 +418,11 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         # Load the model
         feedback.pushInfo("creating model")
-        model = timm.create_model(
-            self.backbone_name,
-            pretrained=True,
-            in_chans=len(input_bands),
-            num_classes=0,
-        )
-        logger.info("Model loaded succesfully !")
-        logger.handlers.clear()
+        if '.yaml' in str(self.backbone_name):
+            model, h, w = self._init_model_pangaea(logger=logger, feedback=feedback)
 
-        if feedback.isCanceled():
-            feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
-            return
-
-        feedback.pushInfo("model done")
-        data_config = timm.data.resolve_model_data_config(model)
-        (
-            _,
-            h,
-            w,
-        ) = data_config["input_size"]
+        else :
+            model, h, w = self._init_model_timm(logger=logger, feedback=feedback)
 
         if torch.cuda.is_available() and self.use_gpu:
             if self.cuda_id + 1 > torch.cuda.device_count():
@@ -540,15 +531,23 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
             feedback.pushInfo(f"Batch shape {images.shape}")
 
-            features = model.forward_features(images)
-            features = features[:, 1:, :]  # take only patch tokens
+            if '.yaml' in str(self.backbone_name):
+                input={}
+                input['optical'] = images
+                features = model(input)[0] ## temp, see why pangaea forwards a list of 4 features ?
+                # print(features.shape)
 
-            if current <= last_batch_done + 1:
-                n_patches = int(np.sqrt(features.shape[1]))
+            else:
+                features = model.forward_features(images)
+                features = features[:, 1:, :]  # take only patch tokens
 
-            features = features.view(
-                features.shape[0], n_patches, n_patches, features.shape[-1]
-            )
+                if current <= last_batch_done + 1:
+                    n_patches = int(np.sqrt(features.shape[1]))
+
+                features = features.view(
+                    features.shape[0], n_patches, n_patches, features.shape[-1]
+                )
+
             features = features.detach().cpu().numpy()
             feedback.pushInfo(f"Features shape {features.shape}")
 
@@ -680,6 +679,36 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             "OUTPUT_RASTER": dst_path,
             "OUTPUT_LAYER_NAME": layer_name,
         }
+
+    def _init_model_timm(self, logger, feedback):
+        model = timm.create_model(
+            self.backbone_name,
+            pretrained=True,
+            in_chans=len(self.input_bands),
+            num_classes=0,
+        )
+        logger.info("Model loaded succesfully !")
+        logger.handlers.clear()
+
+        if feedback.isCanceled():
+            feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
+            return
+
+        feedback.pushInfo("model done")
+        data_config = timm.data.resolve_model_data_config(model)
+        (
+            _,
+            h,
+            w,
+        ) = data_config["input_size"]
+        return model, h, w
+
+    def _init_model_pangaea(self, logger, feedback):
+        cfg = OmegaConf.load(self.backbone_name)
+        model: Encoder = instantiate(cfg)
+        model.load_encoder_weights(logger)
+        model = vit_first_layer_with_nchan(model, in_chans=len(self.input_bands))
+        return model, model.input_size, model.input_size
 
     def load_parameters_as_json(self, feedback, parameters):
         parameters["JSON_PARAM"] = str(parameters["JSON_PARAM"])
