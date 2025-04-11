@@ -535,7 +535,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 input={}
                 input['optical'] = images
                 features = model(input)[0] ## temp, see why pangaea forwards a list of 4 features ?
-                # print(features.shape)
+                features = features.permute(0,2,3,1)
 
             else:
                 features = model.forward_features(images)
