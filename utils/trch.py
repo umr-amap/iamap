@@ -26,6 +26,7 @@ def vit_first_layer_with_nchan(model, in_chans=1):
     kernel_size = model.patch_embed.proj.kernel_size
     stride = model.patch_embed.proj.stride
     embed_dim = model.patch_embed.proj.out_channels # corresponds to embed_dim
+    og_in_channels = model.patch_embed.proj.in_channels
     # copy the original patch_embed.proj config 
     # except the number of input channels
     new_conv = torch.nn.Conv2d(
@@ -39,7 +40,7 @@ def vit_first_layer_with_nchan(model, in_chans=1):
     bias = model.patch_embed.proj.bias.clone()
     with torch.no_grad():
         for i in range(0,in_chans):
-            j = i%3 # cycle every 3 bands
+            j = i%og_in_channels # cycle every n bands from the original weights
             new_conv.weight[:,i,:,:] = weight[:,j,:,:] #band i takes old band j (blue) weights
             new_conv.bias[:] = bias[:]
     model.patch_embed.proj = new_conv
