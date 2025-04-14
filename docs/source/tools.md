@@ -16,7 +16,7 @@ This section describes the different tools available in the plugin.
 :align: center
 ```
 
-This tools enables the encoding of an image with a deep learning backbone.
+This tool enables the encoding of an image with a deep learning backbone.
 Projecting an image through a deep learning backbone can indeed help bypass color, shadows or texture artefacts that make an object hard to detect otherwise.
 We have coded this plugin with Vision Transformers (ViTs) in mind as backbones because they have become the state of the art in computer vision since 2021.
 Modern deep learning backbones are pretrained in a Self-Supervised maner and can provide meaningfull descriptors of an image without further training.
@@ -56,6 +56,51 @@ However, if you input the name of another timm or huggingface backbone in the fi
 
 If you have a pretrained backbone, you can give a path to the weights in the corresponding field and this will be the backbone used for encoding.
 
+### Parameters
+
+- **Input raster layer or image file path:**
+
+The raster you want to feed to a deep learning encoder. This can either be a layer loaded in QGIS or the path to a file.
+
+- **Selected Bands:**
+Bands that will be fed to the encoder. Selected none feeds all the bands as is into the encoder. If you select a number of bands different that the one of the backbone you are using, the pretrained model will be changed accordingly.
+
+- **Processing extent:**
+Defaults to the entire image. Otherwise, you can set a smaller processing extent, either by calculating from a layer, from the current map canvas or by drawing the extent on the map.
+
+- **Sampling size:**
+The input raster will be sampled in squares of this sampling size (in pixels). This size can differ from the input size of the chosen deep learning encoder, sampled tiles will be resized before entering the encoder.
+
+- **Stride:**
+Step size between two sampled tiles. 
+If the stride is equall to the sampling size, the raster will be sampled allong a grid.
+If the stride is smaller than the sampling size, there will be an overlap between neighboring tiles.
+If the stride is larger, this will likely cause an error.
+
+- **Use GPU if CUDA is available**
+If the plugin recognises a GPU, it will be used for computing.
+
+- **Pre-selected backbones:**
+A selection of backbones.
+
+- **Enter an architecture name if you want to test another backbone**:
+You can use other backbones available on [huggingface](https://huggingface.co/timm). These however may not work properly depending on their architecture.
+Most ViT like backbones should work.
+
+- **Batch size:**
+How many tiles are fed into the network at once. This only takes effect if a GPU is available.
+
+
+### Advanced parameters
+
+- **Target CRS:**
+CRS into which the resulting raster should be projected.
+
+- **Target resolution:**
+target resolution in meters.
+
+- **Pretrained checkpoint:**
+If you have a pretrained model available on disk, you can use this one rather than pre-trained weights available on the web.
 
 ---------------------------------------
 ## Dimension reduction 
