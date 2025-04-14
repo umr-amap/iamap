@@ -46,15 +46,14 @@ The backend for handling datasets and dataloader is a fork from [torchgeo](https
 
 
 
+<!-- ### Backbone choice -->
 
-### Backbone choice
+<!-- We have pre-selected a couple of backbones that are often used in computer vision. -->
+<!-- However, if you input the name of another timm or huggingface backbone in the field below, this will be the used one. -->
 
-We have pre-selected a couple of backbones that are often used in computer vision.
-However, if you input the name of another timm or huggingface backbone in the field below, this will be the used one.
+<!-- ### Using a custom backbone -->
 
-### Using a custom backbone
-
-If you have a pretrained backbone, you can give a path to the weights in the corresponding field and this will be the backbone used for encoding.
+<!-- If you have a pretrained backbone, you can give a path to the weights in the corresponding field and this will be the backbone used for encoding. -->
 
 ### Parameters
 
