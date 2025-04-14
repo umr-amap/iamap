@@ -35,7 +35,7 @@ Do keep in mind that before passsing through the model, the sampled tile will be
 During encoding, each tile is saved on disk and the tiles are merged regularly to save space. We chose to save on disk to be easier on ram an leave the option to stop the process and restart later.
 By default, features are saved in a temporary directory but you can change the target location.
 
-Encoding sessions are identified with a [md5 sha](https://en.wikipedia.org/wiki/MD5) so a set of input parameters is unique and can be recognised. This allows to easily start again where you left of.
+Encoding sessions are identified with a [md5 hash](https://en.wikipedia.org/wiki/MD5) so a set of input parameters is unique and can be recognised. This allows to easily start again where you left of.
 The parameters corresponding to a sha are saved in the `parameters.csv` files in the target directory.
 
 The backend for handling datasets and dataloader is a fork from [torchgeo](https://torchgeo.readthedocs.io/).
@@ -59,7 +59,6 @@ If you have a pretrained backbone, you can give a path to the weights in the cor
 ### Parameters
 
 - **Input raster layer or image file path:**
-
 The raster you want to feed to a deep learning encoder. This can either be a layer loaded in QGIS or the path to a file.
 
 - **Selected Bands:**
@@ -77,7 +76,7 @@ If the stride is equall to the sampling size, the raster will be sampled allong 
 If the stride is smaller than the sampling size, there will be an overlap between neighboring tiles.
 If the stride is larger, this will likely cause an error.
 
-- **Use GPU if CUDA is available**
+- **Use GPU if CUDA is available:**
 If the plugin recognises a GPU, it will be used for computing.
 
 - **Pre-selected backbones:**
@@ -90,6 +89,9 @@ Most ViT like backbones should work.
 - **Batch size:**
 How many tiles are fed into the network at once. This only takes effect if a GPU is available.
 
+- **Output directory:**
+Where resulting rasters will be saved. A subdirectory identified by a md5 hash will correspond to a given encoding session.
+
 
 ### Advanced parameters
 
@@ -101,6 +103,36 @@ target resolution in meters.
 
 - **Pretrained checkpoint:**
 If you have a pretrained model available on disk, you can use this one rather than pre-trained weights available on the web.
+
+- **CUDA Device ID:**
+Enter CUDA device ID to choose on which GPU computations are done if you have several.
+
+- **Merge method at the end of inference:**
+Choose how tiles will be merged to reconstruct a full raster.
+For more informations, see [rasterio documentation](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge).
+Only the `average` method is custom and will average several overlapping tiles to obtain the values of the final pixels.
+
+- **Number of workers for dataloader:**
+How many threads will be used by the dataloader to feed the tiles into the encoder. This defaults to all available workers.
+You can chose less to ease the workload on your CPU.
+
+- **Schedule pauses between batches:**
+If a number is inputed, their will be a pause between each batch. This allows to pass the inference in background if other computations have to be made at the same time.
+
+- **Remove temporary files after encoding:**
+If selected, all temporary tiles will be removed at the end of encoding.
+
+- **Compress final result to uint16 and JP2 to save space:**
+If selected, the final features raster will be converted to uint16 rather than float32 (*i.e.* two times lighter) and compressed to JP2 rather than geotiff to save space.
+
+- **Frequency at which temporary files should be cleaned up:**
+Every n batch, temporary tiles will be merged together and deleted.
+
+- **Pass parameters as JSON file:**
+In the output directory, the parameters corresponding to an encoding session, you can find a JSON file summarizing the input parameters used during encoding.
+You can pass this JSON file here to overide all previous parameters. This can be usefull if you want to resume an encoding session.
+
+
 
 ---------------------------------------
 ## Dimension reduction 
