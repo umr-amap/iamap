@@ -94,22 +94,22 @@ Where resulting rasters will be saved. A subdirectory identified by a md5 hash w
 
 ### Advanced parameters
 
-- **Target CRS:**
-CRS into which the resulting raster should be projected.
-
-- **Target resolution:**
-target resolution in meters.
-
 - **Pretrained checkpoint:**
 If you have a pretrained model available on disk, you can use this one rather than pre-trained weights available on the web.
 
 - **CUDA Device ID:**
 Enter CUDA device ID to choose on which GPU computations are done if you have several.
 
+- **Remove temporary files after encoding:**
+If selected, all temporary tiles will be removed at the end of encoding.
+
 - **Merge method at the end of inference:**
 Choose how tiles will be merged to reconstruct a full raster.
 For more informations, see [rasterio documentation](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge).
 Only the `average` method is custom and will average several overlapping tiles to obtain the values of the final pixels.
+
+- **Frequency at which temporary files should be cleaned up:**
+Every n batch, temporary tiles will be merged together and deleted.
 
 - **Number of workers for dataloader:**
 How many threads will be used by the dataloader to feed the tiles into the encoder. This defaults to all available workers.
@@ -118,14 +118,14 @@ You can chose less to ease the workload on your CPU.
 - **Schedule pauses between batches:**
 If a number is inputed, their will be a pause between each batch. This allows to pass the inference in background if other computations have to be made at the same time.
 
-- **Remove temporary files after encoding:**
-If selected, all temporary tiles will be removed at the end of encoding.
+- **Target CRS:**
+CRS into which the resulting raster should be projected.
+
+- **Target resolution:**
+target resolution in meters.
 
 - **Compress final result to uint16 and JP2 to save space:**
 If selected, the final features raster will be converted to uint16 rather than float32 (*i.e.* two times lighter) and compressed to JP2 rather than geotiff to save space.
-
-- **Frequency at which temporary files should be cleaned up:**
-Every n batch, temporary tiles will be merged together and deleted.
 
 - **Pass parameters as JSON file:**
 In the output directory, the parameters corresponding to an encoding session, you can find a JSON file summarizing the input parameters used during encoding.
