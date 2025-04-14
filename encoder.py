@@ -281,7 +281,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             QgsProcessingParameterString(
                 name=self.BACKBONE_CHOICE,
                 description=self.tr(
-                    "Enter a architecture name if you want to test another backbone (see huggingface.co/timm/)"
+                    "Enter an architecture name if you want to test another backbone (see huggingface.co/timm/)"
                 ),
                 defaultValue=None,
                 optional=True,
@@ -321,23 +321,22 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         json_param = QgsProcessingParameterFile(
             name=self.JSON_PARAM,
             description=self.tr("Pass parameters as json file"),
-            # extension='pth',
             fileFilter="JSON Files (*.json)",
             optional=True,
             defaultValue=None,
         )
 
         for param in (
-            crs_param,
-            res_param,
             chkpt_param,
             cuda_id_param,
+            remove_tmp_files,
             merge_param,
+            tmp_files_cleanup_frq,
             nworkers_param,
             pauses_param,
-            remove_tmp_files,
+            crs_param,
+            res_param,
             compress_param,
-            tmp_files_cleanup_frq,
             json_param,
         ):
             param.setFlags(
