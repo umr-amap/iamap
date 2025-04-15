@@ -21,6 +21,7 @@ def quantize_model(model, device):
         )
     return model
 
+
 def vit_first_layer_with_nchan(model, in_chans=1):
 
     kernel_size = model.patch_embed.proj.kernel_size
@@ -46,3 +47,23 @@ def vit_first_layer_with_nchan(model, in_chans=1):
     model.patch_embed.proj = new_conv
 
     return model
+
+
+def get_first_module(model: torch.nn.Module):
+    """
+    modified from https://stackoverflow.com/questions/54846905/pytorch-get-all-layers-of-model
+    """
+    # get children form model
+    children = list(model.named_children())
+    if not children:
+        # if model has no children; model is last child
+        return model
+    else:
+       # look for children from children, to the last child
+       for name, child in children:
+            try:
+                child_name, child = get_first_module(child)
+                name = f'{name}.{child_name}'
+            except TypeError:
+                pass
+            return name, child
