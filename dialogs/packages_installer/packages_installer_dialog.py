@@ -605,17 +605,18 @@ class IAMapEmpty(QObject):
             "Install dependencies and restart QGIS ! - Fit ML model"
         )
 
-        # self.actionEncoder.triggered.connect()
-        # self.actionReducer.triggered.connect()
-        # self.actionCluster.triggered.connect()
-        # self.actionSimilarity.triggered.connect()
-        # self.actionRF.triggered.connect()
+        self.actionEncoder.triggered.connect(lambda: show_install_pop_up(self.iface))
+        self.actionReducer.triggered.connect(lambda: show_install_pop_up(self.iface))
+        self.actionCluster.triggered.connect(lambda: show_install_pop_up(self.iface))
+        self.actionSimilarity.triggered.connect(lambda: show_install_pop_up(self.iface))
+        self.actionRF.triggered.connect(lambda: show_install_pop_up(self.iface))
 
         self.toolbar.addAction(self.actionEncoder)
         self.toolbar.addAction(self.actionReducer)
         self.toolbar.addAction(self.actionCluster)
         self.toolbar.addAction(self.actionSimilarity)
         self.toolbar.addAction(self.actionRF)
+
 
     def unload(self):
         # self.wdg_select.setVisible(False)
