@@ -394,13 +394,12 @@ def get_pytorch_version(cuda_version):
     ## cf. https://pytorch.org/get-started/locally/
     cuda_to_pytorch = {
         "11.8": " --index-url https://download.pytorch.org/whl/cu118",
-        "12.1": "",
-        "12.2": "",
         "12.4": " --index-url https://download.pytorch.org/whl/cu124",
         "12.5": " --index-url https://download.pytorch.org/whl/cu124",
         "12.6": " --index-url https://download.pytorch.org/whl/cu124",
     }
-    return cuda_to_pytorch.get(cuda_version, None)
+    ## If cuda version is not found in dir, default to "pip install torch" + ""
+    return cuda_to_pytorch.get(cuda_version, "")
 
 
 def get_packages_to_install(device):
