@@ -510,10 +510,10 @@ def check_pip_installed() -> bool:
         return False
 
 
-dialog = None
+# dialog = None
 
 
-def check_required_packages_and_install_if_necessary(iface, device="cpu"):
+def check_required_packages(iface, device="cpu"):
     os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
     if PACKAGES_INSTALL_DIR not in sys.path:
         sys.path.append(
@@ -524,6 +524,10 @@ def check_required_packages_and_install_if_necessary(iface, device="cpu"):
         # if packages are importable we are fine, nothing more to do then
         return True
 
+    return False
+
+
+def show_install_pop_up(iface, device="cpu"):
     global dialog
     packages_to_install = get_packages_to_install(device)
     dialog = PackagesInstallerDialog(
@@ -532,7 +536,6 @@ def check_required_packages_and_install_if_necessary(iface, device="cpu"):
     dialog.setWindowModality(QtCore.Qt.WindowModal)
     dialog.show()
     dialog.move_to_top()
-    return False
 
 
 class IAMapEmpty(QObject):
