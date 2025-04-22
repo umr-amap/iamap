@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import time
 import tempfile
@@ -31,7 +32,7 @@ import torchvision.transforms as T
 import kornia.augmentation as K
 import timm
 
-from pangaea.encoders.base import Encoder
+from .pangaea.encoders.base import Encoder
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 
@@ -97,14 +98,14 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
-        cwd = Path(__file__).parent.absolute()
+        self.cwd = Path(__file__).parent.absolute()
         tmp_wd = os.path.join(tempfile.gettempdir(), "iamap_features")
 
         self.addParameter(
             QgsProcessingParameterRasterLayer(
                 name=self.INPUT,
                 description=self.tr("Input raster layer or image file path"),
-                # defaultValue=os.path.join(cwd, "assets", "test.tif"),
+                defaultValue=os.path.join(self.cwd, "assets", "test.tif"),
             ),
         )
 
@@ -260,7 +261,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             "--Empty--",
         ]
         self.timm_backbone_opt = [
-            Path(os.path.join(cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
+            Path(os.path.join(self.cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
             "vit_small_patch8_224.dino",
             "vit_base_patch16_224.dino",
             "vit_tiny_patch16_224.augreg_in21k",
@@ -703,7 +704,12 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         return model, h, w
 
     def _init_model_pangaea(self, logger, feedback):
+
         cfg = OmegaConf.load(self.backbone_name)
+        ## add cwd to path, otherwise hydra cannot find encoder classes
+        ## cf. https://github.com/facebookresearch/hydra/issues/922
+        ## and https://stackoverflow.com/a/53311583
+        sys.path.append(str(self.cwd))
         model: Encoder = instantiate(cfg)
         model.load_encoder_weights(logger)
         model = vit_first_layer_with_nchan(model, in_chans=len(self.input_bands))
