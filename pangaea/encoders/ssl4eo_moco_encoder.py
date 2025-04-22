@@ -8,7 +8,8 @@ import torch
 import torch.nn as nn
 from timm.models.vision_transformer import Block, PatchEmbed
 
-from pangaea.encoders.base import Encoder
+# from pangaea.encoders.base import Encoder
+from .base import Encoder
 
 
 class SSL4EO_MOCO_Encoder(Encoder):
