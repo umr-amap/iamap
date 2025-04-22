@@ -424,6 +424,9 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         else :
             model, h, w = self._init_model_timm(logger=logger, feedback=feedback)
 
+        if self.ckpt_path != '' : 
+            model.load_state_dict(torch.load(self.ckpt_path, weights_only=True))
+
         if torch.cuda.is_available() and self.use_gpu:
             if self.cuda_id + 1 > torch.cuda.device_count():
                 self.cuda_id = torch.cuda.device_count() - 1
@@ -835,7 +838,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         self.process_geo_parameters(parameters, context, feedback)
 
-        ckpt_path = self.parameterAsFile(parameters, self.CKPT, context)  # noqa: F841
+        self.ckpt_path = self.parameterAsFile(parameters, self.CKPT, context)  # noqa: F841
 
         ## Use the given backbone name is any, use preselected models otherwise.
         input_name = self.parameterAsString(parameters, self.BACKBONE_CHOICE, context)
