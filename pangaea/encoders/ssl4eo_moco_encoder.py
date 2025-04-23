@@ -152,22 +152,6 @@ class SSL4EO_MOCO_Encoder(Encoder):
         x = x + self.pos_embed
         x = self.pos_drop(x)
 
-        output = []
         for i, blk in enumerate(self.blocks):
             x = blk(x)
-            if i in self.output_layers:
-                # out = self.norm(x) if i == 11 else x
-                out = (
-                    x[:, 1:]
-                    .permute(0, 2, 1)
-                    .view(
-                        x.shape[0],
-                        -1,
-                        self.img_size // self.patch_size,
-                        self.img_size // self.patch_size,
-                    )
-                    .contiguous()
-                )
-                output.append(out)
-                # x = self.norm(x)
-        return output
+        return x

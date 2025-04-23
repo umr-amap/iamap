@@ -55,7 +55,7 @@ from .utils.misc import (
     compute_md5_hash,
     log_parameters_to_csv,
 )
-from .utils.trch import quantize_model, vit_first_layer_with_nchan
+from .utils.trch import modify_first_conv2d, quantize_model, vit_first_layer_with_nchan
 from .utils.algo import IAMAPAlgorithm
 
 from .tg.datasets import RasterDataset
@@ -419,10 +419,10 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         # Load the model
         feedback.pushInfo("creating model")
         if '.yaml' in str(self.backbone_name):
-            model, h, w = self._init_model_pangaea(logger=logger, feedback=feedback)
+            model, h, w = self.init_model_pangaea(logger=logger, feedback=feedback)
 
         else :
-            model, h, w = self._init_model_timm(logger=logger, feedback=feedback)
+            model, h, w = self.init_model_timm(logger=logger, feedback=feedback)
 
         if self.ckpt_path != '' : 
             model.load_state_dict(torch.load(self.ckpt_path, weights_only=True))
@@ -511,6 +511,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         self.all_encoding_done = True
 
 
+
         for current, sample in enumerate(dataloader):
             if current <= last_batch_done:
                 continue
@@ -537,19 +538,18 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             if '.yaml' in str(self.backbone_name):
                 input={}
                 input['optical'] = images
-                features = model(input)[0] ## temp, see why pangaea forwards a list of 4 features ?
-                features = features.permute(0,2,3,1)
+                features = model(input)
 
             else:
                 features = model.forward_features(images)
                 features = features[:, 1:, :]  # take only patch tokens
 
-                if current <= last_batch_done + 1:
-                    n_patches = int(np.sqrt(features.shape[1]))
+            if current <= last_batch_done + 1:
+                n_patches = int(np.sqrt(features.shape[1]))
 
-                features = features.view(
-                    features.shape[0], n_patches, n_patches, features.shape[-1]
-                )
+            features = features.view(
+                features.shape[0], n_patches, n_patches, features.shape[-1]
+            )
 
             features = features.detach().cpu().numpy()
             feedback.pushInfo(f"Features shape {features.shape}")
@@ -683,7 +683,11 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             "OUTPUT_LAYER_NAME": layer_name,
         }
 
-    def _init_model_timm(self, logger, feedback):
+    def do_first_batch(self, model, dataloader):
+
+        batch = next(dataloader)
+
+    def init_model_timm(self, logger, feedback):
         model = timm.create_model(
             self.backbone_name,
             pretrained=True,
@@ -706,7 +710,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         ) = data_config["input_size"]
         return model, h, w
 
-    def _init_model_pangaea(self, logger, feedback):
+    def init_model_pangaea(self, logger, feedback):
 
         cfg = OmegaConf.load(self.backbone_name)
         ## add cwd to path, otherwise hydra cannot find encoder classes
@@ -715,7 +719,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         sys.path.append(str(self.cwd))
         model: Encoder = instantiate(cfg)
         model.load_encoder_weights(logger)
-        model = vit_first_layer_with_nchan(model, in_chans=len(self.input_bands))
+        model = modify_first_conv2d(model, in_chans=len(self.input_bands))
         return model, model.input_size, model.input_size
 
     def load_parameters_as_json(self, feedback, parameters):
