@@ -721,6 +721,10 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             merged_path = merge_two_rasters(merged_path, tile, next_temp_dst_path, nodata,dtype, method)
             temp_files.append(merged_path)
             os.remove(temp_files.pop(0))  # Remove the previous temporary file
+            if feedback.isCanceled():
+                feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
+                return
+
 
         # Rename the final merged file to the desired destination path
         os.rename(merged_path, dst_path)
