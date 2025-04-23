@@ -83,6 +83,29 @@ def merge_tiles(
         ds.close()
 
 
+def merge_two_rasters(raster1, raster2, temp_dst_path, nodata,dtype, method):
+    with rasterio.open(raster1) as src1, rasterio.open(raster2) as src2:
+        extents = [src1.bounds, src2.bounds]
+        lefts, bottoms, rights, tops = zip(*extents)
+        union_extent = (
+            min(lefts),  # Left
+            min(bottoms),  # Bottom
+            max(rights),  # Right
+            max(tops),  # Top
+        )
+
+        merge(
+            sources=[src1, src2],
+            bounds=union_extent,
+            nodata=nodata,
+            dtype=dtype,
+            method=method,
+            dst_path=temp_dst_path,
+        )
+    return temp_dst_path
+
+
+
 def get_mean_sd_by_band(path, force_compute=True, ignore_zeros=True, subset=1_000):
     """
     Reads metadata or computes mean and sd of each band of a geotiff.

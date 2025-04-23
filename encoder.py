@@ -43,7 +43,7 @@ from omegaconf import DictConfig, OmegaConf
 # from .utils.trchg import NoBordersGridGeoSampler
 
 from .utils.geo import get_mean_sd_by_band
-from .utils.geo import merge_tiles
+from .utils.geo import merge_tiles, merge_two_rasters
 from .utils.misc import (
     QGISLogHandler,
     get_dir_size,
@@ -664,11 +664,18 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
             dst_path = Path(dst_path)
 
-        merge_tiles(
-            tiles=all_tiles,
-            dst_path=dst_path,
-            method=self.merge_method,
-        )
+        # merge_tiles(
+        #     tiles=all_tiles,
+        #     dst_path=dst_path,
+        #     method=self.merge_method,
+        # )
+
+        self.merge_rasters_iteratively(
+                tiles=all_tiles, 
+                dst_path=dst_path, 
+                method=self.merge_method,
+                feedback=feedback,
+                )
 
         if self.remove_tmp_files:
             self.remove_temp_files()
@@ -688,6 +695,38 @@ class EncoderAlgorithm(IAMAPAlgorithm):
     def do_first_batch(self, model, dataloader):
 
         batch = next(dataloader)
+    def merge_rasters_iteratively(
+            self, 
+            tiles, 
+            dst_path, 
+            method,
+            feedback,
+            dtype: str = "float32",
+            nodata=None,
+            ):
+        # Initialize the merged raster with the first two rasters
+        temp_files = []
+        temp_dst_path = str(dst_path).replace('.tif', '_merging.tif')
+
+
+        # Merge the first two rasters
+        merged_path = merge_two_rasters(tiles[0], tiles[1], temp_dst_path, nodata,dtype,method)
+        temp_files.append(merged_path)
+
+        # Iteratively merge the remaining rasters
+        for i, tile in enumerate(tiles[2:], start=2):
+            # print(f"Merging raster {i+1}/{len(tiles)}")
+            feedback.pushInfo(f"Merging raster {i+1}/{len(tiles)}")
+            next_temp_dst_path = temp_dst_path.replace('.tif', f'_{i}.tif')
+            merged_path = merge_two_rasters(merged_path, tile, next_temp_dst_path, nodata,dtype, method)
+            temp_files.append(merged_path)
+            os.remove(temp_files.pop(0))  # Remove the previous temporary file
+
+        # Rename the final merged file to the desired destination path
+        os.rename(merged_path, dst_path)
+
+
+
 
     def init_model_timm(self, logger, feedback):
         model = timm.create_model(
