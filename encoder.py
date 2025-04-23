@@ -105,7 +105,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             QgsProcessingParameterRasterLayer(
                 name=self.INPUT,
                 description=self.tr("Input raster layer or image file path"),
-                defaultValue=os.path.join(self.cwd, "assets", "test.tif"),
+                # defaultValue=os.path.join(self.cwd, "assets", "test.tif"),
             ),
         )
 
@@ -505,7 +505,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         bboxes = []  # keep track of bboxes to have coordinates at the end
         elapsed_time_list = []
-        total = 100 / len(dataloader) if len(dataloader) else 0
+        total = 100 / (len(dataloader)+1) if len(dataloader) else 0
 
         ## will update if process is canceled by the user
         self.all_encoding_done = True
@@ -542,6 +542,8 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
             else:
                 features = model.forward_features(images)
+
+            if features.shape[1] % 2 == 1: 
                 features = features[:, 1:, :]  # take only patch tokens
 
             if current <= last_batch_done + 1:
