@@ -83,7 +83,7 @@ def merge_tiles(
         ds.close()
 
 
-def merge_two_rasters(raster1, raster2, temp_dst_path, nodata,dtype, method):
+def merge_two_tiles(raster1, raster2, temp_dst_path, nodata,dtype, method):
     with rasterio.open(raster1) as src1, rasterio.open(raster2) as src2:
         extents = [src1.bounds, src2.bounds]
         lefts, bottoms, rights, tops = zip(*extents)
@@ -94,14 +94,28 @@ def merge_two_rasters(raster1, raster2, temp_dst_path, nodata,dtype, method):
             max(tops),  # Top
         )
 
-        merge(
-            sources=[src1, src2],
-            bounds=union_extent,
-            nodata=nodata,
-            dtype=dtype,
-            method=method,
-            dst_path=temp_dst_path,
-        )
+        if method == "average":
+            method = custom_method_avg
+
+        try:
+            merge(
+                sources=[src1, src2],
+                bounds=union_extent,
+                nodata=nodata,
+                dtype=dtype,
+                method=method,
+                dst_path=temp_dst_path,
+            )
+    ## different rasterio versions take different keyword args
+    except TypeError:
+            merge(
+                datasets=[src1, src2],
+                bounds=union_extent,
+                nodata=nodata,
+                dtype=dtype,
+                method=method,
+                dst_path=temp_dst_path,
+            )
     return temp_dst_path
 
 

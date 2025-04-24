@@ -43,7 +43,7 @@ from omegaconf import DictConfig, OmegaConf
 # from .utils.trchg import NoBordersGridGeoSampler
 
 from .utils.geo import get_mean_sd_by_band
-from .utils.geo import merge_tiles, merge_two_rasters
+from .utils.geo import merge_tiles, merge_two_tiles
 from .utils.misc import (
     QGISLogHandler,
     get_dir_size,
@@ -670,7 +670,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         #     method=self.merge_method,
         # )
 
-        self.merge_rasters_iteratively(
+        self.merge_tiles_iteratively(
                 tiles=all_tiles, 
                 dst_path=dst_path, 
                 method=self.merge_method,
@@ -695,7 +695,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
     def do_first_batch(self, model, dataloader):
 
         batch = next(dataloader)
-    def merge_rasters_iteratively(
+    def merge_tiles_iteratively(
             self, 
             tiles, 
             dst_path, 
@@ -710,7 +710,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
 
         # Merge the first two rasters
-        merged_path = merge_two_rasters(tiles[0], tiles[1], temp_dst_path, nodata,dtype,method)
+        merged_path = merge_two_tiles(tiles[0], tiles[1], temp_dst_path, nodata,dtype,method)
         temp_files.append(merged_path)
 
         # Iteratively merge the remaining rasters
