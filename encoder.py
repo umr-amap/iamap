@@ -345,6 +345,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
             self.addParameter(param)
 
+
     @torch.no_grad()
     def processAlgorithm(self, parameters, context, feedback):
         """
@@ -353,149 +354,49 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         parameters = self.load_parameters_as_json(feedback, parameters)
         self.process_options(parameters, context, feedback)
+        self.create_output_dir(parameters, feedback)
 
-        ## compute parameters hash to have a unique identifier for the run
-        ## some parameters do not change the encoding part of the algorithm
-        keys_to_remove = ["MERGE_METHOD", "WORKERS", "PAUSES"]
-        subdir_hash = compute_md5_hash(parameters, keys_to_remove=keys_to_remove)
-        output_subdir = os.path.join(self.output_dir, subdir_hash)
-        output_subdir = Path(output_subdir)
-        output_subdir.mkdir(parents=True, exist_ok=True)
-        self.output_subdir = output_subdir
-        feedback.pushInfo(f"output_subdir: {output_subdir}")
-        feedback.pushInfo("saving parameters to json file")
-        save_parameters_to_json(parameters, self.output_subdir)
-        feedback.pushInfo("logging parameters to csv")
-        log_parameters_to_csv(parameters, self.output_dir)
-
-        RasterDataset.filename_glob = self.rlayer_name
-        RasterDataset.all_bands = [
-            self.rlayer.bandName(i_band)
-            for i_band in range(1, self.rlayer.bandCount() + 1)
-        ]
-        # currently only support rgb bands
-        self.input_bands = [self.rlayer.bandName(i_band) for i_band in self.selected_bands]
-
-        feedback.pushInfo("create dataset")
-        if self.crs == self.rlayer.crs():
-            dataset = RasterDataset(
-                paths=self.rlayer_dir,
-                crs=None,
-                res=self.res,
-                bands=self.input_bands,
-                cache=False,
-            )
-        else:
-            dataset = RasterDataset(
-                paths=self.rlayer_dir,
-                crs=self.crs.toWkt(),
-                res=self.res,
-                bands=self.input_bands,
-                cache=False,
-            )
-        extent_bbox = BoundingBox(
-            minx=self.extent.xMinimum(),
-            maxx=self.extent.xMaximum(),
-            miny=self.extent.yMinimum(),
-            maxy=self.extent.yMaximum(),
-            mint=dataset.index.bounds[4],
-            maxt=dataset.index.bounds[5],
-        )
-
+        feedback.pushInfo("Create dataset")
+        self.create_dataset()
+        if feedback.isCanceled():
+            feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
+            return
+        self.init_model(feedback)
+        feedback.pushInfo("Model done")
         if feedback.isCanceled():
             feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
             return
 
-        ### Custom logging to have more feedback during model loading
-        logging.basicConfig(level=logging.DEBUG)
-        logger = logging.getLogger()
+        self.create_dataloader(feedback)
 
-        # Attach the QGIS log handler
-        logger.addHandler(QGISLogHandler(feedback))
-
-        # Log a message
-        logger.info("Starting model loading...")
-
-        # Load the model
-        feedback.pushInfo("creating model")
-        if '.yaml' in str(self.backbone_name):
-            model, h, w = self.init_model_pangaea(logger=logger, feedback=feedback)
-
-        else :
-            model, h, w = self.init_model_timm(logger=logger, feedback=feedback)
-
-        if self.ckpt_path != '' : 
-            model.load_state_dict(torch.load(self.ckpt_path, weights_only=True))
-
-        if torch.cuda.is_available() and self.use_gpu:
-            if self.cuda_id + 1 > torch.cuda.device_count():
-                self.cuda_id = torch.cuda.device_count() - 1
-            cuda_device = f"cuda:{self.cuda_id}"  # noqa: F841
-            device = f"cuda:{self.cuda_id}"
-        else:
-            self.batch_size = 1
-            device = "cpu"
-
-        feedback.pushInfo(f"Device id: {device}")
-
-        if self.quantization:
-            try:
-                feedback.pushInfo(f"before quantization : {get_model_size(model)}")
-
-                model = quantize_model(model, device)
-                feedback.pushInfo(f"after quantization : {get_model_size(model)}")
-
-            except Exception:
-                feedback.pushInfo("quantization impossible, using original model.")
-
-        transform = AugmentationSequential(
-            T.ConvertImageDtype(
-                torch.float32
-            ),  # change dtype for normalize to be possible
-            K.Normalize(
-                self.means, self.sds
-            ),  # normalize occurs only on raster, not mask
-            K.Resize((h, w)),  # resize to 224*224 pixels, regardless of sampling size
-            data_keys=["image"],
-        )
-        dataset.transforms = transform
-
-        # sampler = GridGeoSampler(
-        #         dataset,
-        #         size=self.size,
-        #         stride=self.stride,
-        #         roi=extent_bbox,
-        #         units=Units.PIXELS
-        #         )  # Units.CRS or Units.PIXELS
-        sampler = NoBordersGridGeoSampler(
-            dataset,
-            size=self.size,
-            stride=self.stride,
-            roi=extent_bbox,
-            units=Units.PIXELS,
-        )  # Units.CRS or Units.PIXELS
-
-        if len(sampler) == 0:
-            self.load_feature = False
-            feedback.pushWarning(
-                "\n !!!No available patch sample inside the chosen extent!!! \n"
-            )
-
-        feedback.pushInfo("model to dedvice")
-        model.to(device=device)
-
-        feedback.pushInfo(f"Batch size: {self.batch_size}")
-        dataloader = DataLoader(
-            dataset,
-            batch_size=self.batch_size,
-            sampler=sampler,
-            collate_fn=stack_samples,
-            num_workers=self.nworkers,
-        )
-
-        feedback.pushInfo(f"Patch sample num: {len(sampler)}")
-        feedback.pushInfo(f"Total batch num: {len(dataloader)}")
+        feedback.pushInfo(f"Total batch num: {len(self.dataloader)}")
         feedback.pushInfo(f'\n\n{"-"*16}\nBegining inference \n{"-"*16}\n\n')
+
+        self.inference(feedback)
+
+
+        ## merging all temp tiles
+        feedback.pushInfo(f"\n\n{'-'*8}\n Merging tiles \n{'-'*8}\n")
+        self.merge_tiles_iteratively(feedback=feedback)
+
+        if self.remove_tmp_files:
+            self.remove_temp_files()
+
+        parameters["OUTPUT_RASTER"] = self.dst_path
+
+        if self.compress:
+            self.dst_path = self.tiff_to_jp2(parameters, feedback)
+
+        return {
+            "Output feature path": self.output_subdir,
+            "Patch samples saved": self.iPatch,
+            "OUTPUT_RASTER": self.dst_path,
+            "OUTPUT_LAYER_NAME": self.layer_name,
+        }
+
+
+    def inference(self, feedback):
+
 
         last_batch_done = self.get_last_batch_done()
         if last_batch_done >= 0:
@@ -505,14 +406,13 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         bboxes = []  # keep track of bboxes to have coordinates at the end
         elapsed_time_list = []
-        total = 100 / (len(dataloader)+1) if len(dataloader) else 0
+        nbatch_total = len(self.dataloader)
+        total = 100 / (nbatch_total+1) if nbatch_total else 0
 
         ## will update if process is canceled by the user
         self.all_encoding_done = True
 
-
-
-        for current, sample in enumerate(dataloader):
+        for current, sample in enumerate(self.dataloader):
             if current <= last_batch_done:
                 continue
 
@@ -521,27 +421,23 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             # Stop the algorithm if cancel button has been clicked
             if feedback.isCanceled():
                 self.load_feature = False
-                feedback.pushWarning(
-                    self.tr("\n !!!Processing is canceled by user!!! \n")
-                )
+                feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
                 self.all_encoding_done = False
                 break
 
-            feedback.pushInfo(f'\n{"-"*8}\nBatch no. {current} loaded')
+            images = sample["image"].to(self.device)
+            images = images.squeeze(1)## kornia creates an empty dimension between batch and channels
 
-            images = sample["image"].to(device)
-            if len(images.shape) > 4:
-                images = images.squeeze(1)
+            feedback.setProgressText(f"Processing batch {current}/{nbatch_total}")
 
-            feedback.pushInfo(f"Batch shape {images.shape}")
 
             if '.yaml' in str(self.backbone_name):
                 input={}
                 input['optical'] = images
-                features = model(input)
+                features = self.model(input)
 
             else:
-                features = model.forward_features(images)
+                features = self.model.forward_features(images)
 
             if features.shape[1] % 2 == 1: 
                 features = features[:, 1:, :]  # take only patch tokens
@@ -554,25 +450,17 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
 
             features = features.detach().cpu().numpy()
-            feedback.pushInfo(f"Features shape {features.shape}")
+            # feedback.pushInfo(f"Features shape {features.shape}")
 
             self.save_features(features, sample["bbox"], current)
-            feedback.pushInfo("Features saved")
+            # feedback.pushInfo("Features saved")
 
             if current <= last_batch_done + 1:
-                total_space, total_used_space, free_space = check_disk_space(
-                    self.output_subdir
-                )
-
+                total_space, total_used_space, free_space = check_disk_space(self.output_subdir)
                 used_outputsubdir = get_dir_size(str(self.output_subdir))
-
-                to_use = ((len(dataloader) / (current + 1)) - 1) * used_outputsubdir
+                to_use = ((nbatch_total / (current + 1)) - 1) * used_outputsubdir
                 if to_use >= free_space:
-                    feedback.pushWarning(
-                        self.tr(
-                            f"\n !!! only {free_space} GB disk space remaining, canceling !!! \n"
-                        )
-                    )
+                    feedback.pushWarning(self.tr(f"\n !!! only {free_space} GB disk space remaining, canceling !!! \n"))
                     break
 
             bboxes.extend(sample["bbox"])
@@ -585,7 +473,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             elapsed_time = end_time - start_time
             elapsed_time_list.append(elapsed_time)
             time_spent = sum(elapsed_time_list)
-            time_remain = (time_spent / (current + 1)) * (len(dataloader) - current - 1)
+            time_remain = (time_spent / (current + 1)) * (nbatch_total - current - 1)
 
             # TODO: show gpu usage info
             # if torch.cuda.is_available() and self.use_gpu:
@@ -596,19 +484,19 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             #         f'GPU memory usage: {gpu_mem_used:.2f}GB / {gpu_mem_total:.2f}GB')
             #     feedback.pushInfo(str(torch.cuda.memory_summary(self.sam_model.device)))
 
-            feedback.pushInfo(f"Encoder executed with {elapsed_time:.3f}s")
-            feedback.pushInfo(f"Time spent: {time_spent:.3f}s")
+            # feedback.pushInfo(f"Encoder executed with {elapsed_time:.3f}s")
+            # feedback.pushInfo(f"Time spent: {time_spent:.3f}s")
 
-            if time_remain <= 60:
-                feedback.pushInfo(
-                    f"Estimated time remaining: {time_remain:.3f}s \n {'-'*8}"
-                )
-            else:
-                time_remain_m, time_remain_s = divmod(int(time_remain), 60)
-                time_remain_h, time_remain_m = divmod(time_remain_m, 60)
-                feedback.pushInfo(
-                    f"Estimated time remaining: {time_remain_h:d}h:{time_remain_m:02d}m:{time_remain_s:02d}s \n"
-                )
+            # if time_remain <= 60:
+            #     feedback.pushInfo(
+            #         f"Estimated time remaining: {time_remain:.3f}s \n {'-'*8}"
+            #     )
+            # else:
+            #     time_remain_m, time_remain_s = divmod(int(time_remain), 60)
+            #     time_remain_h, time_remain_m = divmod(time_remain_m, 60)
+            #     feedback.pushInfo(
+            #         f"Estimated time remaining: {time_remain_h:d}h:{time_remain_m:02d}m:{time_remain_s:02d}s \n"
+            #     )
 
             if ((current + 1) % self.cleanup_frq == 0) and self.remove_tmp_files:
                 ## not the cleanest way to do for now
@@ -643,96 +531,193 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             # Update the progress bar
             feedback.setProgress(int((current + 1) * total))
 
-        ## merging all temp tiles
-        feedback.pushInfo(f"\n\n{'-'*8}\n Merging tiles \n{'-'*8}\n")
-        all_tiles = [
+
+    def create_dataloader(self, feedback):
+        transform = AugmentationSequential(
+            T.ConvertImageDtype(torch.float32),  # change dtype for normalize to be possible
+            K.Normalize(self.means, self.sds),  # normalize occurs only on raster, not mask
+            K.Resize((self.h, self.w)),  # resize to model expected input size, regardless of sampling size
+            data_keys=["image"],
+        )
+        self.dataset.transforms = transform
+
+        sampler = NoBordersGridGeoSampler(
+            self.dataset,
+            size=self.size,
+            stride=self.stride,
+            roi=self.extent_bbox,
+            units=Units.PIXELS,
+        )
+
+        if len(sampler) == 0:
+            self.load_feature = False
+            feedback.pushWarning("\n !!!No available patch sample inside the chosen extent!!! \n")
+
+
+        feedback.pushInfo(f"Batch size: {self.batch_size}")
+        self.dataloader = DataLoader(
+            self.dataset,
+            batch_size=self.batch_size,
+            sampler=sampler,
+            collate_fn=stack_samples,
+            num_workers=self.nworkers,
+        )
+
+
+    def create_dataset(self):
+
+        RasterDataset.filename_glob = self.rlayer_name
+        RasterDataset.all_bands = [
+            self.rlayer.bandName(i_band)
+            for i_band in range(1, self.rlayer.bandCount() + 1)
+        ]
+        # currently only support rgb bands
+        self.input_bands = [self.rlayer.bandName(i_band) for i_band in self.selected_bands]
+
+        if self.crs == self.rlayer.crs():
+            self.dataset = RasterDataset(
+                paths=self.rlayer_dir,
+                crs=None,
+                res=self.res,
+                bands=self.input_bands,
+                cache=False,
+            )
+        else:
+            self.dataset = RasterDataset(
+                paths=self.rlayer_dir,
+                crs=self.crs.toWkt(),
+                res=self.res,
+                bands=self.input_bands,
+                cache=False,
+            )
+        self.extent_bbox = BoundingBox(
+            minx=self.extent.xMinimum(),
+            maxx=self.extent.xMaximum(),
+            miny=self.extent.yMinimum(),
+            maxy=self.extent.yMaximum(),
+            mint=self.dataset.index.bounds[4],
+            maxt=self.dataset.index.bounds[5],
+        )
+        return
+
+
+
+    def create_output_dir(self,parameters,feedback):
+        """
+        compute parameters hash to have a unique identifier for the run
+        some parameters do not change the encoding part of the algorithm
+        """
+
+        keys_to_remove = ["MERGE_METHOD", "WORKERS", "PAUSES"]
+        subdir_hash = compute_md5_hash(parameters, keys_to_remove=keys_to_remove)
+
+        self.output_subdir = Path(os.path.join(self.output_dir, subdir_hash))
+        self.output_subdir.mkdir(parents=True, exist_ok=True)
+        feedback.pushInfo(f"output_subdir: {self.output_subdir}")
+
+        feedback.pushInfo("saving parameters to json file")
+        save_parameters_to_json(parameters, self.output_subdir)
+        feedback.pushInfo("logging parameters to csv")
+        log_parameters_to_csv(parameters, self.output_dir)
+
+
+    def merge_tiles_iteratively(self, feedback, dtype: str = "float32", nodata=None,):
+
+        # tiles = sorted([
+        #     os.path.join(self.output_subdir, f)
+        #     for f in os.listdir(self.output_subdir)
+        #     # if (f.endswith("_tmp.tif") or f.endswith("_wip.tif"))
+        #     if f.endswith("_tmp.tif")
+        # ])
+        tiles_to_remove = [
             os.path.join(self.output_subdir, f)
             for f in os.listdir(self.output_subdir)
-            if f.endswith("_tmp.tif")
+            if f.endswith("_tmp.tif") and not f.startswith(str(last_batch_done))
         ]
+        tiles_to_remove = sorted([
+            f for f in tiles_to_remove if not f.endswith("merged_tmp.tif")
+        ])
+
         rlayer_name, ext = os.path.splitext(self.rlayer_name)
 
         if not self.all_encoding_done:
-            dst_path = Path(os.path.join(self.output_subdir, "merged_tmp.tif"))
-            layer_name = f"{rlayer_name} features tmp"
+            self.dst_path = Path(os.path.join(self.output_subdir, "merged_tmp.tif"))
+            self.layer_name = f"{rlayer_name} features tmp"
         else:
-            # dst_path = Path(os.path.join(self.output_subdir,'merged.tif'))
             ## update filename if a merged.tif file allready exists
+            dst_path, self.layer_name = get_unique_filename(self.output_subdir, "merged.tif", f"{rlayer_name} features")
+            self.dst_path = Path(dst_path)
 
-            dst_path, layer_name = get_unique_filename(
-                self.output_subdir, "merged.tif", f"{rlayer_name} features"
-            )
-            dst_path = Path(dst_path)
-
-        # merge_tiles(
-        #     tiles=all_tiles,
-        #     dst_path=dst_path,
-        #     method=self.merge_method,
-        # )
-
-        self.merge_tiles_iteratively(
-                tiles=all_tiles, 
-                dst_path=dst_path, 
-                method=self.merge_method,
-                feedback=feedback,
-                )
-
-        if self.remove_tmp_files:
-            self.remove_temp_files()
-
-        parameters["OUTPUT_RASTER"] = dst_path
-
-        if self.compress:
-            dst_path = self.tiff_to_jp2(parameters, feedback)
-
-        return {
-            "Output feature path": self.output_subdir,
-            "Patch samples saved": self.iPatch,
-            "OUTPUT_RASTER": dst_path,
-            "OUTPUT_LAYER_NAME": layer_name,
-        }
-
-    def do_first_batch(self, model, dataloader):
-
-        batch = next(dataloader)
-    def merge_tiles_iteratively(
-            self, 
-            tiles, 
-            dst_path, 
-            method,
-            feedback,
-            dtype: str = "float32",
-            nodata=None,
-            ):
         # Initialize the merged raster with the first two rasters
         temp_files = []
-        temp_dst_path = str(dst_path).replace('.tif', '_merging.tif')
-
+        wip_dst_path = Path(os.path.join(self.output_subdir, "tmp.tif"))
 
         # Merge the first two rasters
-        merged_path = merge_two_tiles(tiles[0], tiles[1], temp_dst_path, nodata,dtype,method)
+        merged_path = merge_two_tiles(
+                tiles[0], 
+                tiles[1], 
+                wip_dst_path, 
+                nodata,
+                dtype,
+                self.merge_method
+                )
         temp_files.append(merged_path)
 
         # Iteratively merge the remaining rasters
         for i, tile in enumerate(tiles[2:], start=2):
-            # print(f"Merging raster {i+1}/{len(tiles)}")
             feedback.pushInfo(f"Merging raster {i+1}/{len(tiles)}")
-            next_temp_dst_path = temp_dst_path.replace('.tif', f'_{i}.tif')
-            merged_path = merge_two_rasters(merged_path, tile, next_temp_dst_path, nodata,dtype, method)
+            next_dst_path = str(wip_dst_path).replace('wip.tif', f'{i}wip.tif')
+            merged_path = merge_two_tiles(
+                    merged_path, 
+                    tile, 
+                    next_dst_path,
+                    nodata,
+                    dtype, 
+                    self.merge_method
+                    )
             temp_files.append(merged_path)
             os.remove(temp_files.pop(0))  # Remove the previous temporary file
             if feedback.isCanceled():
                 feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
                 return
 
-
         # Rename the final merged file to the desired destination path
-        os.rename(merged_path, dst_path)
+        os.rename(merged_path, self.dst_path)
+
+        return
 
 
+    def init_model(self, feedback):
+
+        ### Custom logging to have more feedback during model loading
+        logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger()
+        logger.addHandler(QGISLogHandler(feedback))# Attach the QGIS log handler
+        logger.info("Starting model loading...")
+
+        if '.yaml' in str(self.backbone_name):
+            model, self.h, self.w = self.init_model_pangaea(logger=logger)
+        else :
+            model, self.h, self.w = self.init_model_timm(logger=logger)
+
+        if self.ckpt_path != '' : 
+            self.model.load_state_dict(torch.load(self.ckpt_path, weights_only=True))
+
+        if self.quantization:
+            try:
+                logger.info(f"Model size before quantization : {get_model_size(model)}")
+                self.model = quantize_model(model, self.device)
+                logger.info(f"Model size after quantization : {get_model_size(model)}")
+
+            except Exception:
+                logger.info("Quantization impossible, using original model.")
+                self.model = model
+
+        self.model.to(device=self.device)
+        return
 
 
-    def init_model_timm(self, logger, feedback):
+    def init_model_timm(self, logger):
         model = timm.create_model(
             self.backbone_name,
             pretrained=True,
@@ -742,20 +727,11 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         logger.info("Model loaded succesfully !")
         logger.handlers.clear()
 
-        if feedback.isCanceled():
-            feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
-            return
-
-        feedback.pushInfo("model done")
         data_config = timm.data.resolve_model_data_config(model)
-        (
-            _,
-            h,
-            w,
-        ) = data_config["input_size"]
+        (_, h, w) = data_config["input_size"]
         return model, h, w
 
-    def init_model_pangaea(self, logger, feedback):
+    def init_model_pangaea(self, logger):
 
         cfg = OmegaConf.load(self.backbone_name)
         ## add cwd to path, otherwise hydra cannot find encoder classes
@@ -927,6 +903,19 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         self.sds = [sds[i - 1] for i in self.selected_bands]
         feedback.pushInfo(f"Means for normalization: {self.means}")
         feedback.pushInfo(f"Std. dev. for normalization: {self.sds}")
+
+        if torch.cuda.is_available() and self.use_gpu:
+            if self.cuda_id + 1 > torch.cuda.device_count():
+                self.cuda_id = torch.cuda.device_count() - 1
+            cuda_device = f"cuda:{self.cuda_id}"  # noqa: F841
+            self.device = f"cuda:{self.cuda_id}"
+        else:
+            self.batch_size = 1
+            self.device = "cpu"
+
+        feedback.pushInfo(f"Device id: {self.device}")
+
+
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
     def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:

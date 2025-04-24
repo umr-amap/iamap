@@ -83,7 +83,7 @@ def merge_tiles(
         ds.close()
 
 
-def merge_two_tiles(raster1, raster2, temp_dst_path, nodata,dtype, method):
+def merge_two_tiles(raster1, raster2, temp_dst_path, nodata, dtype, method):
     with rasterio.open(raster1) as src1, rasterio.open(raster2) as src2:
         extents = [src1.bounds, src2.bounds]
         lefts, bottoms, rights, tops = zip(*extents)
