@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import pyqtSignal, QObject
 from qgis.gui import QgisInterface
+from qgis.core import QgsSettings
 
 from qgis.PyQt import QtCore, uic
 from qgis.PyQt.QtGui import QCloseEvent
@@ -91,6 +92,9 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
 
     def __init__(self, iface, packages_to_install, device, parent=None):
         super(PackagesInstallerDialog, self).__init__(parent)
+
+
+        # Show the dialog if the setting is not checked
         self.setupUi(self)
         self.iface = iface
         self.tb = self.textBrowser_log  # type: QTextBrowser
@@ -100,6 +104,16 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self._setup_message()
         self.aborted = False
         self.thread = None
+        # Connect the checkbox state changed signal
+        self.checkBox_dont_show_again.stateChanged.connect(self.on_checkbox_state_changed)
+
+
+
+    def on_checkbox_state_changed(self, state):
+        # Save the setting when the checkbox state changes
+        settings = QgsSettings()
+        settings.setValue("iamap/dont_show_install_pop_up", state == 2)  # 2 corresponds to Qt.Checked
+
 
     def move_to_top(self):
         """Move the window to the top.
@@ -197,6 +211,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
 
     def closeEvent(self, event: QCloseEvent):
         self.aborted = True
+
         if self._check_packages_installation_and_log():
             res = QMessageBox.information(
                 self.iface.mainWindow(),
@@ -394,13 +409,12 @@ def get_pytorch_version(cuda_version):
     ## cf. https://pytorch.org/get-started/locally/
     cuda_to_pytorch = {
         "11.8": " --index-url https://download.pytorch.org/whl/cu118",
-        "12.1": "",
-        "12.2": "",
         "12.4": " --index-url https://download.pytorch.org/whl/cu124",
         "12.5": " --index-url https://download.pytorch.org/whl/cu124",
         "12.6": " --index-url https://download.pytorch.org/whl/cu124",
     }
-    return cuda_to_pytorch.get(cuda_version, None)
+    ## If cuda version is not found in dir, default to "pip install torch" + ""
+    return cuda_to_pytorch.get(cuda_version, "")
 
 
 def get_packages_to_install(device):
@@ -496,10 +510,10 @@ def check_pip_installed() -> bool:
         return False
 
 
-dialog = None
+# dialog = None
 
 
-def check_required_packages_and_install_if_necessary(iface, device="cpu"):
+def check_required_packages(iface, device="cpu"):
     os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
     if PACKAGES_INSTALL_DIR not in sys.path:
         sys.path.append(
@@ -510,6 +524,10 @@ def check_required_packages_and_install_if_necessary(iface, device="cpu"):
         # if packages are importable we are fine, nothing more to do then
         return True
 
+    return False
+
+
+def show_install_pop_up(iface, device="cpu"):
     global dialog
     packages_to_install = get_packages_to_install(device)
     dialog = PackagesInstallerDialog(
@@ -518,7 +536,6 @@ def check_required_packages_and_install_if_necessary(iface, device="cpu"):
     dialog.setWindowModality(QtCore.Qt.WindowModal)
     dialog.show()
     dialog.move_to_top()
-    return False
 
 
 class IAMapEmpty(QObject):
@@ -588,17 +605,18 @@ class IAMapEmpty(QObject):
             "Install dependencies and restart QGIS ! - Fit ML model"
         )
 
-        # self.actionEncoder.triggered.connect()
-        # self.actionReducer.triggered.connect()
-        # self.actionCluster.triggered.connect()
-        # self.actionSimilarity.triggered.connect()
-        # self.actionRF.triggered.connect()
+        self.actionEncoder.triggered.connect(lambda: show_install_pop_up(self.iface))
+        self.actionReducer.triggered.connect(lambda: show_install_pop_up(self.iface))
+        self.actionCluster.triggered.connect(lambda: show_install_pop_up(self.iface))
+        self.actionSimilarity.triggered.connect(lambda: show_install_pop_up(self.iface))
+        self.actionRF.triggered.connect(lambda: show_install_pop_up(self.iface))
 
         self.toolbar.addAction(self.actionEncoder)
         self.toolbar.addAction(self.actionReducer)
         self.toolbar.addAction(self.actionCluster)
         self.toolbar.addAction(self.actionSimilarity)
         self.toolbar.addAction(self.actionRF)
+
 
     def unload(self):
         # self.wdg_select.setVisible(False)
