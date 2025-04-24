@@ -106,8 +106,8 @@ def merge_two_tiles(raster1, raster2, temp_dst_path, nodata,dtype, method):
                 method=method,
                 dst_path=temp_dst_path,
             )
-    ## different rasterio versions take different keyword args
-    except TypeError:
+        ## different rasterio versions take different keyword args
+        except TypeError:
             merge(
                 datasets=[src1, src2],
                 bounds=union_extent,
