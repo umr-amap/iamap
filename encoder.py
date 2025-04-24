@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import time
 import tempfile
@@ -31,6 +32,10 @@ import torchvision.transforms as T
 import kornia.augmentation as K
 import timm
 
+from .pangaea.encoders.base import Encoder
+from hydra.utils import instantiate
+from omegaconf import DictConfig, OmegaConf
+
 # from torchgeo.datasets import RasterDataset, BoundingBox,stack_samples
 # from torchgeo.samplers import GridGeoSampler, Units
 # from torchgeo.transforms import AugmentationSequential
@@ -38,7 +43,7 @@ import timm
 # from .utils.trchg import NoBordersGridGeoSampler
 
 from .utils.geo import get_mean_sd_by_band
-from .utils.geo import merge_tiles
+from .utils.geo import merge_tiles, merge_two_rasters
 from .utils.misc import (
     QGISLogHandler,
     get_dir_size,
@@ -50,7 +55,7 @@ from .utils.misc import (
     compute_md5_hash,
     log_parameters_to_csv,
 )
-from .utils.trch import quantize_model
+from .utils.trch import modify_first_conv2d, quantize_model, vit_first_layer_with_nchan
 from .utils.algo import IAMAPAlgorithm
 
 from .tg.datasets import RasterDataset
@@ -93,14 +98,14 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
-        cwd = Path(__file__).parent.absolute()
+        self.cwd = Path(__file__).parent.absolute()
         tmp_wd = os.path.join(tempfile.gettempdir(), "iamap_features")
 
         self.addParameter(
             QgsProcessingParameterRasterLayer(
                 name=self.INPUT,
                 description=self.tr("Input raster layer or image file path"),
-                # defaultValue=os.path.join(cwd, "assets", "test.tif"),
+                # defaultValue=os.path.join(self.cwd, "assets", "test.tif"),
             ),
         )
 
@@ -247,6 +252,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
         )
         self.backbone_opt = [
+            "SSL4EO MOCO",
             "ViT small DINO patch 8",
             "ViT base DINO",
             "ViT tiny Imagenet (smallest)",
@@ -255,6 +261,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             "--Empty--",
         ]
         self.timm_backbone_opt = [
+            Path(os.path.join(self.cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
             "vit_small_patch8_224.dino",
             "vit_base_patch16_224.dino",
             "vit_tiny_patch16_224.augreg_in21k",
@@ -275,7 +282,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             QgsProcessingParameterString(
                 name=self.BACKBONE_CHOICE,
                 description=self.tr(
-                    "Enter a architecture name if you want to test another backbone (see huggingface.co/timm/)"
+                    "Enter an architecture name if you want to test another backbone (see huggingface.co/timm/)"
                 ),
                 defaultValue=None,
                 optional=True,
@@ -315,23 +322,22 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         json_param = QgsProcessingParameterFile(
             name=self.JSON_PARAM,
             description=self.tr("Pass parameters as json file"),
-            # extension='pth',
             fileFilter="JSON Files (*.json)",
             optional=True,
             defaultValue=None,
         )
 
         for param in (
-            crs_param,
-            res_param,
             chkpt_param,
             cuda_id_param,
+            remove_tmp_files,
             merge_param,
+            tmp_files_cleanup_frq,
             nworkers_param,
             pauses_param,
-            remove_tmp_files,
+            crs_param,
+            res_param,
             compress_param,
-            tmp_files_cleanup_frq,
             json_param,
         ):
             param.setFlags(
@@ -368,7 +374,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             for i_band in range(1, self.rlayer.bandCount() + 1)
         ]
         # currently only support rgb bands
-        input_bands = [self.rlayer.bandName(i_band) for i_band in self.selected_bands]
+        self.input_bands = [self.rlayer.bandName(i_band) for i_band in self.selected_bands]
 
         feedback.pushInfo("create dataset")
         if self.crs == self.rlayer.crs():
@@ -376,7 +382,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 paths=self.rlayer_dir,
                 crs=None,
                 res=self.res,
-                bands=input_bands,
+                bands=self.input_bands,
                 cache=False,
             )
         else:
@@ -384,7 +390,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 paths=self.rlayer_dir,
                 crs=self.crs.toWkt(),
                 res=self.res,
-                bands=input_bands,
+                bands=self.input_bands,
                 cache=False,
             )
         extent_bbox = BoundingBox(
@@ -412,26 +418,14 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         # Load the model
         feedback.pushInfo("creating model")
-        model = timm.create_model(
-            self.backbone_name,
-            pretrained=True,
-            in_chans=len(input_bands),
-            num_classes=0,
-        )
-        logger.info("Model loaded succesfully !")
-        logger.handlers.clear()
+        if '.yaml' in str(self.backbone_name):
+            model, h, w = self.init_model_pangaea(logger=logger, feedback=feedback)
 
-        if feedback.isCanceled():
-            feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
-            return
+        else :
+            model, h, w = self.init_model_timm(logger=logger, feedback=feedback)
 
-        feedback.pushInfo("model done")
-        data_config = timm.data.resolve_model_data_config(model)
-        (
-            _,
-            h,
-            w,
-        ) = data_config["input_size"]
+        if self.ckpt_path != '' : 
+            model.load_state_dict(torch.load(self.ckpt_path, weights_only=True))
 
         if torch.cuda.is_available() and self.use_gpu:
             if self.cuda_id + 1 > torch.cuda.device_count():
@@ -511,10 +505,11 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         bboxes = []  # keep track of bboxes to have coordinates at the end
         elapsed_time_list = []
-        total = 100 / len(dataloader) if len(dataloader) else 0
+        total = 100 / (len(dataloader)+1) if len(dataloader) else 0
 
         ## will update if process is canceled by the user
         self.all_encoding_done = True
+
 
 
         for current, sample in enumerate(dataloader):
@@ -540,8 +535,16 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
             feedback.pushInfo(f"Batch shape {images.shape}")
 
-            features = model.forward_features(images)
-            features = features[:, 1:, :]  # take only patch tokens
+            if '.yaml' in str(self.backbone_name):
+                input={}
+                input['optical'] = images
+                features = model(input)
+
+            else:
+                features = model.forward_features(images)
+
+            if features.shape[1] % 2 == 1: 
+                features = features[:, 1:, :]  # take only patch tokens
 
             if current <= last_batch_done + 1:
                 n_patches = int(np.sqrt(features.shape[1]))
@@ -549,6 +552,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             features = features.view(
                 features.shape[0], n_patches, n_patches, features.shape[-1]
             )
+
             features = features.detach().cpu().numpy()
             feedback.pushInfo(f"Features shape {features.shape}")
 
@@ -660,11 +664,18 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
             dst_path = Path(dst_path)
 
-        merge_tiles(
-            tiles=all_tiles,
-            dst_path=dst_path,
-            method=self.merge_method,
-        )
+        # merge_tiles(
+        #     tiles=all_tiles,
+        #     dst_path=dst_path,
+        #     method=self.merge_method,
+        # )
+
+        self.merge_rasters_iteratively(
+                tiles=all_tiles, 
+                dst_path=dst_path, 
+                method=self.merge_method,
+                feedback=feedback,
+                )
 
         if self.remove_tmp_files:
             self.remove_temp_files()
@@ -680,6 +691,81 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             "OUTPUT_RASTER": dst_path,
             "OUTPUT_LAYER_NAME": layer_name,
         }
+
+    def do_first_batch(self, model, dataloader):
+
+        batch = next(dataloader)
+    def merge_rasters_iteratively(
+            self, 
+            tiles, 
+            dst_path, 
+            method,
+            feedback,
+            dtype: str = "float32",
+            nodata=None,
+            ):
+        # Initialize the merged raster with the first two rasters
+        temp_files = []
+        temp_dst_path = str(dst_path).replace('.tif', '_merging.tif')
+
+
+        # Merge the first two rasters
+        merged_path = merge_two_rasters(tiles[0], tiles[1], temp_dst_path, nodata,dtype,method)
+        temp_files.append(merged_path)
+
+        # Iteratively merge the remaining rasters
+        for i, tile in enumerate(tiles[2:], start=2):
+            # print(f"Merging raster {i+1}/{len(tiles)}")
+            feedback.pushInfo(f"Merging raster {i+1}/{len(tiles)}")
+            next_temp_dst_path = temp_dst_path.replace('.tif', f'_{i}.tif')
+            merged_path = merge_two_rasters(merged_path, tile, next_temp_dst_path, nodata,dtype, method)
+            temp_files.append(merged_path)
+            os.remove(temp_files.pop(0))  # Remove the previous temporary file
+            if feedback.isCanceled():
+                feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
+                return
+
+
+        # Rename the final merged file to the desired destination path
+        os.rename(merged_path, dst_path)
+
+
+
+
+    def init_model_timm(self, logger, feedback):
+        model = timm.create_model(
+            self.backbone_name,
+            pretrained=True,
+            in_chans=len(self.input_bands),
+            num_classes=0,
+        )
+        logger.info("Model loaded succesfully !")
+        logger.handlers.clear()
+
+        if feedback.isCanceled():
+            feedback.pushWarning(self.tr("\n !!!Processing is canceled by user!!! \n"))
+            return
+
+        feedback.pushInfo("model done")
+        data_config = timm.data.resolve_model_data_config(model)
+        (
+            _,
+            h,
+            w,
+        ) = data_config["input_size"]
+        return model, h, w
+
+    def init_model_pangaea(self, logger, feedback):
+
+        cfg = OmegaConf.load(self.backbone_name)
+        ## add cwd to path, otherwise hydra cannot find encoder classes
+        ## cf. https://github.com/facebookresearch/hydra/issues/922
+        ## and https://stackoverflow.com/a/53311583
+        sys.path.append(str(self.cwd))
+        model: Encoder = instantiate(cfg)
+        model.load_encoder_weights(logger)
+        model = modify_first_conv2d(model, in_chans=len(self.input_bands))
+        return model, model.input_size, model.input_size
 
     def load_parameters_as_json(self, feedback, parameters):
         parameters["JSON_PARAM"] = str(parameters["JSON_PARAM"])
@@ -801,7 +887,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         self.process_geo_parameters(parameters, context, feedback)
 
-        ckpt_path = self.parameterAsFile(parameters, self.CKPT, context)  # noqa: F841
+        self.ckpt_path = self.parameterAsFile(parameters, self.CKPT, context)  # noqa: F841
 
         ## Use the given backbone name is any, use preselected models otherwise.
         input_name = self.parameterAsString(parameters, self.BACKBONE_CHOICE, context)

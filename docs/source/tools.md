@@ -16,7 +16,7 @@ This section describes the different tools available in the plugin.
 :align: center
 ```
 
-This tools enables the encoding of an image with a deep learning backbone.
+This tool enables the encoding of an image with a deep learning backbone.
 Projecting an image through a deep learning backbone can indeed help bypass color, shadows or texture artefacts that make an object hard to detect otherwise.
 We have coded this plugin with Vision Transformers (ViTs) in mind as backbones because they have become the state of the art in computer vision since 2021.
 Modern deep learning backbones are pretrained in a Self-Supervised maner and can provide meaningfull descriptors of an image without further training.
@@ -35,7 +35,7 @@ Do keep in mind that before passsing through the model, the sampled tile will be
 During encoding, each tile is saved on disk and the tiles are merged regularly to save space. We chose to save on disk to be easier on ram an leave the option to stop the process and restart later.
 By default, features are saved in a temporary directory but you can change the target location.
 
-Encoding sessions are identified with a [md5 sha](https://en.wikipedia.org/wiki/MD5) so a set of input parameters is unique and can be recognised. This allows to easily start again where you left of.
+Encoding sessions are identified with a [md5 hash](https://en.wikipedia.org/wiki/MD5) so a set of input parameters is unique and can be recognised. This allows to easily start again where you left of.
 The parameters corresponding to a sha are saved in the `parameters.csv` files in the target directory.
 
 The backend for handling datasets and dataloader is a fork from [torchgeo](https://torchgeo.readthedocs.io/).
@@ -46,15 +46,91 @@ The backend for handling datasets and dataloader is a fork from [torchgeo](https
 
 
 
+<!-- ### Backbone choice -->
 
-### Backbone choice
+<!-- We have pre-selected a couple of backbones that are often used in computer vision. -->
+<!-- However, if you input the name of another timm or huggingface backbone in the field below, this will be the used one. -->
 
-We have pre-selected a couple of backbones that are often used in computer vision.
-However, if you input the name of another timm or huggingface backbone in the field below, this will be the used one.
+<!-- ### Using a custom backbone -->
 
-### Using a custom backbone
+<!-- If you have a pretrained backbone, you can give a path to the weights in the corresponding field and this will be the backbone used for encoding. -->
 
-If you have a pretrained backbone, you can give a path to the weights in the corresponding field and this will be the backbone used for encoding.
+### Parameters
+
+- **Input raster layer or image file path:**
+The raster you want to feed to a deep learning encoder. This can either be a layer loaded in QGIS or the path to a file.
+
+- **Selected Bands:**
+Bands that will be fed to the encoder. Selected none feeds all the bands as is into the encoder. If you select a number of bands different that the one of the backbone you are using, the pretrained model will be changed accordingly.
+
+- **Processing extent:**
+Defaults to the entire image. Otherwise, you can set a smaller processing extent, either by calculating from a layer, from the current map canvas or by drawing the extent on the map.
+
+- **Sampling size:**
+The input raster will be sampled in squares of this sampling size (in pixels). This size can differ from the input size of the chosen deep learning encoder, sampled tiles will be resized before entering the encoder.
+
+- **Stride:**
+Step size between two sampled tiles. 
+If the stride is equall to the sampling size, the raster will be sampled allong a grid.
+If the stride is smaller than the sampling size, there will be an overlap between neighboring tiles.
+If the stride is larger, this will likely cause an error.
+
+- **Use GPU if CUDA is available:**
+If the plugin recognises a GPU, it will be used for computing.
+
+- **Pre-selected backbones:**
+A selection of backbones.
+
+- **Enter an architecture name if you want to test another backbone**:
+You can use other backbones available on [huggingface](https://huggingface.co/timm). These however may not work properly depending on their architecture.
+Most ViT like backbones should work.
+
+- **Batch size:**
+How many tiles are fed into the network at once. This only takes effect if a GPU is available.
+
+- **Output directory:**
+Where resulting rasters will be saved. A subdirectory identified by a md5 hash will correspond to a given encoding session.
+
+
+### Advanced parameters
+
+- **Pretrained checkpoint:**
+If you have a pretrained model available on disk, you can use this one rather than pre-trained weights available on the web.
+
+- **CUDA Device ID:**
+Enter CUDA device ID to choose on which GPU computations are done if you have several.
+
+- **Remove temporary files after encoding:**
+If selected, all temporary tiles will be removed at the end of encoding.
+
+- **Merge method at the end of inference:**
+Choose how tiles will be merged to reconstruct a full raster.
+For more informations, see [rasterio documentation](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge).
+Only the `average` method is custom and will average several overlapping tiles to obtain the values of the final pixels.
+
+- **Frequency at which temporary files should be cleaned up:**
+Every n batch, temporary tiles will be merged together and deleted.
+
+- **Number of workers for dataloader:**
+How many threads will be used by the dataloader to feed the tiles into the encoder. This defaults to all available workers.
+You can chose less to ease the workload on your CPU.
+
+- **Schedule pauses between batches:**
+If a number is inputed, their will be a pause between each batch. This allows to pass the inference in background if other computations have to be made at the same time.
+
+- **Target CRS:**
+CRS into which the resulting raster should be projected.
+
+- **Target resolution:**
+target resolution in meters.
+
+- **Compress final result to uint16 and JP2 to save space:**
+If selected, the final features raster will be converted to uint16 rather than float32 (*i.e.* two times lighter) and compressed to JP2 rather than geotiff to save space.
+
+- **Pass parameters as JSON file:**
+In the output directory, the parameters corresponding to an encoding session, you can find a JSON file summarizing the input parameters used during encoding.
+You can pass this JSON file here to overide all previous parameters. This can be usefull if you want to resume an encoding session.
+
 
 
 ---------------------------------------
