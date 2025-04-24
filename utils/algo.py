@@ -885,6 +885,9 @@ class SKAlgorithm(IAMAPAlgorithm):
         if "random_state" in kwargs_dict.keys():
             kwargs_dict["random_state"] = self.seed
 
+        if "verbose" in kwargs_dict.keys():
+            kwargs_dict["verbose"] = True
+
         for key, value in self.passed_kwargs.items():
             if key in kwargs_dict.keys():
                 kwargs_dict[key] = value
