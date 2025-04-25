@@ -12,11 +12,20 @@ from PyQt5.QtCore import QVariant
 ## for hashing without using to much memory
 BUF_SIZE = 65536
 
+class RasterioDebugFilter(logging.Filter):
+    def filter(self, record):
+        # Suppress DEBUG messages from the 'rasterio' logger
+        # if record.levelno == logging.DEBUG and record.name.startswith('rasterio'):
+        if (record.levelno == logging.DEBUG or record.levelno == logging.INFO) and record.name.startswith('rasterio'):
+            return False
+        return True
 
 class QGISLogHandler(logging.Handler):
-    def __init__(self, feedback):
+    def __init__(self, feedback, ignore_rasterio=True):
         super().__init__()
         self.feedback = feedback
+        if ignore_rasterio:
+            self.addFilter(RasterioDebugFilter())  # Add the filter to the handler
 
     def emit(self, record):
         msg = self.format(record)
