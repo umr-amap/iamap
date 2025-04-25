@@ -34,7 +34,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
             "BACKBONE_OPT": 0,
             "BANDS": None,
             "BATCH_SIZE": 1,
-            "CKPT": "NULL",
+            "CKPT": "",
             "CRS": None,
             "CUDA": True,
             "CUDA_ID": 0,
@@ -107,7 +107,8 @@ class TestEncoderAlgorithm(unittest.TestCase):
         parameters = {
             "INPUT": INPUT,
                 }
-        self.algorithm.process_options(parameters, self.context, self.feedback)
+        self.algorithm.logger = self.algorithm.redirect_logger(feedback=self.feedback)
+        self.algorithm.process_options(parameters, self.context)
         RasterDataset.filename_glob = self.algorithm.rlayer_name
         RasterDataset.all_bands = [
             self.algorithm.rlayer.bandName(i_band)

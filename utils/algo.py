@@ -992,7 +992,14 @@ class SHPAlgorithm(IAMAPAlgorithm):
         """
         Here is where the processing itself takes place.
         """
-        self.process_geo_parameters(parameters, context, feedback)
+        logging_level = logging.INFO
+        ignore_rasterio_logs = True
+        self.logger = self.redirect_logger(
+                feedback, 
+                level=logging_level, 
+                ignore_rasterio=ignore_rasterio_logs
+                )
+        self.process_geo_parameters(parameters, context)
         self.process_common_shp(parameters, context, feedback)
 
         fit_raster = self.get_fit_raster()
