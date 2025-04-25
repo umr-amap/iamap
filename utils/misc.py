@@ -20,7 +20,16 @@ class QGISLogHandler(logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
-        self.feedback.pushInfo(msg)
+        if record.levelno == logging.DEBUG:
+            self.feedback.pushDebugInfo(msg)
+        elif record.levelno == logging.INFO:
+            self.feedback.pushInfo(msg)
+        elif record.levelno == logging.WARNING:
+            self.feedback.pushWarning(msg)
+        elif record.levelno == logging.ERROR:
+            self.feedback.pushError(msg)
+        elif record.levelno == logging.CRITICAL:
+            self.feedback.pushCritical(msg)
 
 def get_libspatialindex():
     """
