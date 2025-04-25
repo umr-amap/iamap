@@ -1,4 +1,5 @@
 import os
+import logging
 import ast
 import tempfile
 import numpy as np
@@ -65,7 +66,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 if __name__ != "__main__":
-    from .misc import get_unique_filename, calculate_chunk_size
+    from .misc import QGISLogHandler, get_unique_filename, calculate_chunk_size
     from .geo import get_random_samples_in_gdf
 
 
@@ -256,10 +257,20 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         )
         self.addParameter(seed_param)
 
+    def redirect_logger(self,feedback, level=logging.INFO):
+        # logging.basicConfig(level=level)
+        logger = logging.getLogger()
+        logger.addHandler(QGISLogHandler(feedback))# Attach the QGIS log handler
+        logger.setLevel(level)
+        return logger
+
     def process_geo_parameters(self, parameters, context, feedback):
         """
         Handle geographic parameters that are common to all algorithms (CRS, resolution, extent, selected bands).
         """
+
+        if not self.logger:
+            self.logger = self.redirect_logger(feedback)
 
         rlayer = self.parameterAsRasterLayer(parameters, self.INPUT, context)
 
@@ -288,24 +299,16 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         # handle crs
         if crs is None or not crs.isValid():
             crs = rlayer.crs()
-            feedback.pushInfo(
-                f"Layer CRS unit is {crs.mapUnits()}"
-            )  # 0 for meters, 6 for degrees, 9 for unknown
-            feedback.pushInfo(
-                f"whether the CRS is a geographic CRS (using lat/lon coordinates) {crs.isGeographic()}"
-            )
+            self.logger.debug(f"Layer CRS unit is {crs.mapUnits()}")  # 0 for meters, 6 for degrees, 9 for unknown
+            self.logger.debug(f"whether the CRS is a geographic CRS (using lat/lon coordinates) {crs.isGeographic()}")
             if crs.mapUnits() == Qgis.DistanceUnit.Degrees:
                 crs = self.estimate_utm_crs(rlayer.extent())
 
         # target crs should use meters as units
         if crs.mapUnits() != Qgis.DistanceUnit.Meters:
-            feedback.pushInfo(f"Layer CRS unit is {crs.mapUnits()}")
-            feedback.pushInfo(
-                f"whether the CRS is a geographic CRS (using lat/lon coordinates) {crs.isGeographic()}"
-            )
-            raise QgsProcessingException(
-                self.tr("Only support CRS with the units as meters")
-            )
+            self.logger.debug(f"Layer CRS unit is {crs.mapUnits()}")
+            self.logger.debug(f"whether the CRS is a geographic CRS (using lat/lon coordinates) {crs.isGeographic()}")
+            raise QgsProcessingException(self.tr("Only support CRS with the units as meters"))
 
         # 0 for meters, 6 for degrees, 9 for unknown
         UNIT_METERS = 0
@@ -322,24 +325,15 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
                     # estimate utm crs based on layer extent
                     crs = self.estimate_utm_crs(rlayer.extent())
                 else:
-                    raise QgsProcessingException(
-                        f"Resampling of image with the CRS of {crs.authid()} in meters is not supported."
-                    )
-            # else:
-            #     res = (rlayer_extent.xMaximum() -
-            #            rlayer_extent.xMinimum()) / rlayer.width()
+                    raise QgsProcessingException(f"Resampling of image with the CRS of {crs.authid()} in meters is not supported.")
 
         # handle extent
         if extent.isNull():
-            extent = (
-                rlayer.extent()
-            )  # QgsProcessingUtils.combineLayerExtents(layers, crs, context)
+            extent = (rlayer.extent())  # QgsProcessingUtils.combineLayerExtents(layers, crs, context)
             extent_crs = rlayer.crs()
         else:
             if extent.isEmpty():
-                raise QgsProcessingException(
-                    self.tr("The extent for processing can not be empty!")
-                )
+                raise QgsProcessingException(self.tr("The extent for processing can not be empty!"))
             extent_crs = self.parameterAsExtentCrs(parameters, self.EXTENT, context)
         # if extent crs != target crs, convert it to target crs
         if extent_crs != crs:
@@ -363,22 +357,18 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         else:
             rlayer_extent = rlayer.extent()
         if not rlayer_extent.intersects(extent):
-            raise QgsProcessingException(
-                self.tr(
-                    "The extent for processing is not intersected with the input image!"
-                )
-            )
+            raise QgsProcessingException(self.tr("The extent for processing is not intersected with the input image!"))
 
         img_width_in_extent = round((extent.xMaximum() - extent.xMinimum()) / res)
         img_height_in_extent = round((extent.yMaximum() - extent.yMinimum()) / res)
 
-        feedback.pushInfo(
+        self.logger.debug(
             (
                 f"Processing extent: minx:{extent.xMinimum():.6f}, maxx:{extent.xMaximum():.6f},"
                 f"miny:{extent.yMinimum():.6f}, maxy:{extent.yMaximum():.6f}"
             )
         )
-        feedback.pushInfo(
+        self.logger.debug(
             (
                 f"Processing image size: (width {img_width_in_extent}, "
                 f"height {img_height_in_extent})"
@@ -386,12 +376,9 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         )
 
         # Send some information to the user
-        feedback.pushInfo(f"Layer path: {rlayer.dataProvider().dataSourceUri()}")
-        # feedback.pushInfo(
-        #     f'Layer band scale: {rlayer_data_provider.bandScale(self.selected_bands[0])}')
-        feedback.pushInfo(f"Layer name: {rlayer.name()}")
-
-        feedback.pushInfo(f"Bands selected: {self.selected_bands}")
+        self.logger.info(f"Layer path: {rlayer.dataProvider().dataSourceUri()}")
+        self.logger.info(f"Layer name: {rlayer.name()}")
+        self.logger.info(f"Bands selected: {self.selected_bands}")
 
         self.extent = extent
         self.rlayer = rlayer
@@ -403,7 +390,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         Compress final file to JP2.
         """
 
-        feedback.pushInfo("Compressing to JP2")
+        self.logger.info("Compressing to JP2")
 
         file = parameters["OUTPUT_RASTER"]
         dst_path = Path(file).with_suffix(".jp2")
@@ -569,7 +556,7 @@ class SKAlgorithm(IAMAPAlgorithm):
         """
         Here is where the processing itself takes place.
         """
-        self.process_geo_parameters(parameters, context, feedback)
+        self.process_geo_parameters(parameters, context)
         self.process_common_sklearn(parameters, context)
 
         fit_raster, scaler = self.get_fit_raster(feedback)
@@ -642,14 +629,14 @@ class SKAlgorithm(IAMAPAlgorithm):
 
         self.print_transform_metrics(model, feedback)
         self.print_cluster_metrics(model, fit_raster, feedback)
-        feedback.pushInfo("Fitting done, saving model\n")
+        self.logger.info("Fitting done, saving model\n")
         save_file = f"{self.method_name}.pkl".lower()
         if self.save_model:
             out_path = os.path.join(self.output_dir, save_file)
             joblib.dump(model, out_path)
 
         if not (do_fit_predict or do_fit_transform):
-            feedback.pushInfo("Inference over raster\n")
+            self.logger.info("Inference over raster\n")
             self.infer_model(model, feedback, scaler)
 
         return {"OUTPUT_RASTER": self.dst_path, "OUTPUT_LAYER_NAME": self.layer_name}
@@ -695,7 +682,7 @@ class SKAlgorithm(IAMAPAlgorithm):
             scaler.fit(fit_raster)
 
             if self.subset:
-                feedback.pushInfo(
+                self.logger.info(
                     f"Using a random subset of {self.subset} pixels, random seed is {self.seed}"
                 )
 
@@ -718,7 +705,7 @@ class SKAlgorithm(IAMAPAlgorithm):
         return fit_raster, scaler
 
     def fit_model(self, model, fit_raster, iter, feedback):
-        feedback.pushInfo(
+        self.logger.info(
             "Starting fit. If it goes for too long, consider setting a subset.\n"
         )
 
@@ -767,7 +754,7 @@ class SKAlgorithm(IAMAPAlgorithm):
             proj_img = proj_img.reshape((raster.shape[0], raster.shape[1], -1))
             height, width, channels = proj_img.shape
 
-            feedback.pushInfo("Export to geotif\n")
+            self.logger.info("Export to geotif\n")
             with rasterio.open(
                 self.dst_path,
                 "w",
@@ -780,7 +767,7 @@ class SKAlgorithm(IAMAPAlgorithm):
                 transform=transform,
             ) as dst_ds:
                 dst_ds.write(np.transpose(proj_img, (2, 0, 1)))
-            feedback.pushInfo("Export to geotif done\n")
+            self.logger.info("Export to geotif done\n")
 
         return model
 
@@ -813,7 +800,7 @@ class SKAlgorithm(IAMAPAlgorithm):
             proj_img = proj_img.reshape((raster.shape[0], raster.shape[1], -1))
             height, width, channels = proj_img.shape
 
-            feedback.pushInfo("Export to geotif\n")
+            self.logger.info("Export to geotif\n")
             with rasterio.open(
                 self.dst_path,
                 "w",
@@ -826,7 +813,7 @@ class SKAlgorithm(IAMAPAlgorithm):
                 transform=transform,
             ) as dst_ds:
                 dst_ds.write(np.transpose(proj_img, (2, 0, 1)))
-            feedback.pushInfo("Export to geotif done\n")
+            self.logger.info("Export to geotif done\n")
 
         return model
 
@@ -861,7 +848,7 @@ class SKAlgorithm(IAMAPAlgorithm):
             proj_img = proj_img.reshape((raster.shape[0], raster.shape[1], -1))
             height, width, channels = proj_img.shape
 
-            feedback.pushInfo("Export to geotif\n")
+            self.logger.info("Export to geotif\n")
             with rasterio.open(
                 self.dst_path,
                 "w",
@@ -874,7 +861,7 @@ class SKAlgorithm(IAMAPAlgorithm):
                 transform=transform,
             ) as dst_ds:
                 dst_ds.write(np.transpose(proj_img, (2, 0, 1)))
-            feedback.pushInfo("Export to geotif done\n")
+            self.logger.info("Export to geotif done\n")
 
     def update_kwargs(self, kwargs_dict):
         if "n_clusters" in kwargs_dict.keys():
@@ -951,13 +938,13 @@ class SKAlgorithm(IAMAPAlgorithm):
             # Loadings (Principal axes)
             loadings = model.components_.T * np.sqrt(model.explained_variance_)
 
-            feedback.pushInfo(
+            self.logger.info(
                 f"Explained Variance Ratio : \n{explained_variance_ratio}"
             )
-            feedback.pushInfo(
+            self.logger.info(
                 f"Cumulative Explained Variance : \n{cumulative_variance}"
             )
-            feedback.pushInfo(f"Loadings (Principal axes) : \n{loadings}")
+            self.logger.info(f"Loadings (Principal axes) : \n{loadings}")
 
     def print_cluster_metrics(self, model, fit_raster, feedback):
         """
@@ -965,11 +952,11 @@ class SKAlgorithm(IAMAPAlgorithm):
         """
 
         if hasattr(model, "inertia_"):
-            feedback.pushInfo(f"Inertia : \n{model.inertia_}")
-            feedback.pushInfo(f"Cluster sizes : \n{Counter(model.labels_)}")
+            self.logger.info(f"Inertia : \n{model.inertia_}")
+            self.logger.info(f"Cluster sizes : \n{Counter(model.labels_)}")
             ## silouhette score seem to heavy for now
-            # feedback.pushInfo(f'Silhouette Score : \n{silhouette_score(fit_raster, model.labels_)}')
-            # feedback.pushInfo(f'Silouhette Values : \n{silhouette_values(fit_raster, model.labels_)}')
+            # self.logger.info(f'Silhouette Score : \n{silhouette_score(fit_raster, model.labels_)}')
+            # self.logger.info(f'Silouhette Values : \n{silhouette_values(fit_raster, model.labels_)}')
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
     def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
@@ -1127,16 +1114,16 @@ class SHPAlgorithm(IAMAPAlgorithm):
         gdf = gpd.read_file(self.template)
         gdf = gdf.to_crs(self.crs.toWkt())
 
-        feedback.pushInfo(f"before sampling: {len(gdf)}")
+        self.logger.info(f"before sampling: {len(gdf)}")
         ## If gdf is not point geometry, we take random samples in it
         gdf = get_random_samples_in_gdf(gdf, random_samples, seed=self.seed)
-        feedback.pushInfo(f"after samples:\n {len(gdf)}")
+        self.logger.info(f"after samples:\n {len(gdf)}")
 
         self.used_shp_path = os.path.join(self.output_dir, "used.shp")
-        feedback.pushInfo(f"saving used dataframe to: {self.used_shp_path}")
+        self.logger.info(f"saving used dataframe to: {self.used_shp_path}")
         gdf.to_file(self.used_shp_path)
 
-        feedback.pushInfo(f"before extent: {len(gdf)}")
+        self.logger.info(f"before extent: {len(gdf)}")
         bounds = box(
             self.extent.xMinimum(),
             self.extent.yMinimum(),
@@ -1144,7 +1131,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
             self.extent.yMaximum(),
         )
         self.gdf = gdf[gdf.within(bounds)]
-        feedback.pushInfo(f"after extent: {len(self.gdf)}")
+        self.logger.info(f"after extent: {len(self.gdf)}")
 
         if len(self.gdf) == 0:
             feedback.pushWarning("No template points within extent !")
