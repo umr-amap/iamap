@@ -36,12 +36,6 @@ from .pangaea.encoders.base import Encoder
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 
-# from torchgeo.datasets import RasterDataset, BoundingBox,stack_samples
-# from torchgeo.samplers import GridGeoSampler, Units
-# from torchgeo.transforms import AugmentationSequential
-## from .utils.torchgeo import NoBordersGridGeoSampler
-# from .utils.trchg import NoBordersGridGeoSampler
-
 from .utils.geo import get_mean_sd_by_band
 from .utils.geo import merge_tiles, merge_two_tiles
 from .utils.misc import (
@@ -55,7 +49,7 @@ from .utils.misc import (
     compute_md5_hash,
     log_parameters_to_csv,
 )
-from .utils.trch import modify_first_conv2d, quantize_model, vit_first_layer_with_nchan
+from .utils.trch import modify_first_conv2d, quantize_model
 from .utils.algo import IAMAPAlgorithm
 
 from .tg.datasets import RasterDataset
@@ -374,13 +368,31 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         self.inference(feedback)
 
-
         ## merging all temp tiles
         feedback.pushInfo(f"\n\n{'-'*8}\n Merging tiles \n{'-'*8}\n")
-        self.merge_tiles_iteratively(feedback=feedback)
+        all_tiles = [
+            os.path.join(self.output_subdir, f)
+            for f in os.listdir(self.output_subdir)
+            if f.endswith("_tmp.tif")
+        ]
+        rlayer_name, ext = os.path.splitext(self.rlayer_name)
+
+        if not self.all_encoding_done:
+            dst_path = Path(os.path.join(self.output_subdir, "merged_tmp.tif"))
+            layer_name = f"{rlayer_name} features tmp"
+        else:
+            dst_path, layer_name = get_unique_filename(self.output_subdir, "merged.tif", f"{rlayer_name} features")
+            dst_path = Path(dst_path)
+
+        merge_tiles(
+            tiles=all_tiles,
+            dst_path=dst_path,
+            method=self.merge_method,
+        )
 
         if self.remove_tmp_files:
             self.remove_temp_files()
+
 
         parameters["OUTPUT_RASTER"] = self.dst_path
 
@@ -390,13 +402,12 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         return {
             "Output feature path": self.output_subdir,
             "Patch samples saved": self.iPatch,
-            "OUTPUT_RASTER": self.dst_path,
-            "OUTPUT_LAYER_NAME": self.layer_name,
+            "OUTPUT_RASTER": dst_path,
+            "OUTPUT_LAYER_NAME": layer_name,
         }
 
 
     def inference(self, feedback):
-
 
         last_batch_done = self.get_last_batch_done()
         if last_batch_done >= 0:
