@@ -257,20 +257,17 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         )
         self.addParameter(seed_param)
 
-    def redirect_logger(self,feedback, level=logging.INFO):
+    def redirect_logger(self,feedback, level=logging.DEBUG, ignore_rasterio=True):
         # logging.basicConfig(level=level)
         logger = logging.getLogger()
-        logger.addHandler(QGISLogHandler(feedback))# Attach the QGIS log handler
+        logger.addHandler(QGISLogHandler(feedback, ignore_rasterio=ignore_rasterio))# Attach the QGIS log handler
         logger.setLevel(level)
         return logger
 
-    def process_geo_parameters(self, parameters, context, feedback):
+    def process_geo_parameters(self, parameters, context):
         """
         Handle geographic parameters that are common to all algorithms (CRS, resolution, extent, selected bands).
         """
-
-        if not self.logger:
-            self.logger = self.redirect_logger(feedback)
 
         rlayer = self.parameterAsRasterLayer(parameters, self.INPUT, context)
 
@@ -556,6 +553,14 @@ class SKAlgorithm(IAMAPAlgorithm):
         """
         Here is where the processing itself takes place.
         """
+
+        logging_level = logging.INFO
+        ignore_rasterio_logs = True
+        self.logger = self.redirect_logger(
+                feedback, 
+                level=logging_level, 
+                ignore_rasterio=ignore_rasterio_logs
+                )
         self.process_geo_parameters(parameters, context)
         self.process_common_sklearn(parameters, context)
 

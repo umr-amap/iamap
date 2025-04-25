@@ -345,9 +345,15 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         Here is where the processing itself takes place.
         """
 
-        self.logger = self.redirect_logger(feedback)
+        logging_level = logging.INFO
+        ignore_rasterio_logs = True
+        self.logger = self.redirect_logger(
+                feedback, 
+                level=logging_level, 
+                ignore_rasterio=ignore_rasterio_logs
+                )
         parameters = self.load_parameters_as_json(parameters)
-        self.process_options(parameters, context, feedback)
+        self.process_options(parameters, context)
         self.create_output_dir(parameters)
 
         self.logger.info("Creating dataset...")
@@ -834,13 +840,13 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
         return
 
-    def process_options(self, parameters, context, feedback):
+    def process_options(self, parameters, context):
 
         self.iPatch = 0
         self.feature_dir = ""
         self.logger.debug(f"PARAMETERS :\n{parameters}")
 
-        self.process_geo_parameters(parameters, context, feedback)
+        self.process_geo_parameters(parameters, context)
 
         self.ckpt_path = self.parameterAsFile(parameters, self.CKPT, context)  # noqa: F841
 
