@@ -394,7 +394,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             self.remove_temp_files()
 
 
-        parameters["OUTPUT_RASTER"] = self.dst_path
+        parameters["OUTPUT_RASTER"] = dst_path
 
         if self.compress:
             self.dst_path = self.tiff_to_jp2(parameters, feedback)
