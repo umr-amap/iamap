@@ -1,4 +1,5 @@
 import os
+import logging
 import tempfile
 from pathlib import Path
 import unittest
@@ -54,6 +55,13 @@ class TestEncoderAlgorithm(unittest.TestCase):
             "JSON_PARAM": "NULL",
             "OUT_DTYPE": 0,
         }
+        logging_level = logging.INFO
+        ignore_rasterio_logs = True
+        self.algorithm.logger = self.algorithm.redirect_logger(
+                self.feedback, 
+                level=logging_level, 
+                ignore_rasterio=ignore_rasterio_logs
+                )
 
     @pytest.mark.xfail(raises=huggingface_hub.errors.LocalEntryNotFoundError)
     def test_valid_parameters(self):
@@ -102,6 +110,47 @@ class TestEncoderAlgorithm(unittest.TestCase):
 
             assert output.shape == exp_feat_size
 
+    @pytest.mark.xfail(raises=huggingface_hub.errors.LocalEntryNotFoundError)
+    def test_init_model(self):
+        self.algorithm.cwd = Path(__file__).parent.parent.absolute()
+        self.algorithm.ckpt_path = ''
+        self.algorithm.quantization = True
+        self.algorithm.device = 'cpu'
+        archs = [
+            Path(os.path.join(self.algorithm.cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
+            "vit_small_patch8_224.dino",
+            "vit_base_patch16_224.dino",
+            "vit_tiny_patch16_224.augreg_in21k",
+            "vit_base_patch16_224.mae",
+            "samvit_base_patch16.sa1b",
+        ]
+        expected_output_size = [
+            torch.Size([1, 197, 768]),
+            torch.Size([1, 197, 768]),
+            torch.Size([1, 197, 192]),
+            torch.Size([1, 197, 768]),
+            torch.Size([1, 197, 768]),
+            # torch.Size([1, 256, 64, 64]),
+            # torch.Size([1, 256, 64, 64]),
+        ]
+        nbands = [[1],[1,2,3,4,5,6,7,8,9,10,11,12]]
+
+        for nband in nbands:
+            for arch, exp_feat_size in zip(archs, expected_output_size):
+                self.algorithm.backbone_name = arch
+                self.algorithm.input_bands = nband 
+                self.algorithm.init_model()
+                images = torch.rand(1,len(nband),self.algorithm.w, self.algorithm.h)
+                if '.yaml' in str(self.algorithm.backbone_name):
+                    input={}
+                    input['optical'] = images
+                    features = self.algorithm.model(input)
+
+                else:
+                    features = self.algorithm.model.forward_features(images)
+
+            assert features.shape == exp_feat_size
+
     def test_RasterDataset(self):
         self.algorithm.initAlgorithm()
         parameters = {
@@ -146,7 +195,8 @@ class TestEncoderAlgorithm(unittest.TestCase):
 if __name__ == "__main__":
     test_encoder = TestEncoderAlgorithm()
     test_encoder.setUp()
-    test_encoder.test_timm_create_model()
+    # test_encoder.test_timm_create_model()
+    test_encoder.test_init_model()
     test_encoder.test_RasterDataset()
     test_encoder.test_valid_parameters()
     test_encoder.test_cuda()
