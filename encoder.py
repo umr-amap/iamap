@@ -691,7 +691,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         else :
             model, self.h, self.w = self.init_model_timm()
 
-        if self.ckpt_path != '' : 
+        if not (self.ckpt_path == '' or self.ckpt_path == 'NULL') : 
             model.load_state_dict(torch.load(self.ckpt_path, weights_only=True))
 
         if self.quantization:
