@@ -727,6 +727,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         ## add cwd to path, otherwise hydra cannot find encoder classes
         ## cf. https://github.com/facebookresearch/hydra/issues/922
         ## and https://stackoverflow.com/a/53311583
+        cfg.encoder_weights = os.path.join(self.cwd, str(cfg.encoder_weights))
         sys.path.append(str(self.cwd))
         model: Encoder = instantiate(cfg)
         model.load_encoder_weights(self.logger)
