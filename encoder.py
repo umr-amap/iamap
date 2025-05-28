@@ -661,7 +661,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             self.layer_name = f"{rlayer_name} features tmp"
         else:
             ## update filename if a merged.tif file allready exists
-            dst_path, self.layer_name = get_unique_filename(self.output_subdir, "merged.tif", f"{rlayer_name} features")
+            dst_path, self.layer_name = get_unique_filename(self.output_subdir, f"{self.rlayer_name}_merged.tif", f"{rlayer_name} features")
             self.dst_path = Path(dst_path)
 
         print(tiles)
