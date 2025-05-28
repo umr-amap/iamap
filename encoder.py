@@ -85,6 +85,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
     TEMP_FILES_CLEANUP_FREQ = "TEMP_FILES_CLEANUP_FREQ"
     JSON_PARAM = "JSON_PARAM"
     COMPRESS = "COMPRESS"
+    VERBOSITY = "VERBOSITY"
 
     def initAlgorithm(self, config=None):
         """
@@ -320,6 +321,14 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             defaultValue=None,
         )
 
+        self.verbosity = ["INFO", "DEBUG", "WARNING"]
+        verbosity_param = QgsProcessingParameterEnum(
+            name=self.VERBOSITY,
+            description=self.tr("Log verbosity level"),
+            options=self.verbosity,
+            defaultValue=0,
+        )
+
         for param in (
             chkpt_param,
             cuda_id_param,
@@ -332,6 +341,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             res_param,
             compress_param,
             json_param,
+            verbosity_param,
         ):
             param.setFlags(
                 param.flags() | QgsProcessingParameterDefinition.FlagAdvanced
@@ -345,7 +355,14 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         Here is where the processing itself takes place.
         """
 
-        logging_level = logging.INFO
+        verbosity_opt = self.parameterAsInt(parameters, self.VERBOSITY, context)
+        verbosity = self.verbosity[verbosity_opt]
+        if verbosity == "INFO":
+            logging_level = logging.INFO
+        if verbosity == "DEBUG":
+            logging_level = logging.DEBUG
+        if verbosity == "WARNING":
+            logging_level = logging.WARNING
         ignore_rasterio_logs = True
         self.logger = self.redirect_logger(
                 feedback, 
@@ -469,6 +486,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
 
             features = features.detach().cpu().numpy()
+            print(features.shape)
             self.logger.debug(f"Features shape {features.shape}")
 
             self.save_features(features, sample["bbox"], current)
