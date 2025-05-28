@@ -703,6 +703,8 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             except Exception:
                 self.logger.debug("Quantization impossible, using original model.")
                 self.model = model
+        else:
+            self.model = model
 
         self.model.to(device=self.device)
         return
