@@ -473,6 +473,8 @@ def get_packages_to_install(device):
             import_name = "sklearn"
         if lib == "umap-learn ":
             import_name = "umap"
+        if lib == "hydra-core ":
+            import_name = "hydra"
 
         packages_to_install.append(
             PackageToInstall(name=lib, version=version, import_name=import_name)
