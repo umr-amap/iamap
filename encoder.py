@@ -299,8 +299,8 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.QUANT,
-                self.tr("Quantization of the model to reduce space"),
-                defaultValue=True,
+                self.tr("Quantization of the model to reduce space (behaves differently depending on hardware)"),
+                defaultValue=False,
             )
         )
 
