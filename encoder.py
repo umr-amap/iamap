@@ -925,6 +925,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
     # used to handle any thread-sensitive cleanup which is required by the algorithm.
     def postProcessAlgorithm(self, context, feedback) -> Dict[str, Any]:
+        del self.logger
         return {}
 
     def tr(self, string):
