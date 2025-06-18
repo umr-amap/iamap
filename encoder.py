@@ -434,6 +434,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
     def inference(self, feedback):
 
+        n_patches = None
         last_batch_done = self.get_last_batch_done()
         if last_batch_done >= 0:
             self.logger.info(
@@ -475,11 +476,17 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             else:
                 features = self.model.forward_features(images)
 
-            if features.shape[1] % 2 == 1: 
-                features = features[:, 1:, :]  # take only patch tokens
+            self.logger.debug(f"Raw features shape {features.shape}")
+
 
             if current <= last_batch_done + 1:
-                n_patches = int(np.sqrt(features.shape[1]))
+                # n_patches = int(np.sqrt(features.shape[1]))
+                if np.sqrt(features.shape[1] - 1).is_integer():
+                    n_patches = int(np.sqrt(features.shape[1] - 1))
+
+            if n_patches: 
+                features = features[:, 1:, :]  # take only patch tokens
+
 
             features = features.view(
                 features.shape[0], n_patches, n_patches, features.shape[-1]
@@ -487,7 +494,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
 
             features = features.detach().cpu().numpy()
             print(features.shape)
-            self.logger.debug(f"Features shape {features.shape}")
+            self.logger.debug(f"Patch features shape {features.shape}")
 
             self.save_features(features, sample["bbox"], current)
             self.logger.debug("Features saved")
