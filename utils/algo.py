@@ -15,6 +15,7 @@ from qgis.core import (
     QgsCoordinateTransform,
     QgsProcessingException,
     QgsProcessingAlgorithm,
+    QgsProcessingParameterFile,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterRasterLayer,
     QgsProcessingParameterFolderDestination,
@@ -525,6 +526,15 @@ class SKAlgorithm(IAMAPAlgorithm):
             )
         )
 
+        load_model_param = QgsProcessingParameterFile(
+            name=self.LOAD,
+            description=self.tr("Pretrained model"),
+            # extension='pth',
+            fileFilter="Checkpoint Files (*.pkl);; All Files (*.*)",
+            optional=True,
+            defaultValue=None,
+        )
+
         subset_param = QgsProcessingParameterNumber(
             name=self.SUBSET,
             description=self.tr(
@@ -543,7 +553,7 @@ class SKAlgorithm(IAMAPAlgorithm):
             defaultValue=True,
         )
 
-        for param in (subset_param, save_param):
+        for param in (load_model_param, subset_param, save_param):
             param.setFlags(
                 param.flags() | QgsProcessingParameterDefinition.FlagAdvanced
             )
@@ -616,6 +626,12 @@ class SKAlgorithm(IAMAPAlgorithm):
         do_fit_predict = False
         do_fit_transform = False
 
+        if self.load_model_path:
+            model = joblib.load(self.load_model_path)
+            self.logger.info("Inference over raster\n")
+            self.infer_model(model, feedback, scaler)
+            return {"OUTPUT_RASTER": self.dst_path, "OUTPUT_LAYER_NAME": self.layer_name}
+
         if not hasattr(model, "predict") and sk_module==cluster:
             do_fit_predict = True
 
@@ -667,6 +683,7 @@ class SKAlgorithm(IAMAPAlgorithm):
         output_dir = self.parameterAsString(parameters, self.OUTPUT, context)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.load_model_path = self.parameterAsFile(parameters, self.LOAD, context)  # noqa: F841
 
     def get_fit_raster(self, feedback):
         with rasterio.open(self.rlayer_path) as ds:
