@@ -53,8 +53,8 @@ Documentation is available [here](https://iamap.readthedocs.io/en/latest/).
 
 ## Roadmap
 
-- [ ] Saving and using sklearn models in inference
-- [ ] Implementation of [Pangaea benchmark models](https://github.com/VMarsocci/pangaea-bench/tree/main)
+- [x] Saving and using sklearn models in inference
+- [x] Implementation of [Pangaea benchmark models](https://github.com/VMarsocci/pangaea-bench/tree/main) (SSL4EO and MOCO for now)
 - [ ] Handling features of non-ViT-like models
 - [ ] Publication on QGIS repo
 
