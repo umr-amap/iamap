@@ -246,9 +246,9 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
         )
         self.backbone_opt = [
-            "DOFA",
-            "SSL4EO MOCO",
             "ViT small DINO patch 8",
+            "SSL4EO MOCO",
+            "DOFA",
             "ViT base DINO",
             "ViT tiny Imagenet (smallest)",
             "ViT base MAE",
@@ -256,10 +256,10 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             "--Empty--",
         ]
         self.timm_backbone_opt = [
-            Path(os.path.join(self.cwd,'pangaea','configs','encoder','dofa.yaml')),
-            Path(os.path.join(self.cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
-            "vit_small_patch8_224.dino",
             "vit_base_patch16_224.dino",
+            Path(os.path.join(self.cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
+            Path(os.path.join(self.cwd,'pangaea','configs','encoder','dofa.yaml')),
+            "vit_small_patch8_224.dino",
             "vit_tiny_patch16_224.augreg_in21k",
             "vit_base_patch16_224.mae",
             "samvit_base_patch16.sa1b",
