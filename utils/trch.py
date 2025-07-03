@@ -31,7 +31,9 @@ def modify_first_conv2d(model, in_chans=1):
             break
 
     if first_conv_layer is None:
-        raise ValueError("No Conv2d layer found in the model.")
+        # raise ValueError("No Conv2d layer found in the model.")
+        ### if no Conv2d is found, we return the model as is
+        return model
 
     layer_name, conv_layer = first_conv_layer
     kernel_size = conv_layer.kernel_size
