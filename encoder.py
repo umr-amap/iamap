@@ -408,7 +408,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             dst_path = Path(os.path.join(self.output_subdir, "merged_tmp.tif"))
             layer_name = f"{rlayer_name} features tmp"
         else:
-            dst_path, layer_name = get_unique_filename(self.output_subdir, "merged.tif", f"{rlayer_name} features")
+            dst_path, layer_name = get_unique_filename(self.output_subdir, f"{rlayer_name}-merged.tif", f"{rlayer_name} features")
             dst_path = Path(dst_path)
 
         merge_tiles(
