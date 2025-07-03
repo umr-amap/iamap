@@ -118,6 +118,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
         self.algorithm.device = 'cpu'
         archs = [
             Path(os.path.join(self.algorithm.cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
+            Path(os.path.join(self.algorithm.cwd,'pangaea','configs','encoder','dofa.yaml')),
             "vit_small_patch8_224.dino",
             "vit_base_patch16_224.dino",
             "vit_tiny_patch16_224.augreg_in21k",
@@ -125,6 +126,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
             "samvit_base_patch16.sa1b",
         ]
         expected_output_size = [
+            torch.Size([1, 197, 768]),
             torch.Size([1, 197, 768]),
             torch.Size([1, 197, 768]),
             torch.Size([1, 197, 192]),
