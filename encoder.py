@@ -246,6 +246,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
         )
         self.backbone_opt = [
+            "DOFA",
             "SSL4EO MOCO",
             "ViT small DINO patch 8",
             "ViT base DINO",
@@ -255,6 +256,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             "--Empty--",
         ]
         self.timm_backbone_opt = [
+            Path(os.path.join(self.cwd,'pangaea','configs','encoder','dofa.yaml')),
             Path(os.path.join(self.cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
             "vit_small_patch8_224.dino",
             "vit_base_patch16_224.dino",
@@ -493,7 +495,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             )
 
             features = features.detach().cpu().numpy()
-            print(features.shape)
             self.logger.debug(f"Patch features shape {features.shape}")
 
             self.save_features(features, sample["bbox"], current)
@@ -689,7 +690,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             dst_path, self.layer_name = get_unique_filename(self.output_subdir, f"{self.rlayer_name}_merged.tif", f"{rlayer_name} features")
             self.dst_path = Path(dst_path)
 
-        print(tiles)
         # Iteratively merge the remaining rasters
         for i, tile in enumerate(tiles):
             self.logger.info(f"Merging raster {i+1}/{len(tiles)}")
@@ -756,6 +756,8 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         ## and https://stackoverflow.com/a/53311583
         cfg.encoder_weights = os.path.join(self.cwd, str(cfg.encoder_weights))
         sys.path.append(str(self.cwd))
+        cfg.input_bands = {}
+        cfg.input_bands['optical'] = ['B' + str(int(band.split()[1])) for band in self.input_bands]
         model: Encoder = instantiate(cfg)
         model.load_encoder_weights(self.logger)
         model = modify_first_conv2d(model, in_chans=len(self.input_bands))
@@ -764,7 +766,6 @@ class EncoderAlgorithm(IAMAPAlgorithm):
     def load_parameters_as_json(self, parameters):
         parameters["JSON_PARAM"] = str(parameters["JSON_PARAM"])
         json_param = parameters["JSON_PARAM"]
-        print(json_param)
         if json_param != "NULL":
             with open(json_param) as json_file:
                 parameters = json.load(json_file)

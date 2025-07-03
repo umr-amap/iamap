@@ -10,7 +10,7 @@ num_heads: 12
 mlp_ratio: 4
 use_norm: False
 
-input_bands: ${dataset.bands}
+# input_bands: ${dataset.bands}
 
 wave_list:
   optical:

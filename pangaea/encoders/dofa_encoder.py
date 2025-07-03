@@ -259,27 +259,11 @@ class DOFA_Encoder(Encoder):
         x = torch.cat((cls_tokens, x), dim=1)
 
         # apply Transformer blocks
-        output = []
         for i, blk in enumerate(self.blocks):
             x = blk(x)
             if i == len(self.blocks) - 1:
                 x = self.norm(x)
-            if i in self.output_layers:
-                out = (
-                    x[:, 1:]
-                    .permute(0, 2, 1)
-                    .view(
-                        x.shape[0],
-                        -1,
-                        self.img_size // self.patch_size,
-                        self.img_size // self.patch_size,
-                    )
-                    .contiguous()
-                )
-
-                output.append(out)
-
-        return output
+        return x
 
     def load_encoder_weights(self, logger: Logger) -> None:
         pretrained_model = torch.load(self.encoder_weights, map_location="cpu")
