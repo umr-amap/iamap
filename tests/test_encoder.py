@@ -69,7 +69,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
         _ = self.algorithm.processAlgorithm(
             self.default_parameters, self.context, self.feedback
         )
-        expected_result_path = os.path.join(self.algorithm.output_subdir, "merged.tif")
+        expected_result_path = os.path.join(self.algorithm.output_subdir, "test-merged.tif")
         @pytest.mark.parametrize("output_file", expected_result_path)
         def test_geotiff_validity(output_file):
             validate_geotiff(output_file)
