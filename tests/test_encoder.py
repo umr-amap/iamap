@@ -45,7 +45,7 @@ class TestEncoderAlgorithm(unittest.TestCase):
             "MERGE_METHOD": 0,
             "OUTPUT": OUTPUT,
             "PAUSES": 0,
-            "QUANT": True,
+            "QUANT": False,
             "REMOVE_TEMP_FILES": True,
             "RESOLUTION": None,
             "SIZE": 224,
