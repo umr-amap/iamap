@@ -719,6 +719,11 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         if not (self.ckpt_path == '' or self.ckpt_path == 'NULL') : 
             model.load_state_dict(torch.load(self.ckpt_path, weights_only=True))
 
+        if "dofa" in str(self.backbone_name):
+            ## quantization does not work in inference for DOFA yet
+            self.quantization = False
+            self.logger.info(f"Quantization does not work for DOFA yet")
+
         if self.quantization:
             try:
                 self.logger.debug(f"Model size before quantization : {get_model_size(model)}")
