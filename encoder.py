@@ -762,7 +762,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         cfg.encoder_weights = os.path.join(self.cwd, str(cfg.encoder_weights))
         sys.path.append(str(self.cwd))
         cfg.input_bands = {}
-        cfg.input_bands['optical'] = ['B' + str(int(band.split()[1])) for band in self.input_bands]
+        cfg.input_bands['optical'] = ['B' + str(int(str(band).split()[-1])) for band in self.input_bands]
         model: Encoder = instantiate(cfg)
         model.load_encoder_weights(self.logger)
         model = modify_first_conv2d(model, in_chans=len(self.input_bands))
