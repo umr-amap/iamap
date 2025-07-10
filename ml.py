@@ -554,7 +554,7 @@ class MLAlgorithm(SHPAlgorithm):
         parameters and outputs associated with it..
         """
         return self.tr(
-            f"Fit a Machine Learning model using input template. Only RandomForestClassifier is throughfully tested. \n{self.get_help_sk_methods()}"
+            f"Fit a Machine Learning model using input template. Only RandomForestClassifier is throughfully tested. Please consider your training and validation protocol carefully. See https://scikit-learn.org/stable/auto_examples/model_selection/index.html for documentation on good practices. \n{self.get_help_sk_methods()}"
         )
 
     def icon(self):
