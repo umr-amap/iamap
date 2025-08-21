@@ -1,5 +1,5 @@
 <p align="center">
-<img src="./icons/favicon.svg" width=50% height=50%> 
+<img src="./icons/favicon.svg" width=20% height=20%> 
 </p>
 
 # IAMAP
