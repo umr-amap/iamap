@@ -7,6 +7,7 @@
 [![Documentation Status](https://app.readthedocs.org/projects/iamap/badge/)](https://iamap.readthedocs.io/en/latest/?badge=latest)
 [![CI](https://github.com/umr-amap/iamap/actions/workflows/jobs.yml/badge.svg)](https://github.com/umr-amap/iamap/actions/workflows/jobs.yml)
 [![GitLab Mirror](https://img.shields.io/badge/GitLab-Mirror-blue)](https://forge.ird.fr/amap/iamap)
+[![ArXiv preprint](https://img.shields.io/badge/preprint-arXiv:2508.00627-B31B1B)](https://arxiv.org/abs/2508.00627)
 
 
 ## Rationale
@@ -67,5 +68,15 @@ Feel free to fill an issue on GitHub or submit a PR. More detailled environment 
 
 The feature extraction algorithm was inspired by the [Geo-SAM](https://github.com/coolzhao/Geo-SAM) plugin. The dependencies installation popup was modified from code by [Deepness](https://github.com/PUTvision/qgis-plugin-deepness) plugin.
 
-<!-- ## Citation -->
+## Citation
 
+If you use iamap for your work, you can use the following citation:
+
+```
+@article{tresson2025iamap,
+  title={IAMAP: Unlocking Deep Learning in QGIS for non-coders and limited computing resources},
+  author={Tresson, Paul and Coz, Pierre Le and Tulet, Hadrien and Malkassian, Anthony and M{\'e}chain, Maxime R{\'e}jou},
+  journal={arXiv preprint arXiv:2508.00627},
+  year={2025}
+}
+```
