@@ -66,7 +66,7 @@ bibliography: paper.bib
   **Keywords:** Remote sensing, Self-supervised learning, Foundation
   models, Machine learning, Artificial Intelligence, Consumer hardware.
 
-# Introduction
+# Statement of need
 
 The integration of remote sensing data with deep learning approaches is
 currently revolutionizing Earth observation sciences, leading to
