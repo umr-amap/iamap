@@ -166,7 +166,7 @@ reference="fig:functionalities"}). We here below describe the
 functionality of each module.
 
 ![The five main modules of the IAMAP
-plugin.](fig/FigPlugin.png){#fig:functionalities width="0.9\\linewidth"}
+plugin.](figures/plugin.png){#fig:functionalities width="0.9\\linewidth"}
 
 ## Deep Learning feature production
 
@@ -256,63 +256,13 @@ pretrained on the SSL4EO dataset [@wang2022ssl4eo] using
 encoder, multispectral bands are handled by the model without
 manipulation of the encoder or pre-processing required.
 
-<figure id="fig:backbones">
-<img src="fig/inf/original.png" />
-<table>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;"></td>
-<td style="text-align: center;">ViT base DINO</td>
-<td style="text-align: center;">ViT base MAE</td>
-<td style="text-align: center;">SSL4EO DINO</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"></td>
-<td style="text-align: center;"><span><span class="citation"
-data-cites="caron2021emerging"></span></span></td>
-<td style="text-align: center;"><span><span class="citation"
-data-cites="he2022masked"></span></span></td>
-<td style="text-align: center;"><span><span class="citation"
-data-cites="wang2022ssl4eo"></span></span></td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;"></td>
-<td style="text-align: center;"><img src="fig/inf/dino_feat.png"
-alt="image" /></td>
-<td style="text-align: center;"><img src="fig/inf/mae_feat.png"
-alt="image" /></td>
-<td style="text-align: center;"><img src="fig/inf/ssl4eo_dino.png"
-alt="image" /></td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"></td>
-<td style="text-align: center;"><img src="fig/inf/dino_pca.png"
-alt="image" /></td>
-<td style="text-align: center;"><img src="fig/inf/mae_pca.png"
-alt="image" /></td>
-<td style="text-align: center;"><img src="fig/inf/ssl4eo_dino_pca.png"
-alt="image" /></td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;"></td>
-<td style="text-align: center;"><img src="fig/inf/dino_tsne.png"
-alt="image" /></td>
-<td style="text-align: center;"><img src="fig/inf/mae_tsne.png"
-alt="image" /></td>
-<td style="text-align: center;"><img src="fig/inf/ssl4eo_dino_tsne.png"
-alt="image" /></td>
-</tr>
-</tbody>
-</table>
-<p>. <span id="fig:backbones" label="fig:backbones"></span></p>
-<figcaption>A sentinel 2 image of a forested landscape in Thailand (Khao
+![A sentinel 2 image of a forested landscape in Thailand (Khao
 Banthat Wildlife Sanctuary; Lat 7.53°, Lon 99.82°) processed by
 different backbones. The top row represents the first three feature
 dimensions output by the models (which may not be the most informative).
 The second row shows a 3D PCA of the features mapped to the red, green
 and blue channel respectively. The third row shows a projection using a
-3D T-SNE.</figcaption>
-</figure>
+3D T-SNE.](figures/backbones.png){#fig:backbones width="0.9\\linewidth"}
 
 ## Reduction of data dimensionality
 
@@ -357,32 +307,8 @@ reference="fig:clusterings"}). This module again relies on
 *scikit-learn* *cluster* module sharing common APIs (namely, a *fit()*,
 a *predict()*, or a *fit_predict()* method) can be used.
 
-<figure id="fig:clusterings">
-<table>
-<tbody>
-<tr class="odd">
-<td style="text-align: center;">K-means</td>
-<td style="text-align: center;">K-Means</td>
-<td style="text-align: center;">Spectral Clustering</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;"></td>
-<td style="text-align: center;">after 3D T-SNE</td>
-<td style="text-align: center;">after 3D T-SNE</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;"><img src="fig/inf/dino_kmeans.png"
-alt="image" /></td>
-<td style="text-align: center;"><img src="fig/inf/dino_kmeans_tsne.png"
-alt="image" /></td>
-<td style="text-align: center;"><img
-src="fig/inf/dino_spectral_tsne.png" alt="image" /></td>
-</tr>
-</tbody>
-</table>
-<figcaption>Example of different clustering (k=5) of the ViT Base DINO
-features.</figcaption>
-</figure>
+![Example of different clustering (k=5) of the ViT Base DINO
+features.](figures/clusterings.png){#fig:clusterings width="0.9\\linewidth"}
 
 ## Similarity approach
 
@@ -400,40 +326,14 @@ Fig. [4](#fig:sim){reference-type="ref" reference="fig:sim"} for
 examples). By applying a threshold, this method can also be used for
 simple segmentation tasks.
 
-<figure id="fig:sim">
-<table>
-<tbody>
-<tr class="odd">
-<td style="text-align: center;"><img src="fig/sim/naip.png"
-alt="image" /></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"><img src="fig/sim/features.png"
-alt="image" /></td>
-</tr>
-<tr class="even">
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"></td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;"><img src="fig/sim/houses.png"
-alt="image" /></td>
-<td style="text-align: center;"></td>
-<td style="text-align: center;"><img src="fig/sim/trees.png"
-alt="image" /></td>
-</tr>
-</tbody>
-</table>
-<figcaption>Example usage of cosine similarity with <a
-href="https://catalog.data.gov/dataset/national-agriculture-imagery-program-naip">NAIP
-data</a>. Using only a couple of points, we can identify trees or houses
+![Example usage of cosine similarity with 
+[NAIP data](https://catalog.data.gov/dataset/national-agriculture-imagery-program-naip). 
+Using only a couple of points, we can identify trees or houses
 without needing to train a model for this specific task. From left to
 right and top to bottom: Original RGB data and provided template points
 (red and blue crosses); Features produced by a ViT DINO small encoder
-<span class="citation" data-cites="caron2021emerging"></span>; Heatmap
-produced with the red points as input (houses); Heatmap produced with
-the blue points as input (trees with red leaves).</figcaption>
-</figure>
+[@caron2021emerging]; Heatmap produced with the red points as input (houses); 
+Heatmap produced with the blue points as input (trees with red leaves).](figures/similarity.png){#fig:similarity width="0.9\\linewidth"}
 
 ## Supervised machine learning
 
@@ -485,7 +385,7 @@ plugin](https://iamap.readthedocs.io/en/latest/examples.html).
 ![An example of workflow implemented using IAMAP to produce a ca. 50-m
 classification map from a 10-m multispectral Sentinel 2 image over a
 forested landscape from Thailand (Lat 7.53°, Lon
-99.82°).](fig/FigureExample.pdf){#fig:exampleIamap width="1\\linewidth"}
+99.82°).](figure/example.pdf){#fig:exampleIamap width="1\\linewidth"}
 
 # Design choices
 
