@@ -2,37 +2,69 @@
 title: 'IAMAP: Unlocking Deep Learning in QGIS for non-coders and limited computing resources'
 tags:
   - Python
-  - astronomy
-  - dynamics
-  - galactic dynamics
-  - milky way
+  - GIS
+  - Remote Sensing
+  - Deep Learning
 authors:
-  - name: Adrian M. Price-Whelan
-    orcid: 0000-0000-0000-0000
-    equal-contrib: true
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
-  - name: Author Without ORCID
-    equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
-    affiliation: 2
-  - name: Author with no affiliation
-    corresponding: true # (This is how to denote the corresponding author)
+  - name: Paul Tresson
+    orcid: 0000-0002-1275-4673
+    corresponding: true
+    affiliation: 1
+  - name: Pierre Le Coz
+    affiliation: "1,2"
+  - name: Hadrien Tulet
+    affiliation: 1
+  - name: Anthony Malkassian
+    orcid: 0000-0001-9603-4448
     affiliation: 3
-  - given-names: Ludwig
-    dropping-particle: van
-    surname: Beethoven
-    affiliation: 3
+  - name: Maxime Réjou-Méchain
+    orcid: 0000-0003-2824-267X
+    affiliation: "1,2"
 affiliations:
- - name: Lyman Spitzer, Jr. Fellow, Princeton University, United States
+ - name: AMAP, Univ. Montpellier, IRD, CNRS, CIRAD, INRAE, Montpellier, France
    index: 1
-   ror: 00hx57361
- - name: Institution Name, Country
+ - name: Forest Restoration Research Unit, Department of Biology, Faculty of Science, Chiang Mai University, Chiang Mai, Thailand
    index: 2
- - name: Independent Researcher, Country
+ - name: Université de la Réunion, UMR PVBMT, St. Pierre, La Réunion, France
    index: 3
 date: 13 August 2017
 bibliography: paper.bib
 
 ---
+
+# Summary
+
+  **1.** Remote sensing has entered a new era with the rapid development
+  of artificial intelligence approaches. However, the implementation of
+  deep learning has largely remained restricted to specialists and has
+  been impractical because it often requires (i) large reference
+  datasets for model training and validation; (ii) substantial computing
+  resources; and (iii) strong coding skills.
+
+  **2.** Here, we introduce IAMAP, a user-friendly QGIS plugin that
+  addresses these three challenges in an easy yet flexible way. IAMAP
+  builds on recent advancements in self-supervised learning strategies,
+  which now provide robust feature extractors, often referred to as
+  foundation models. These generalist models can often be reliably used
+  in few-shot or zero-shot scenarios (*i.e.*, with little to no
+  fine-tuning).
+
+  **3.** IAMAP's interface allows users to streamline several key steps
+  in remote sensing image analysis: (i) extracting image features using
+  a wide range of deep learning architectures; (ii) reducing
+  dimensionality with built-in algorithms; (iii) performing clustering
+  on features or their reduced representations; (iv) generating feature
+  similarity maps; and (v) calibrating and validating supervised machine
+  learning models for prediction.
+
+  **4.** By enabling non-AI specialists to leverage the high-quality
+  features provided by recent deep learning approaches without requiring
+  GPU capacity or extensive reference datasets, IAMAP contributes to the
+  democratization of computationally efficient and energy-conscious deep
+  learning methods.
+
+  **Keywords:** Remote sensing, Self-supervised learning, Foundation
+  models, Machine learning, Artificial Intelligence, Consumer hardware.
 
 # Introduction
 
