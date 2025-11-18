@@ -175,12 +175,12 @@ layer or a raster saved on disk), this module enables the use of various
 pre-trained deep learning models to produce a set of features describing
 the input raster. The use of deep learning model in inference only
 removes the costly training step and greatly reduce the computational
-power required. This module mostly relies on two widely used *PyTorch*
+power required. This module mostly relies on two widely used *pytorch*
 libraries: *timm* [@rw2019timm], for loading pre-trained model weights,
 and *torchgeo* [@torchgeo2022], for handling geospatial data.
 
 The *timm* library has become a standard for sharing and loading
-pre-trained weights in *PyTorch* and is now integrated into the
+pre-trained weights in *pytorch* and is now integrated into the
 [HuggingFace Hub](https://huggingface.co/)[@wolf2019huggingface].
 Originally developed for sharing natural language processing (NLP)
 models, the HuggingFace Hub has since become the largest repository of
@@ -285,9 +285,9 @@ dimensions can improve the performance of other algorithms afterward
 
 This module relies on the *scikit-learn* library, which provides access
 to a wide range of algorithms (25 at the time of writing). As a result,
-all algorithms available in the *scikit-learn* *decomposition* and
-*cluster* modules that have common APIs (namely, a *fit()*, a
-*transform()*, or a *fit_transform()* method) can be used. Note that the
+all algorithms available in the *scikit-learn* `decomposition` and
+`cluster` modules that have common APIs (namely, a `fit()`, a
+`transform()`, or a `fit_transform()` method) can be used. Note that the
 UMAP approach relies instead on its dedicated Python implementation and
 is an optional dependency at the time of writing.
 
@@ -299,8 +299,8 @@ implement various unsupervised clustering algorithms, including K-means
 or HDBSCAN [@mcinnes2017hdbscan] (see
 Fig. \autoref{fig:clusterings}). This module again relies on
 *scikit-learn* as a back-end. As such, all algorithms available in the
-*scikit-learn* *cluster* module sharing common APIs (namely, a *fit()*,
-a *predict()*, or a *fit_predict()* method) can be used.
+*scikit-learn* `cluster` module sharing common APIs (namely, a `fit()`,
+a `predict()`, or a `fit_predict()` method) can be used.
 
 ![Example of different clustering (k=5) of the ViT Base DINO
 features. \label{fig:clusterings}](figures/clusterings.png)
@@ -349,7 +349,7 @@ without having to retrain an entire model (*e.g.* see SM of
 
 The plugin provides a wide array of available algorithms, once again
 using the *scikit-learn* library as a back-end. More specifically, all
-methods provided by the *ensemble* and *neighbors* modules that share a
+methods provided by the `ensemble` and `neighbors` modules that share a
 common API are available.
 
 Because this module relies on supervised approaches, it requires the
@@ -365,7 +365,7 @@ most appropriate (see [@ploton2020spatial] for discussion on this topic
 in the context of spatial datasets). We therefore encourage the users to
 consider their choices of validation scheme via the plugin interface.
 
-# Usage example {#sec:examples}
+# Usage example
 
 Because the IAMAP plugin consists of a set of different modules that can
 be implemented independently or sequentially in various combinations,
@@ -379,7 +379,7 @@ plugin](https://iamap.readthedocs.io/en/latest/examples.html).
 ![An example of workflow implemented using IAMAP to produce a ca. 50-m
 classification map from a 10-m multispectral Sentinel 2 image over a
 forested landscape from Thailand (Lat 7.53°, Lon
-99.82°). \label{fig:example}](figure/example.pdf)
+99.82°). \label{fig:example}](figure/example.png)
 
 # Design choices
 
@@ -419,7 +419,7 @@ default to save space.
 The quantization of a deep learning model is the act of switching the
 encoding of the weights from *float32* to a lighter format such as
 *uint8*. This greatly reduces model size and inference time, at the cost
-of some precision (see [Pytorch
+of some precision (see [pytorch
 documentation](https://pytorch.org/blog/introduction-to-quantization-on-pytorch/))
 [@wu2020integer]. Recently, DeepSeek AI have been able to divide
 training costs by 40 by relying on similar methods with *fp8* precision
