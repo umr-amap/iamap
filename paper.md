@@ -161,12 +161,11 @@ clustering, similarity, and supervised machine learning (ML) algorithms.
 
 The IAMAP plugin integrated into QGIS consists of five main modules,
 which can be used individually or sequentially on a georeferenced raster
-image (Fig. [1](#fig:functionalities){reference-type="ref"
-reference="fig:functionalities"}). We here below describe the
+image (Fig. \autoref{fig:functionalities}. We here below describe the
 functionality of each module.
 
 ![The five main modules of the IAMAP
-plugin.](figures/plugin.png){#fig:functionalities width="0.9\\linewidth"}
+plugin. \label{fig:functionalities}](figures/plugin.png)
 
 ## Deep Learning feature production
 
@@ -182,7 +181,7 @@ and *torchgeo* [@torchgeo2022], for handling geospatial data.
 
 The *timm* library has become a standard for sharing and loading
 pre-trained weights in *PyTorch* and is now integrated into the
-HuggingFace Hub (<https://huggingface.co/>,[@wolf2019huggingface]).
+[HuggingFace Hub](https://huggingface.co/)[@wolf2019huggingface].
 Originally developed for sharing natural language processing (NLP)
 models, the HuggingFace Hub has since become the largest repository of
 pre-trained deep learning models, with over 400,000 models available at
@@ -225,8 +224,8 @@ learning architecture. It contains as many bands as the number of
 extracted features (*e.g.* 768 for a ViT-base model). By default, QGIS
 loads the raster at the end of the process and displays only the first
 three bands using a false-color RGB composition, although these bands
-are not necessarily the most informative (see top row of Fig.
-[2](#fig:backbones){reference-type="ref" reference="fig:backbones"}).
+are not necessarily the most informative (see top row of
+Fig. \autoref{fig:backbones}).
 
 Computer vision state of the art pretrained models are usually trained
 with Red Green and Blue (RGB) bands used in natural images. We thus
@@ -239,8 +238,7 @@ of input bands is larger than three or averaging weights if the number
 of input bands is smaller than three. This option should be taken with
 caution given that it is expected to change the behavior of the model,
 even if it should keep a capacity for abstraction and projecting low
-level information into a richer feature space (see Figure
-[2](#fig:backbones){reference-type="ref" reference="fig:backbones"}
+level information into a richer feature space (see Fig. \autoref{fig:backbones}
 examples). The second solution consists in selecting only 3 relevant
 bands in the deep learning module without modifying the model's weights.
 The last option, which appears to be the most robust one according to
@@ -262,7 +260,7 @@ different backbones. The top row represents the first three feature
 dimensions output by the models (which may not be the most informative).
 The second row shows a 3D PCA of the features mapped to the red, green
 and blue channel respectively. The third row shows a projection using a
-3D T-SNE.](figures/backbones.png){#fig:backbones width="0.9\\linewidth"}
+3D T-SNE.\label{fig:backbones}](figures/backbones.png)
 
 ## Reduction of data dimensionality
 
@@ -281,11 +279,9 @@ models such as Random Forests. To address this, it is common in deep
 learning research to use dimensionality reduction algorithms to
 visualize and analyze the feature space of a model. These reduced
 features can often be more informative at first glance (see the second
-row of Fig. [2](#fig:backbones){reference-type="ref"
-reference="fig:backbones"}), and reducing or ordering the input
+row of Fig. \autoref{fig:backbones}), and reducing or ordering the input
 dimensions can improve the performance of other algorithms afterward
-(see the third row of Fig. [2](#fig:backbones){reference-type="ref"
-reference="fig:backbones"}).
+(see the third row of Fig. \autoref{fig:backbones}).
 
 This module relies on the *scikit-learn* library, which provides access
 to a wide range of algorithms (25 at the time of writing). As a result,
@@ -301,14 +297,13 @@ A common operation when handling feature spaces is clustering to assign
 classes to data points. The unsupervised clustering module allows to
 implement various unsupervised clustering algorithms, including K-means
 or HDBSCAN [@mcinnes2017hdbscan] (see
-Fig. [3](#fig:clusterings){reference-type="ref"
-reference="fig:clusterings"}). This module again relies on
+Fig. \autoref{fig:clusterings}). This module again relies on
 *scikit-learn* as a back-end. As such, all algorithms available in the
 *scikit-learn* *cluster* module sharing common APIs (namely, a *fit()*,
 a *predict()*, or a *fit_predict()* method) can be used.
 
 ![Example of different clustering (k=5) of the ViT Base DINO
-features.](figures/clusterings.png){#fig:clusterings width="0.9\\linewidth"}
+features. \label{fig:clusterings}](figures/clusterings.png)
 
 ## Similarity approach
 
@@ -321,8 +316,7 @@ zero if the vectors represented by these coordinates are orthogonal to
 the reference vectors provided by the user, and 1 if they are identical.
 This approach is commonly used for instance retrieval tasks in deep
 learning [@chen2022deep], as it helps identify points that are closely
-represented in the feature space (see
-Fig. [4](#fig:sim){reference-type="ref" reference="fig:sim"} for
+represented in the feature space (see Fig. \autoref{fig:similarity} for
 examples). By applying a threshold, this method can also be used for
 simple segmentation tasks.
 
@@ -333,7 +327,8 @@ without needing to train a model for this specific task. From left to
 right and top to bottom: Original RGB data and provided template points
 (red and blue crosses); Features produced by a ViT DINO small encoder
 [@caron2021emerging]; Heatmap produced with the red points as input (houses); 
-Heatmap produced with the blue points as input (trees with red leaves).](figures/similarity.png){#fig:similarity width="0.9\\linewidth"}
+Heatmap produced with the blue points as input (trees with red leaves).
+\label{fig:similarity}](figures/similarity.png)
 
 ## Supervised machine learning
 
@@ -376,16 +371,15 @@ Because the IAMAP plugin consists of a set of different modules that can
 be implemented independently or sequentially in various combinations,
 the number of possible uses is very large. Here, we provide one example
 of a potential workflow to produce a classification map using three
-complementary IAMAP modules (Fig.
- [5](#fig:exampleIamap){reference-type="ref"
-reference="fig:exampleIamap"}). Several other use cases, along with
+complementary IAMAP modules (Fig.\autoref{fig:example}). 
+Several other use cases, along with
 detailed protocols, are available [in the online documentation of the
 plugin](https://iamap.readthedocs.io/en/latest/examples.html).
 
 ![An example of workflow implemented using IAMAP to produce a ca. 50-m
 classification map from a 10-m multispectral Sentinel 2 image over a
 forested landscape from Thailand (Lat 7.53°, Lon
-99.82°).](figure/example.pdf){#fig:exampleIamap width="1\\linewidth"}
+99.82°). \label{fig:example}](figure/example.pdf)
 
 # Design choices
 
@@ -479,99 +473,20 @@ are still widely used in deep learning and remote sensing.
 
 # Availability
 
-Development of the plugin is open sourced on GitHub
-<https://github.com/umr-amap/iamap>. Documentation is available at
-<https://iamap.readthedocs.io/>. The plugin is developed in continuous
+Development of the plugin is 
+[open sourced on GitHub](https://github.com/umr-amap/iamap).
+Documentation is available [on readthedocs](https://iamap.readthedocs.io/). 
+The plugin is developed in continuous
 integration. We plan to publish the plugin on official QGIS repository
 to further ease the installation process.
 
-# Acknowledgments {#acknowledgments .unnumbered}
+# Acknowledgments
 
 The authors would like to thank all people who have tested this software
 during development and have provided meaningful feedback.
 
-# Conflict of interest {#conflict-of-interest .unnumbered}
+# Conflict of interest
 
 The authors declare no conflict of interest.
 
 # References
-
-
-<!-- # Summary -->
-
-<!-- 1. Remote sensing has entered a new era with the rapid development of artificial intelligence approaches. However, the implementation of deep learning has largely remained restricted to specialists and has been impractical because it often requires (i) large reference datasets for model training and validation; (ii) substantial computing resources; and (iii) strong coding skills. -->
-
-<!-- 2. Here, we introduce IAMAP, a user-friendly QGIS plugin that addresses these three challenges in an easy yet flexible way. IAMAP builds on recent advancements in self-supervised learning strategies, which now provide robust feature extractors, often referred to as foundation models. These generalist models can often be reliably used in few-shot or zero-shot scenarios (i.e., with little to no fine-tuning). -->
-
-<!-- 3. IAMAP’s interface allows users to streamline several key steps in remote sensing image analysis: (i) extracting image features using a wide range of deep learning architectures; (ii) reducing dimensionality with built-in algorithms; (iii) performing clustering on features or their reduced representations; (iv) generating feature similarity maps; and (v) calibrating and validating supervised machine learning models for prediction. -->
-
-<!-- 4. By enabling non-AI specialists to leverage the high-quality features provided by recent deep learning approaches without requiring GPU capacity or extensive reference datasets, IAMAP contributes to the democratization of computationally efficient and energy-conscious deep learning methods. -->
-
-<!-- # Statement of need -->
-
-<!-- `Gala` is an Astropy-affiliated Python package for galactic dynamics. Python -->
-<!-- enables wrapping low-level languages (e.g., C) for speed without losing -->
-<!-- flexibility or ease-of-use in the user-interface. The API for `Gala` was -->
-<!-- designed to provide a class-based and user-friendly interface to fast (C or -->
-<!-- Cython-optimized) implementations of common operations such as gravitational -->
-<!-- potential and force evaluation, orbit integration, dynamical transformations, -->
-<!-- and chaos indicators for nonlinear dynamics. `Gala` also relies heavily on and -->
-<!-- interfaces well with the implementations of physical units and astronomical -->
-<!-- coordinate systems in the `Astropy` package [@astropy] (`astropy.units` and -->
-<!-- `astropy.coordinates`). -->
-
-<!-- `Gala` was designed to be used by both astronomical researchers and by -->
-<!-- students in courses on gravitational dynamics or astronomy. It has already been -->
-<!-- used in a number of scientific publications [@Pearson:2017] and has also been -->
-<!-- used in graduate courses on Galactic dynamics to, e.g., provide interactive -->
-<!-- visualizations of textbook material [@Binney:2008]. The combination of speed, -->
-<!-- design, and support for Astropy functionality in `Gala` will enable exciting -->
-<!-- scientific explorations of forthcoming data releases from the *Gaia* mission -->
-<!-- [@gaia] by students and experts alike. -->
-
-<!-- # Mathematics -->
-
-<!-- Single dollars ($) are required for inline mathematics e.g. $f(x) = e^{\pi/x}$ -->
-
-<!-- Double dollars make self-standing equations: -->
-
-<!-- $$\Theta(x) = \left\{\begin{array}{l} -->
-<!-- 0\textrm{ if } x < 0\cr -->
-<!-- 1\textrm{ else} -->
-<!-- \end{array}\right.$$ -->
-
-<!-- You can also use plain \LaTeX for equations -->
-<!-- \begin{equation}\label{eq:fourier} -->
-<!-- \hat f(\omega) = \int_{-\infty}^{\infty} f(x) e^{i\omega x} dx -->
-<!-- \end{equation} -->
-<!-- and refer to \autoref{eq:fourier} from text. -->
-
-<!-- # Citations -->
-
-<!-- Citations to entries in paper.bib should be in -->
-<!-- [rMarkdown](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html) -->
-<!-- format. -->
-
-<!-- If you want to cite a software repository URL (e.g. something on GitHub without a preferred -->
-<!-- citation) then you can do it with the example BibTeX entry below for @fidgit. -->
-
-<!-- For a quick reference, the following citation commands can be used: -->
-<!-- - `@author:2001`  ->  "Author et al. (2001)" -->
-<!-- - `[@author:2001]` -> "(Author et al., 2001)" -->
-<!-- - `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)" -->
-
-<!-- # Figures -->
-
-<!-- Figures can be included like this: -->
-<!-- ![Caption for example figure.\label{fig:example}](figure.png) -->
-<!-- and referenced from text using \autoref{fig:example}. -->
-
-<!-- Figure sizes can be customized by adding an optional second parameter: -->
-<!-- ![Caption for example figure.](figure.png){ width=20% } -->
-
-<!-- # Acknowledgements -->
-
-<!-- We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong -->
-<!-- Oh, and support from Kathryn Johnston during the genesis of this project. -->
-
-<!-- # References -->
