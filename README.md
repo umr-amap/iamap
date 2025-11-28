@@ -24,6 +24,10 @@ With this plugin, we aim to provide an easy to use framework to use these models
 
 As of now, the plugin is not yet published in official QGIS repos, so you have to clone or copy this code into the python plugin directory of QGIS and manualy install.
 
+```
+git clone --depth 1 https://github.com/umr-amap/iamap.git
+```
+
 this is where it probably is located : 
 
 ```
