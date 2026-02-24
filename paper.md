@@ -97,7 +97,14 @@ learning model in a supervised way (see.Fig. \autoref{fig:functionalities}).
 
 # Research impact statement
 
+The plugin is used internally and has been presented in several webinars. It 
+has also be used for research to be published soon by Malkassian et. al. (A 
+preview of the results [is available in the documentation](https://iamap.readthedocs.io/en/latest/examples.html#mapping-land-cover-change-in-la-reunion-island)).
+
 # AI usage disclosure
+
+AI was only used to help generate small functions and "boilerplate" code on 
+common tasks that could be immediatly be tested. 
 
 
 <!-- ================================================== -->
