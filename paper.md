@@ -34,13 +34,30 @@ bibliography: paper.bib
 
 # Summary 
 
+Here, we introduce IAMAP, a user-friendly QGIS plugin that allows to 
+- tile raster images and feed them into pre-trained deep learning model to 
+extract image features; 
+- reduce features dimensionality; 
+- perform clustering on features or their reduced representations; 
+- generate feature similarity maps; 
+- calibrate and validate supervised machine learning models to create maps.
+By enabling non-AI specialists to leverage the high-quality features provided 
+by foundation modesl without requiring GPU capacity or extensive reference 
+datasets, IAMAP contributes to the democratization of these computationally 
+efficient and energy-conscious methods.
+Development of the plugin is 
+[open sourced on GitHub](https://github.com/umr-amap/iamap) and the
+documentation is available [on readthedocs](https://iamap.readthedocs.io/). 
+
 # Statement of need
 
 The integration of remote sensing data with deep learning approaches is
 currently revolutionizing Earth observation sciences, leading to
 significant qualitative and quantitative improvements in large-scale
 predictions [@zhu2017deep; @yuan2020deep; @yasir2023coupling]. However,
-this revolution comes with a number of challenges. First, over the past
+this revolution comes with a number of challenges. 
+
+First, over the past
 decade, most deep learning applications have been highly data-demanding,
 requiring extensive manual labeling with typically more than one hundred
 thousands labeled points [@safonova2023ten]. In most ecological and
@@ -49,10 +66,21 @@ dataset, through *e.g.*, ground observations or photo-interpretation,
 remains a major barrier to the implementation of deep learning
 approaches.
 
-Recent developments in deep learning state of the art has seen an evolution
+Secondly, most deep learning developpements have been conducted by and for 
+actors able to leverage significant computing power with the training of a 
+model being GPU-dependant. This creates an important entry barrier users that 
+could already benefit from inference-only usage of deep learning models.
+
+Finally, the use of state of the art models is still mostly confined to users 
+able to code in Python, even considering different wrapper libraries that can 
+ease the implementation of models.
+
+# State of the field
+
+Recently, deep learning state of the art has seen an evolution
 towards the use of large foundation models, trained on large scale datasets 
 in an unsupervised way and capable of very good few-shot performances (*i.e.*
-without expensive supervised training of the network).
+without expensive supervised training of the network)
 [@ericsson2021well]. The main difference between a pre-trained
 self-supervised learning (SSL) model and a pre-trained supervised model
 lies in their training objectives: SSL models are not constrained by
@@ -67,9 +95,6 @@ as is, with few or no training data. Consequently, SSL models are
 considered particularly promising for remote sensing tasks, as
 demonstrated by recent works and initiatives
 [@jakubik2023prithvi; @cong2023satmae; @xiong2024neural; @marsocci2024pangaea].
-
-
-# State of the field
 
 With the democratization of deep learning, some developers have already
 worked on the integration of deep learning models in geographic
@@ -90,9 +115,9 @@ The plugin aims at allowing two main tasks:
     provided by the *scikit-learn* library.
 
 these tasks are separated into five modules depending on the type of models
-and operations the user wants to perform: deep learning feature extraction(see.
-Fig. \autoref{fig:backbones}), dimension reduction, clustering, similarity 
-computation, or fitting a machine learning model in a supervised way (see.Fig.
+and operations the user wants to perform: deep learning feature extraction 
+(see \autoref{fig:backbones}), dimension reduction, clustering, similarity 
+computation, or fitting a machine learning model in a supervised way (see
  \autoref{fig:functionalities}).
 
 ![The five main modules of the IAMAP
@@ -129,7 +154,7 @@ defined by the user).
 
 A core constraint of the development is for the plugin to be accessible for a 
 non-coding user without a GPU and with limited internet access. As such, all 
-design and development is done a CPU only laptop to assess usability with no 
+design and development is done on CPU on a laptop to assess usability with no 
 GPU. Various optimizations are available, such as quantization, scheduled 
 pauses and progress save on disk. We used code from the 
 [deepness plugin](https://github.com/PUTvision/qgis-plugin-deepness/) to 
@@ -145,7 +170,7 @@ to be published soon by Malkassian et. al. (A preview of the results
 # AI usage disclosure
 
 AI was only used to help generate small functions and "boilerplate" code on 
-common tasks that could be immediatly be tested. 
+common tasks that could immediatly be tested. 
 
 # Availability
 
