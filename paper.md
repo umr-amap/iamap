@@ -34,20 +34,20 @@ bibliography: paper.bib
 
 # Summary 
 
-Here, we introduce IAMAP, a user-friendly QGIS plugin that allows to 
-- tile raster images and feed them into pre-trained deep learning model to 
+We introduce IAMAP, a user-friendly QGIS plugin that allows to 
+(1) tile raster images and feed them into pre-trained deep learning model to 
 extract image features; 
-- reduce features dimensionality; 
-- perform clustering on features or their reduced representations; 
-- generate feature similarity maps; 
-- calibrate and validate supervised machine learning models to create maps.
+(2) reduce features dimensionality; 
+(3) perform clustering on features or their reduced representations; 
+(4) generate feature similarity maps; 
+(5) calibrate and validate supervised machine learning models to create maps.
 By enabling non-AI specialists to leverage the high-quality features provided 
-by foundation modesl without requiring GPU capacity or extensive reference 
+by foundation models without requiring GPU capacity or extensive reference 
 datasets, IAMAP contributes to the democratization of these computationally 
 efficient and energy-conscious methods.
 Development of the plugin is 
-[open sourced on GitHub](https://github.com/umr-amap/iamap) and the
-documentation is available [on readthedocs](https://iamap.readthedocs.io/). 
+[open sourced on GitHub](https://github.com/umr-amap/iamap). Documentation and 
+tutorials are available [on readthedocs](https://iamap.readthedocs.io/). 
 
 # Statement of need
 
@@ -66,10 +66,10 @@ dataset, through *e.g.*, ground observations or photo-interpretation,
 remains a major barrier to the implementation of deep learning
 approaches.
 
-Secondly, most deep learning developpements have been conducted by and for 
+Second, most deep learning developpements have been conducted by and for 
 actors able to leverage significant computing power with the training of a 
-model being GPU-dependant. This creates an important entry barrier users that 
-could already benefit from inference-only usage of deep learning models.
+model being GPU-dependant. This creates a significant barrier to users who 
+could otherwise benefit from inference-only deep learning applications.
 
 Finally, the use of state of the art models is still mostly confined to users 
 able to code in Python, even considering different wrapper libraries that can 
@@ -106,12 +106,17 @@ only usable by users with access to high-end computing power, extensive
 dataset, on interested in a task for which a specific model was already
 trained.
 
+We have therefore developped a plugin that allows to use a variety of deep 
+learning models and manipulate their features in a user-friendly fashion.
+
 # Software design
 
-The plugin aims at allowing two main tasks: 
-1) feeding a tiled raster through a pre-trained deep learning model,
+This plugin aims at allowing two main tasks:
+
+1. feeding a tiled raster through a pre-trained deep learning model,
     typically via the *timm* and *huggingface* library.
-2) manipulating the produced features with common machine learning tools,
+
+2. manipulating the produced features with common machine learning tools,
     provided by the *scikit-learn* library.
 
 these tasks are separated into five modules depending on the type of models
