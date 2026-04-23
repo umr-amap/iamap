@@ -65,7 +65,8 @@ Documentation is available [here](https://iamap.readthedocs.io/en/latest/).
 
 ## Contributing
 
-Feel free to fill an issue on GitHub or submit a PR. More detailled environment setup to come.
+Feel free to fill an issue on GitHub or submit a PR.
+You can find more detailed instruction in [CONTRIBUTING.md](CONTRIBUTING.md)
 
 
 ## Aknowledgments
