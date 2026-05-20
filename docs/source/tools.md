@@ -264,9 +264,20 @@ This measure will be equall to one for vectors having the same coordinates and 0
 
 Here, additionnaly to an input raster, you have to provide a shapefile (or any format that will be read by geopandas) that will serve to prodive reference point(s).
 
-> If the geometry of your input is not points, it will automatically be sampled as points. You can check the sampling rate in the options.
-
 You can find a screen recording showing the process [here](https://github.com/ptresson/iamap_docs/blob/main/sim.webm).
+
+The main steps are the following:
+
+1) Choose a raster you want to feed to a clustering algorithm.
+2) Select the bands you want to be used.
+3) Select the extent you want the encoding to be applied on. If you don't want to use all the input raster, this can save a lot of compute time !
+You can draw the extent on canvas or use an other layer as reference.
+4) Select a shapefile that will serve as a prompt for the similarity. 
+If the geometry of your shapefile is not points, it will automatically be sampled as points. 
+You can check the sampling rate in the options. 
+If there is several points, the prompt used is the arithmetic mean of the points coordinates.
+5) Define an output directory for the produced files. If you don't specify it, a temporary directory will be created and output rasters will be deleted on shutdown !!
+6) Hit `Run`.
 
 <!-- <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;"> -->
 <!--     <iframe src="./_static/sim.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe> -->
