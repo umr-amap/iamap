@@ -1,6 +1,12 @@
 # Tutorials
 
 This section describes the different tools available in the plugin.
+The video examples showcase a case study using aerial images from the [NAIP programm](https://catalog.data.gov/dataset/national-agriculture-imagery-program-naip) in the USA. 
+You can download the same raster using the following command:
+
+```
+wget https://naipeuwest.blob.core.windows.net/naip/v002/de/2018/de_060cm_2018/38075/m_3807511_ne_18_060_20181104.tif
+```
 
 <!-- <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;"> -->
 <!--     <iframe src="https://www.youtube.com/watch?v=dQw4w9WgXcQ" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe> -->
@@ -41,6 +47,24 @@ The parameters corresponding to a sha are saved in the `parameters.csv` files in
 The backend for handling datasets and dataloader is a fork from [torchgeo](https://torchgeo.readthedocs.io/).
 
 You can find a screen recording showing the process [here](https://github.com/ptresson/iamap_docs/blob/main/encoder.webm).
+
+The main steps are the following:
+
+1) Choose a raster you want to feed to an encoder.
+2) Select the bands you want to be used.
+3) Select the extent you want the encoding to be applied on. If you don't want to use all the input raster, this can save a lot of compute time !
+You can draw the extent on canvas or use an other layer as reference.
+4) Choose sampling and stride size. This will define the grid allong which your raster is sampled. By default, stride will be equal to the sampling size [but you can add an overlap for smoother results](faq.md#faq-tile).
+5) Choose an encoder. We have pre-selected some classic and reliable foundation models 
+but you can use other models available on [huggingface](https://huggingface.co/timm) 
+by typing their name below (e.g. `vit_base_patch16_dinov3.lvd1689m`). 
+Note that this library features a lot of models and all of them are not tested !
+6) Select the batch size you want to apply. 
+This will depend on your hardware, do not hesitate to test out on a small area to be sure everything works before scalling up ! 
+Do check [advanced parameters](#advanced-parameters) as well, several optimizations for limited hardware are available as well.
+7) Define an output directory for the produced files. If you don't specify it, a temporary directory will be created and output rasters will be deleted on shutdown !!
+8) Hit `Run` and let the encoder do it's job. You can change log verbosity in the advanced parameters if you want a more intricate viwew of what's going on. Temporary output files are stored on disk, you can cancel a run between batches and start again where you left off [with the same parameters afterwards](#pass-json-encoder).
+
 
 <!-- <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;"> -->
 <!--     <iframe src="https://github.com/ptresson/iamap_docs/blob/main/encoder.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe> -->
@@ -94,6 +118,7 @@ How many tiles are fed into the network at once. This only takes effect if a GPU
 Where resulting rasters will be saved. A subdirectory identified by a md5 hash will correspond to a given encoding session.
 
 
+<a id="advanced-parameters"></a>
 ### Advanced parameters
 
 - **Pretrained checkpoint:**
@@ -129,8 +154,9 @@ target resolution in meters.
 - **Compress final result to uint16 and JP2 to save space:**
 If selected, the final features raster will be converted to uint16 rather than float32 (*i.e.* two times lighter) and compressed to JP2 rather than geotiff to save space.
 
+<a id="pass-json-encoder"></a>
 - **Pass parameters as JSON file:**
-In the output directory, the parameters corresponding to an encoding session, you can find a JSON file summarizing the input parameters used during encoding.
+In the output directory, you can find a JSON file summarizing the input parameters used during encoding.
 You can pass this JSON file here to overide all previous parameters. This can be usefull if you want to resume an encoding session.
 
 

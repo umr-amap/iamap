@@ -30,6 +30,7 @@ Then, the resolution of a resulting feature map in our plugin will depend on the
 
 Our models are created using the `timm` librairy, which is widely used in deep learning research. [Here](https://timm.fast.ai/models#How-is-timm-able-to-use-pretrained-weights-and-handle-images-that-are-not-3-channel-RGB-images?) is the doc explaining how they handle non-RGB images when loading pre-trained models.
 
+<a id="faq-tile"></a>
 ## How can I avoid tiling effects ?
 
 You can create an overlap by selecting a stride smaller than the sampling size of your raster. In the advanced options, you can change how the tiles will be merged afterwards.
