@@ -277,7 +277,7 @@ If the geometry of your shapefile is not points, it will automatically be sample
 You can check the sampling rate in the options. 
 If there is several points, the prompt used is the arithmetic mean of the points coordinates.
 5) Define an output directory for the produced files. If you don't specify it, a temporary directory will be created and output rasters will be deleted on shutdown !!
-6) Hit `Run`.
+6) Hit `Run`. Cosine similarity should be relatively quick to compute.
 
 <!-- <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;"> -->
 <!--     <iframe src="./_static/sim.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe> -->
@@ -300,6 +300,30 @@ All models provided by scikit-learn [ensemble](https://scikit-learn.org/stable/a
 
 You can find a screen recording showing the process [here](https://github.com/ptresson/iamap_docs/blob/main/ml.webm).
 
+The main steps are the following:
+
+1) Choose a raster you want to feed to a clustering algorithm.
+2) Select the bands you want to be used.
+3) Select the extent you want the encoding to be applied on. If you don't want to use all the input raster, this can save a lot of compute time !
+You can draw the extent on canvas or use an other layer as reference.
+4) Select a shapefile that will provide labels to the algorithm.
+5) Select an algorithm to be used, by default, `RandomForestClassifier` is selected as this is a reliable and versatile algorithm but
+a lot more algorithms are available, you can find a list of them in the sidebar.
+Note that [scikit-learn](https://scikit-learn.org/) provides a lot of algorithms, 
+not all of them are usable for any type of data (_e.g._ classification vs. regression).
+6) You can pass overriding arguments in the field below, the arguments are expected to be on the same format as
+featured in the sidebar description (_e.g._ `{'estimator': None, 'n_estimators': 50, 'learning_rate': 1.0, 'loss': 'linear', 'random_state': None}` for `AdaBoostRegressor`)
+7) You can provide a shapefile for a test dataset as well.
+8) Define the column (attribute) to be used as a ground truth value.
+9) By default, we encourage users to perform a cross-validation. Default scheme will be a random 5-fold but if you have an atribute defining folds, you can pass it as well in the field bellow.
+10) Do check the advanced parameters, you can set the seed for reproductibility and save the produced model to a file so you can reuse it afterwards.
+11) Define an output directory for the produced files. If you don't specify it, a temporary directory will be created and output rasters will be deleted on shutdown !!
+12) Hit `Run`.
+
+> Although the majority of the algorithms are lightweight, some may take some time to fit. 
+QGIS's plugin structure makes it impossible for the plugin to kill an algorithm while running. 
+**If you're stuck, you may have to force kill QGIS !**
+
 <!-- <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;"> -->
 <!--     <iframe src="./_static/ml.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe> -->
 <!-- </div> -->
@@ -310,6 +334,9 @@ It is good practice to train and test a ML model on separate datasets. If you do
 Then, you can either define the column that defined the separation between the different folds of your dataset or go for an automatic split.
 If you choose the automatic split, ye perform a random sampling and each points are randomly attributed to a fold. Be carefull that this may not be the best way to validate a model in your case !
 
-> If the geometry of your input is not points, it will automatically be sampled as points. You can check the sampling rate in the options.
 
-> Not all of the algorithms have been tested and some may be heavy on computing or need particular input types.
+## Requesting model or algorithm support
+
+As both [timm](https://huggingface.co/timm) and [scikit-learn](https://scikit-learn.org/) provide a lot of different models and algorithm, not all of them have been tested.
+Nevertheless, we chose these libraries because their implementation of different methods is very consistent and reliable.
+If you find a model or an algorithm that does not work and that you would like to see properly supported, please do [fill an issue on GitHub](https://github.com/umr-amap/iamap/issues) and we will try to make it work !
