@@ -94,7 +94,7 @@ perform well even in low-shot or zero-shot tasks, *i.e.* using the model
 as is, with few or no training data. Consequently, SSL models are
 considered particularly promising for remote sensing tasks, as
 demonstrated by recent works and initiatives
-[@jakubik2023prithvi; @cong2023satmae; @xiong2024neural; @marsocci2024pangaea].
+[@jakubik2023prithvi; @cong2022satmae; @xiong2024neural; @marsocci2024pangaea].
 
 With the democratization of deep learning, some developers have already
 worked on the integration of deep learning models in geographic
