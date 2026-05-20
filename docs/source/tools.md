@@ -175,13 +175,33 @@ The features produced by a deep learning encoder are often of high dimensionalit
 However, it can be cumbersome to deal with all these features and this high dimensionality feature space, especially when a majority are not really informative.
 Therefore, it is possible to reduce the dimensions of a raster using a variety of algorithms.
 We chose to rely on [scikit-learn](https://scikit-learn.org/) to provide the algorithms.
-All algorighms available in the [decomposition](https://scikit-learn.org/stable/api/sklearn.decomposition.html), [manifold](https://scikit-learn.org/stable/api/sklearn.manifold.html) and the [cluster](https://scikit-learn.org/stable/api/sklearn.cluster.html) module that share a common API can be used.
+All algorithms available in the [decomposition](https://scikit-learn.org/stable/api/sklearn.decomposition.html), [manifold](https://scikit-learn.org/stable/api/sklearn.manifold.html) and the [cluster](https://scikit-learn.org/stable/api/sklearn.cluster.html) module that share a common API can be used.
 
 Different algorithms have different arguments that can be passed. You can provide these as a json string in the corresponding field.
 
 > Not all of the algorithms have been tested and some may be heavy on computing or need particular input types.
 
 You can find a screen recording showing the process [here](https://github.com/ptresson/iamap_docs/blob/main/proj.webm).
+
+The main steps are the following:
+
+1) Choose a raster you want to feed to a dimension reduction algorithm.
+2) Select the bands you want to be used.
+3) Select the extent you want the encoding to be applied on. If you don't want to use all the input raster, this can save a lot of compute time !
+You can draw the extent on canvas or use an other layer as reference.
+4) Choose the target number of dimensions (components). If the algorithm has this parameter, this will be used.
+5) Select an algorithm to be used, by default, `PCA` is selected as this is a common lightweight operation but
+a lot more algorithms are available, you can find a list of them in the sidebar.
+Note that [scikit-learn](https://scikit-learn.org/) provides a lot of algorithms, not all of them are usable for any type of data.
+6) You can pass overriding arguments in the field below, the arguments are expected to be on the same format as
+featured in the sidebar description (_e.g._ `{'n_components': 5, 'whiten': False, 'copy': True, 'batch_size': 10}` for `IncrementalPCA`)
+7) Do check the advanced parameters, you can set the seed for reproductibility and save the produced model to a file so you can reuse it afterwards.
+8) Define an output directory for the produced files. If you don't specify it, a temporary directory will be created and output rasters will be deleted on shutdown !!
+9) Hit `Run`. 
+
+> Although the majority of the algorithms are lightweight, some may take some time to fit. 
+QGIS's plugin structure makes it impossible for the plugin to kill an algorithm while running. 
+**If you're stuck, you may have to force kill QGIS !**
 
 <!-- <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;"> -->
 <!--     <iframe src="./_static/proj.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe> -->
@@ -204,6 +224,26 @@ Different algorithms have different arguments that can be passed. You can provid
 > Not all of the algorithms have been tested and some may be heavy on computing or need particular input types.
 
 You can find a screen recording showing the process [here](https://github.com/ptresson/iamap_docs/blob/main/cluster.webm).
+
+The main steps are the following:
+
+1) Choose a raster you want to feed to a clustering algorithm.
+2) Select the bands you want to be used.
+3) Select the extent you want the encoding to be applied on. If you don't want to use all the input raster, this can save a lot of compute time !
+You can draw the extent on canvas or use an other layer as reference.
+4) Choose the target number of clusters. If the algorithm has this parameter, this will be used.
+5) Select an algorithm to be used, by default, `KMeans` is selected as this is a common lightweight operation but
+a lot more algorithms are available, you can find a list of them in the sidebar.
+Note that [scikit-learn](https://scikit-learn.org/) provides a lot of algorithms, not all of them are usable for any type of data.
+6) You can pass overriding arguments in the field below, the arguments are expected to be on the same format as
+featured in the sidebar description (_e.g._ `{'eps': 0.5, 'min_samples': 5, 'metric': 'euclidean', 'metric_params': None, 'algorithm': 'auto', 'leaf_size': 30, 'p': None, 'n_jobs': None}` for `DBSCAN`)
+7) Do check the advanced parameters, you can set the seed for reproductibility and save the produced model to a file so you can reuse it afterwards.
+8) Define an output directory for the produced files. If you don't specify it, a temporary directory will be created and output rasters will be deleted on shutdown !!
+9) Hit `Run`.
+
+> Although the majority of the algorithms are lightweight, some may take some time to fit. 
+QGIS's plugin structure makes it impossible for the plugin to kill an algorithm while running. 
+**If you're stuck, you may have to force kill QGIS !**
 
 <!-- <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;"> -->
 <!--     <iframe src="./_static/cluster.webm" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe> -->
