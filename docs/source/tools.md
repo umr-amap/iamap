@@ -263,6 +263,7 @@ A good way to compare two points in a high-dimension setting is through [cosine 
 This measure will be equall to one for vectors having the same coordinates and 0 for orthogonal vectors. Thus, the closer to one the cosine similarity is, the more similar two points should be.
 
 Here, additionnaly to an input raster, you have to provide a shapefile (or any format that will be read by geopandas) that will serve to prodive reference point(s).
+You can find a template shapefile over NAIP dataset [here](https://github.com/umr-amap/iamap/blob/joss/assets/docs/sim.zip).
 
 You can find a screen recording showing the process [here](https://github.com/ptresson/iamap_docs/blob/main/sim.webm).
 
@@ -299,6 +300,8 @@ Based on the algorithm you choose, these values will be interpreted as integers 
 All models provided by scikit-learn [ensemble](https://scikit-learn.org/stable/api/sklearn.ensemble.html) (_e.g._ Random Forests, Gradient Boosting) and [neighbors](https://scikit-learn.org/stable/api/sklearn.neighbors.html)(_e.g._ KNN) module  that share a common API are available.
 
 You can find a screen recording showing the process [here](https://github.com/ptresson/iamap_docs/blob/main/ml.webm).
+
+You can find a template shapefile over NAIP dataset [here](https://github.com/umr-amap/iamap/blob/joss/assets/docs/ml.zip).
 
 The main steps are the following:
 
