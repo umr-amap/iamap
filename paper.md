@@ -34,7 +34,7 @@ bibliography: paper.bib
 
 # Summary 
 
-We introduce IAMAP, a user-friendly QGIS plugin that allows to 
+We introduce IAMAP, a user-friendly plugin  for the geographic information system QGIS that allows to 
 (1) tile raster images and feed them into pre-trained deep learning model to 
 extract image features; 
 (2) reduce features dimensionality; 
@@ -66,7 +66,7 @@ dataset, through *e.g.*, ground observations or photo-interpretation,
 remains a major barrier to the implementation of deep learning
 approaches.
 
-Second, most deep learning developpements have been conducted by and for 
+Second, most deep learning developments have been conducted by and for 
 actors able to leverage significant computing power with the training of a 
 model being GPU-dependant. This creates a significant barrier to users who 
 could otherwise benefit from inference-only deep learning applications.
@@ -79,7 +79,7 @@ ease the implementation of models.
 
 Recently, deep learning state of the art has seen an evolution
 towards the use of large foundation models, trained on large scale datasets 
-in an unsupervised way and capable of very good few-shot performances (*i.e.*
+in an unsupervised way, and capable of very good few-shot performances (*i.e.*,
 without expensive supervised training of the network)
 [@ericsson2021well]. The main difference between a pre-trained
 self-supervised learning (SSL) model and a pre-trained supervised model
@@ -90,7 +90,7 @@ general and transferable representations. In contrast, supervised models
 are explicitly optimized to perform a specific user-defined task, which
 can lead to highly specialized representations that may overlook other
 meaningful features in the data. As such, SSL foundation models can
-perform well even in low-shot or zero-shot tasks, *i.e.* using the model
+perform well even in low-shot or zero-shot tasks, *i.e.*, using the model
 as is, with few or no training data. Consequently, SSL models are
 considered particularly promising for remote sensing tasks, as
 demonstrated by recent works and initiatives
@@ -98,10 +98,10 @@ demonstrated by recent works and initiatives
 
 With the democratization of deep learning, some developers have already
 worked on the integration of deep learning models in geographic
-information systems such as the open-source and widely used QGIS
+information systems such as the open source and widely used QGIS
 software [@QGIS]. However, at the time of writing, these solutions
 mostly focus on fine-tuning models or using a model in inference only
-[*e.g.* see @aszkowski2023deepness; @zhao2023geosam]. Then, they are
+[*e.g.*, see @aszkowski2023deepness; @zhao2023geosam]. Then, they are
 only usable by users with access to high-end computing power, extensive
 dataset, on interested in a task for which a specific model was already
 trained.
@@ -114,12 +114,12 @@ learning models and manipulate their features in a user-friendly fashion.
 This plugin aims at allowing two main tasks:
 
 1. feeding a tiled raster through a pre-trained deep learning model,
-    typically via the *timm* and *huggingface* library.
+    typically via the *timm* and *huggingface* library [@rw2019timm, @wolf2019huggingface].
 
 2. manipulating the produced features with common machine learning tools,
     provided by the *scikit-learn* library.
 
-these tasks are separated into five modules depending on the type of models
+These tasks are separated into five modules depending on the type of models
 and operations the user wants to perform: deep learning feature extraction 
 (see \autoref{fig:backbones}), dimension reduction, clustering, similarity 
 computation, or fitting a machine learning model in a supervised way (see
@@ -137,16 +137,17 @@ and blue channel respectively. The third row shows a projection using a
 3D T-SNE.\label{fig:backbones}](figures/backbones.png)
 
 - **The deep learning feature extraction module** allows to feed a raster into 
-a ViT-like backbone. The user can chose a raster loaded in QGIS, a pre-trained 
+a ViT-like backbone (Vision Transformer see, [@dosovitskiy2020image]) . 
+The user can chose a raster loaded in QGIS, a pre-trained 
 model that is downloaded from timm/huggingface or pass local pre-trained 
 weights. The raster is then tiled according to user defined rules and fed into 
-the model using a light fork of the *torchgeo library*. Resulting features are 
+the model using a light fork of the *torchgeo library* [@stewart2024torchgeo]. Resulting features are 
 saved into a geotiff file and can then be used for further analysis.
 - **The dimension reduction module** uses *scikit-learn* API to feed a raster 
 into a model and collect the resulting raster. All algorithms available in 
 the *scikit-learn* `decomposition` and `cluster` modules that have common APIs 
 (namely, a `fit()`, a `transform()`, or a `fit_transform()` method) are 
-available. The parameters can be fed following a json format.
+available. The parameters can be fed following a JSON format.
 - **The clustering module** works in a similar manner with algorithms 
 available in the *scikit-learn* `cluster` module sharing common APIs (namely, 
 a `fit()`, a `predict()`, or a `fit_predict()` method).
@@ -154,15 +155,15 @@ a `fit()`, a `predict()`, or a `fit_predict()` method).
 defined template pixels (via a vector layer).
 - **The machine learning module** allows the user to fit a supervised machine 
 learning model available in the *sciki-learn* `ensemble` and `neighbors` 
-modules. Hyper-parameters (*e.g.* validation scheme, labelled data… can be 
-defined by the user).
+modules. Hyper-parameters (*e.g.* validation scheme, labelled data… ) can be 
+defined by the user.
 
 A core constraint of the development is for the plugin to be accessible for a 
 non-coding user without a GPU and with limited internet access. As such, all 
 design and development is done on CPU on a laptop to assess usability with no 
 GPU. Various optimizations are available, such as quantization, scheduled 
-pauses and progress save on disk. We used code from the 
-[deepness plugin](https://github.com/PUTvision/qgis-plugin-deepness/) to 
+pauses, and progress save on disk. We used code from the 
+[deepness plugin](https://github.com/PUTvision/qgis-plugin-deepness/) [@aszkowski2023deepness] to 
 provide automated dependencies installation dialog.
 
 # Research impact statement
