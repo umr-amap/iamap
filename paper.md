@@ -114,7 +114,7 @@ learning models and manipulate their features in a user-friendly fashion.
 This plugin aims at allowing two main tasks:
 
 1. feeding a tiled raster through a pre-trained deep learning model,
-    typically via the *timm* and *huggingface* library [@rw2019timm, @wolf2019huggingface].
+    typically via the *timm* and *huggingface* library [@rw2019timm; @wolf2019huggingface].
 
 2. manipulating the produced features with common machine learning tools,
     provided by the *scikit-learn* library.
