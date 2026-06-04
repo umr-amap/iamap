@@ -14,6 +14,7 @@ authors:
     affiliation: "1,2"
   - name: Hadrien Tulet
     affiliation: 1
+    orcid: 0009-0004-8139-2380
   - name: Anthony Malkassian
     orcid: 0000-0001-9603-4448
     affiliation: 3
