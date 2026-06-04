@@ -1,8 +1,8 @@
 [general]
 name=iamap
-description=Extract and manipulate deep learning features from rasters
-about= This plugin is still a work in progress, feel free to fill an issue on github.
-version=0.7.0
+description=Extract and manipulate deep learning features from rasters with timm and scikit-learn.
+about= Development is open-sourced, feel free to fill an issue on github.
+version=1.0.0
 icon=icons/favicon.svg
 qgisMinimumVersion=3.12
 author=Paul Tresson, Pierre Lecoz, Hadrien Tulet
