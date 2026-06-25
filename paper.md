@@ -169,9 +169,8 @@ provide automated dependency-installation dialog.
 
 # Research impact statement
 
-The plugin is used internally and has been presented in several webinars with 
-strong positive feedback from potential users. It has also been used for research
-to be published soon by Malkassian et al. (A preview of the results 
+The plugin is used internally and has been presented in [several webinars](https://www.oneforestvision.org/actualites/webinaire-de-formation-ageos) with 
+strong positive feedback from potential users. It has also been used for research by Malkassian et al. (A preview of the results 
 [is available in the documentation](https://iamap.readthedocs.io/en/latest/examples.html#mapping-land-cover-change-in-la-reunion-island)).
 
 # AI usage disclosure
