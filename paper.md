@@ -135,7 +135,7 @@ different backbones. The top row represents the first three feature
 dimensions output by the models (which may not be the most informative).
 The second row shows a 3D PCA of the features mapped to the red, green,
 and blue channel respectively. The third row shows a projection using a
-3D T-SNE.\label{fig:backbones}](figures/backbones.png)
+3D t-SNE.\label{fig:backbones}](figures/backbones.png)
 
 - **The deep learning feature extraction module** allows users to feed a raster into 
 a ViT-like backbone (Vision Transformer; see [@dosovitskiy2020image]) . 
