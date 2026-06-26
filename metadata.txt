@@ -2,7 +2,7 @@
 name=iamap
 description=Extract and manipulate deep learning features from rasters with timm and scikit-learn.
 about= Development is open-sourced, feel free to fill an issue on github.
-version=1.0.1
+version=1.0.2
 icon=icons/favicon.svg
 qgisMinimumVersion=3.12
 author=Paul Tresson, Pierre Lecoz, Hadrien Tulet
