@@ -7,7 +7,7 @@
 [![Documentation Status](https://app.readthedocs.org/projects/iamap/badge/)](https://iamap.readthedocs.io/en/latest/?badge=latest)
 [![CI](https://github.com/umr-amap/iamap/actions/workflows/jobs.yml/badge.svg)](https://github.com/umr-amap/iamap/actions/workflows/jobs.yml)
 [![GitLab Mirror](https://img.shields.io/badge/GitLab-Mirror-blue)](https://forge.ird.fr/amap/iamap)
-[![ArXiv preprint](https://img.shields.io/badge/preprint-arXiv:2508.00627-B31B1B)](https://arxiv.org/abs/2508.00627)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.10329/status.svg)](https://doi.org/10.21105/joss.10329)
 
 
 ## Rationale
@@ -78,10 +78,16 @@ The feature extraction algorithm was inspired by the [Geo-SAM](https://github.co
 If you use iamap for your work, you can use the following citation:
 
 ```
-@article{tresson2025iamap,
-  title={IAMAP: Unlocking Deep Learning in QGIS for non-coders and limited computing resources},
-  author={Tresson, Paul and Coz, Pierre Le and Tulet, Hadrien and Malkassian, Anthony and M{\'e}chain, Maxime R{\'e}jou},
-  journal={arXiv preprint arXiv:2508.00627},
-  year={2025}
+@article{Tresson2026, 
+    doi = {10.21105/joss.10329}, 
+    url = {https://doi.org/10.21105/joss.10329}, 
+    year = {2026}, 
+    publisher = {The Open Journal}, 
+    volume = {11}, 
+    number = {122}, 
+    pages = {10329}, 
+    author = {Tresson, Paul and Coz, Pierre Le and Tulet, Hadrien and Malkassian, Anthony and Réjou-Méchain, Maxime}, 
+    title = {IAMAP: Unlocking Deep Learning in QGIS for non-coders and limited computing resources}, 
+    journal = {Journal of Open Source Software} 
 }
 ```
