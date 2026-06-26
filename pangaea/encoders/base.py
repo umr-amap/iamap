@@ -178,11 +178,17 @@ class Encoder(nn.Module):
 
             pbar = DownloadProgressBar(f"Downloading {self.encoder_weights}")
 
+            if not self.download_url.lower().startswith("http"):
+                print("Provided url is not valid")
+                raise ValueError
+
             if self.download_url.startswith("https://drive.google.com/"):
                 gdown.download(self.download_url, self.encoder_weights)
             else:
                 try:
-                    urllib.request.urlretrieve(
+                    ### request to local files is checked above
+                    ### see https://stackoverflow.com/questions/48779202/audit-url-open-for-permitted-schemes-allowing-use-of-file-or-custom-schemes
+                    urllib.request.urlretrieve( #nosec
                         self.download_url,
                         self.encoder_weights,
                         pbar,
