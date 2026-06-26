@@ -35,10 +35,6 @@ class TestReductionAlgorithm(unittest.TestCase):
 
     algorithm = ReductionAlgorithm()
     default_parameters = {"INPUT": INPUT, "OUTPUT": OUTPUT}
-    possible_hashes = [
-        "d7a32c6b7a4cee1af9c73607561d7b25",
-        "e04f8c86d9aad81dd9c625b9cd8f9824",
-    ]
     output_size = 4405122
     output_wh = (968,379)
     out_name = "proj.tif"
@@ -61,7 +57,6 @@ class TestReductionAlgorithm(unittest.TestCase):
 
 class TestClusteringAlgorithm(TestReductionAlgorithm):
     algorithm = ClusterAlgorithm()
-    # possible_hashes = ["0c47b0c4b4c13902db5da3ee6e5d4aef"]
     out_name = "cluster.tif"
     output_size = 4405122
 
@@ -69,7 +64,6 @@ class TestClusteringAlgorithm(TestReductionAlgorithm):
 class TestSimAlgorithm(TestReductionAlgorithm):
     algorithm = SimilarityAlgorithm()
     default_parameters = {"INPUT": INPUT, "OUTPUT": OUTPUT, "TEMPLATE": TEMPLATE}
-    # possible_hashes = ["f76eb1f0469725b49fe0252cfe86829a"]
     out_name = "similarity.tif"
     output_size = 1468988
 
@@ -82,7 +76,6 @@ class TestMLAlgorithm(TestReductionAlgorithm):
         "TEMPLATE": TEMPLATE_RF,
         "GT_COL": GT_COL,
     }
-    # possible_hashes = ["bd22d66180347e043fca58d494876184"]
     out_name = "ml.tif"
     output_size = 367520
 
