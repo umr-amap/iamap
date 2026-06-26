@@ -8,3 +8,4 @@ qgisMinimumVersion=3.12
 author=Paul Tresson, Pierre Lecoz, Hadrien Tulet
 email=paul.tresson@ird.fr
 repository=github.com/umr-amap/iamap
+tracker=github.com/umr-amap/iamap/issues
