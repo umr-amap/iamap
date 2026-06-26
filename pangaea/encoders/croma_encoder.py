@@ -108,7 +108,7 @@ class CROMA_OPTICAL_Encoder(Encoder):
         return output
 
     def load_encoder_weights(self, logger: Logger) -> None:
-        pretrained_model = torch.load(self.encoder_weights, map_location="cpu")[
+        pretrained_model = torch.load(self.encoder_weights, map_location="cpu", weights_only=True)[
             "s2_encoder"
         ]
         k = pretrained_model.keys()
@@ -228,7 +228,7 @@ class CROMA_SAR_Encoder(Encoder):
         return output
 
     def load_encoder_weights(self, logger: Logger) -> None:
-        pretrained_model = torch.load(self.encoder_weights, map_location="cpu")[
+        pretrained_model = torch.load(self.encoder_weights, map_location="cpu", weights_only=True)[
             "s1_encoder"
         ]
         k = pretrained_model.keys()
@@ -368,7 +368,7 @@ class CROMA_JOINT_Encoder(Encoder):
         return output
 
     def load_encoder_weights(self, logger: Logger) -> None:
-        pretrained_model = torch.load(self.encoder_weights, map_location="cpu")
+        pretrained_model = torch.load(self.encoder_weights, map_location="cpu", weights_only=True)
         combined_state_dict = {}
         for prefix, module in pretrained_model.items():
             for k, v in module.items():
