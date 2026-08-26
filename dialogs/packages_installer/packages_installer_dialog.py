@@ -217,9 +217,9 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                 self.iface.mainWindow(),
                 f"{PLUGIN_NAME} - Installation done !",
                 "Restart QGIS for the plugin to load properly.",
-                QMessageBox.Ok,
+                QMessageBox.StandardButton.Ok,
             )
-            if res == QMessageBox.Ok:
+            if res == QMessageBox.StandardButton.Ok:
                 log_msg = "User accepted to restart QGIS"
                 event.accept()
             return
@@ -229,11 +229,11 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
             f"{PLUGIN_NAME} - skip installation?",
             "Are you sure you want to abort the installation of the required python packages? "
             "The plugin may not function correctly without them!",
-            QMessageBox.No,
-            QMessageBox.Yes,
+            QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
         )
         log_msg = "User requested to close the dialog, but the packages are not installed correctly!\n"
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
             log_msg += "And the user confirmed to close the dialog, knowing the risk!"
             event.accept()
         else:

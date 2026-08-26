@@ -133,7 +133,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             description=self.tr(
                 "Target resolution in meters (default to native resolution)"
             ),
-            type=QgsProcessingParameterNumber.Double,
+            type=QgsProcessingParameterNumber.Type.Double,
             optional=True,
             minValue=0,
             maxValue=100000,
@@ -144,7 +144,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             description=self.tr(
                 "CUDA Device ID (choose which GPU to use, default to device 0)"
             ),
-            type=QgsProcessingParameterNumber.Integer,
+            type=QgsProcessingParameterNumber.Type.Integer,
             defaultValue=0,
             minValue=0,
             maxValue=9,
@@ -152,7 +152,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
         nworkers_param = QgsProcessingParameterNumber(
             name=self.WORKERS,
             description=self.tr("Number of CPU workers for dataloader (0 selects all)"),
-            type=QgsProcessingParameterNumber.Integer,
+            type=QgsProcessingParameterNumber.Type.Integer,
             defaultValue=0,
             minValue=0,
             maxValue=10,
@@ -162,7 +162,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             description=self.tr(
                 "Schedule pauses between batches to ease CPU usage (in seconds)."
             ),
-            type=QgsProcessingParameterNumber.Integer,
+            type=QgsProcessingParameterNumber.Type.Integer,
             defaultValue=0,
             minValue=0,
             maxValue=10000,
@@ -173,7 +173,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             description=self.tr(
                 "Frequency at which temporary files should be cleaned up (zero means no cleanup)."
             ),
-            type=QgsProcessingParameterNumber.Integer,
+            type=QgsProcessingParameterNumber.Type.Integer,
             defaultValue=500,
             minValue=1,
             maxValue=10000,
@@ -201,7 +201,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 description=self.tr(
                     "Sampling size (the raster will be sampled in a square with a side of that many pixel)"
                 ),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 defaultValue=224,
                 minValue=1,
                 maxValue=1024,
@@ -214,7 +214,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 description=self.tr(
                     "Stride (If smaller than the sampling size, tiles will overlap. If larger, it may cause errors.)"
                 ),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 defaultValue=224,
                 minValue=1,
                 maxValue=1024,
@@ -292,7 +292,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
                 description=self.tr(
                     "Batch size (take effect if choose to use GPU and CUDA is available)"
                 ),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 defaultValue=1,
                 minValue=1,
                 maxValue=1024,
@@ -346,7 +346,7 @@ class EncoderAlgorithm(IAMAPAlgorithm):
             verbosity_param,
         ):
             param.setFlags(
-                param.flags() | QgsProcessingParameterDefinition.FlagAdvanced
+                param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced
             )
             self.addParameter(param)
 

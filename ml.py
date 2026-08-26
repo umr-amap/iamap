@@ -152,7 +152,7 @@ class MLAlgorithm(SHPAlgorithm):
         nfold_param = QgsProcessingParameterNumber(
             name=self.NFOLDS,
             description=self.tr("Number of folds performed"),
-            type=QgsProcessingParameterNumber.Integer,
+            type=QgsProcessingParameterNumber.Type.Integer,
             optional=True,
             minValue=2,
             defaultValue=5,
@@ -168,7 +168,7 @@ class MLAlgorithm(SHPAlgorithm):
             save_param,
         ):
             param.setFlags(
-                param.flags() | QgsProcessingParameterDefinition.FlagAdvanced
+                param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced
             )
             self.addParameter(param)
 

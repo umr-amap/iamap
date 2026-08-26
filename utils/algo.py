@@ -173,7 +173,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
 
         for param in (compress_param,):
             param.setFlags(
-                param.flags() | QgsProcessingParameterDefinition.FlagAdvanced
+                param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced
             )
             self.addParameter(param)
 
@@ -211,7 +211,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
             description=self.tr(
                 "Target resolution in meters (default to native resolution)"
             ),
-            type=QgsProcessingParameterNumber.Double,
+            type=QgsProcessingParameterNumber.Type.Double,
             optional=True,
             minValue=0,
             maxValue=100000,
@@ -240,7 +240,7 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
             res_param,
         ):
             param.setFlags(
-                param.flags() | QgsProcessingParameterDefinition.FlagAdvanced
+                param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced
             )
             self.addParameter(param)
 
@@ -248,13 +248,13 @@ class IAMAPAlgorithm(QgsProcessingAlgorithm):
         seed_param = QgsProcessingParameterNumber(
             name=self.RANDOM_SEED,
             description=self.tr("Random seed"),
-            type=QgsProcessingParameterNumber.Integer,
+            type=QgsProcessingParameterNumber.Type.Integer,
             defaultValue=42,
             minValue=0,
             maxValue=100000,
         )
         seed_param.setFlags(
-            seed_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced
+            seed_param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced
         )
         self.addParameter(seed_param)
 
@@ -483,7 +483,7 @@ class SKAlgorithm(IAMAPAlgorithm):
                 QgsProcessingParameterNumber(
                     name=self.MAIN_PARAM,
                     description=self.tr("Number of target components"),
-                    type=QgsProcessingParameterNumber.Integer,
+                    type=QgsProcessingParameterNumber.Type.Integer,
                     defaultValue=3,
                     minValue=1,
                     maxValue=1024,
@@ -498,7 +498,7 @@ class SKAlgorithm(IAMAPAlgorithm):
                 QgsProcessingParameterNumber(
                     name=self.MAIN_PARAM,
                     description=self.tr("Number of target clusters"),
-                    type=QgsProcessingParameterNumber.Integer,
+                    type=QgsProcessingParameterNumber.Type.Integer,
                     defaultValue=3,
                     minValue=1,
                     maxValue=1024,
@@ -540,7 +540,7 @@ class SKAlgorithm(IAMAPAlgorithm):
             description=self.tr(
                 "Select a subset of random pixels of the image to fit transform"
             ),
-            type=QgsProcessingParameterNumber.Integer,
+            type=QgsProcessingParameterNumber.Type.Integer,
             defaultValue=None,
             minValue=1,
             maxValue=10_000,
@@ -555,7 +555,7 @@ class SKAlgorithm(IAMAPAlgorithm):
 
         for param in (load_model_param, subset_param, save_param):
             param.setFlags(
-                param.flags() | QgsProcessingParameterDefinition.FlagAdvanced
+                param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced
             )
             self.addParameter(param)
 
@@ -1035,7 +1035,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
             description=self.tr(
                 "Random samples taken if input is not in point geometry"
             ),
-            type=QgsProcessingParameterNumber.Integer,
+            type=QgsProcessingParameterNumber.Type.Integer,
             optional=True,
             minValue=0,
             defaultValue=500,
@@ -1051,7 +1051,7 @@ class SHPAlgorithm(IAMAPAlgorithm):
         )
 
         samples_param.setFlags(
-            samples_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced
+            samples_param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced
         )
         self.addParameter(samples_param)
 
