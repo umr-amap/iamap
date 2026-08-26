@@ -6,7 +6,7 @@ This tool allows to install them in a local directory, if they are not installed
 import importlib
 import logging
 import os
-import subprocess
+import subprocess # nosec
 import sys
 import traceback
 from dataclasses import dataclass

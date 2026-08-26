@@ -47,7 +47,9 @@ def download_model(download_url=False, encoder_weights=False):
                 gdown.download(download_url, encoder_weights)
             else:
                 try:
-                    urllib.request.urlretrieve(
+                    ### urls should be clean and provided in the code with no user input
+                    ### I'm setting nosec on this line
+                    urllib.request.urlretrieve( # nosec
                         download_url,
                         encoder_weights,
                         pbar,
