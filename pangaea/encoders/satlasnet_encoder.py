@@ -494,7 +494,7 @@ class SatlasNet_Encoder(Encoder):
         Option to load pretrained FPN.
         """
 
-        response = requests.get(self.weights_url)
+        response = requests.get(self.weights_url, timeout=5000)
         if response.status_code == 200:
             weights_file = BytesIO(response.content)
         else:
