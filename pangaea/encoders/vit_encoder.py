@@ -116,7 +116,7 @@ class VIT_Encoder(Encoder):
     def load_encoder_weights(self, logger: Logger) -> None:
         if self.encoder_weights is None:
             return
-        pretrained_model = torch.load(self.encoder_weights, map_location="cpu")
+        pretrained_model = torch.load(self.encoder_weights, map_location="cpu", weights_only=True)
         k = pretrained_model.keys()
         pretrained_encoder = {}
         incompatible_shape = {}
@@ -238,7 +238,7 @@ class VIT_EncoderMT(Encoder):
     def load_encoder_weights(self, logger: Logger) -> None:
         if self.encoder_weights is None:
             return
-        pretrained_model = torch.load(self.encoder_weights, map_location="cpu")
+        pretrained_model = torch.load(self.encoder_weights, map_location="cpu", weights_only=True)
         k = pretrained_model.keys()
         pretrained_encoder = {}
         incompatible_shape = {}

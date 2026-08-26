@@ -136,7 +136,7 @@ class ScaleMAE_Encoder(Encoder):
             nn.init.constant_(m.weight, 1.0)
 
     def load_encoder_weights(self, logger: Logger) -> None:
-        pretrained_model = torch.load(self.encoder_weights, map_location="cpu")["model"]
+        pretrained_model = torch.load(self.encoder_weights, map_location="cpu", weights_only=True)["model"]
         k = pretrained_model.keys()
         pretrained_encoder = {}
         incompatible_shape = {}
