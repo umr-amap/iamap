@@ -97,7 +97,7 @@ class IAMap(QObject):
         if sys.platform == "win32":
             self.iface.actionShowPythonDialog().trigger()
         result = processing.execAlgorithmDialog("iamap:encoder", {})
-        print(result)
+        # print(result)
         # Check if algorithm execution was successful
         if result:
             # Retrieve output parameters from the result dictionary
@@ -119,7 +119,7 @@ class IAMap(QObject):
     def reduceImage(self):
         """ """
         result = processing.execAlgorithmDialog("iamap:reduction", {})
-        print(result)
+        # print(result)
         # Check if algorithm execution was successful
         if result:
             # Retrieve output parameters from the result dictionary
@@ -140,7 +140,7 @@ class IAMap(QObject):
     def clusterImage(self):
         """ """
         result = processing.execAlgorithmDialog("iamap:cluster", {})
-        print(result)
+        # print(result)
         # Check if algorithm execution was successful
         if result:
             # Retrieve output parameters from the result dictionary
@@ -161,7 +161,7 @@ class IAMap(QObject):
     def similarityImage(self):
         """ """
         result = processing.execAlgorithmDialog("iamap:similarity", {})
-        print(result)
+        # print(result)
         # Check if algorithm execution was successful
         if result:
             # Retrieve output parameters from the result dictionary
@@ -184,7 +184,7 @@ class IAMap(QObject):
     def rfImage(self):
         """ """
         result = processing.execAlgorithmDialog("iamap:ml", {})
-        print(result)
+        # print(result)
         # Check if algorithm execution was successful
         if result:
             # Retrieve output parameters from the result dictionary

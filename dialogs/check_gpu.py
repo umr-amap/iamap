@@ -6,7 +6,6 @@ import shutil
 def check_nvidia_gpu():
 
     nvidia_smi_path = shutil.which("nvidia-smi")
-    print(nvidia_smi_path)
     if nvidia_smi_path :
         # Run the nvidia-smi command and capture the output
         output = subprocess.check_output(
