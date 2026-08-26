@@ -161,7 +161,7 @@ def compute_md5_hash(parameters, keys_to_remove=["MERGE_METHOD", "WORKERS", "PAU
     param_encoder = {
         key: parameters[key] for key in parameters if key not in keys_to_remove
     }
-    return hashlib.md5(str(param_encoder).encode("utf-8")).hexdigest()
+    return hashlib.md5(str(param_encoder).encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 def get_file_md5_hash(path):
