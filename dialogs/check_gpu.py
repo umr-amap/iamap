@@ -21,7 +21,7 @@ def check_nvidia_gpu():
         gpu_name = gpu_info[0].strip()
 
         output_cuda_version = subprocess.run(
-            ["nvidia-smi"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            [nvidia_smi_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=False
         )
         for line in output_cuda_version.stdout.split("\n"):
             if "CUDA Version" in line:
@@ -38,16 +38,17 @@ def check_amd_gpu():
             output = subprocess.check_output(
                 ["wmic", "path", "win32_videocontroller", "get", "name"],
                 universal_newlines=True,
+                shell=False,
             )
             if "AMD" in output or "Radeon" in output:
                 return True
         elif platform.system() == "Linux":
-            output = subprocess.check_output(["lspci"], universal_newlines=True)
+            output = subprocess.check_output(["lspci"], universal_newlines=True, shell=False)
             if "AMD" in output or "Radeon" in output:
                 return True
         elif platform.system() == "Darwin":
             output = subprocess.check_output(
-                ["system_profiler", "SPDisplaysDataType"], universal_newlines=True
+                ["system_profiler", "SPDisplaysDataType"], universal_newlines=True, shell=False
             )
             if "AMD" in output or "Radeon" in output:
                 return True
