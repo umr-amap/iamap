@@ -165,7 +165,7 @@ def compute_md5_hash(parameters, keys_to_remove=["MERGE_METHOD", "WORKERS", "PAU
 
 
 def get_file_md5_hash(path):
-    md5 = hashlib.md5()
+    md5 = hashlib.md5(usedforsecurity=False)
     with open(path, "rb") as f:
         while True:
             data = f.read(BUF_SIZE)
