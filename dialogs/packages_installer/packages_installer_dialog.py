@@ -265,6 +265,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
             universal_newlines=True,
             stderr=subprocess.STDOUT,
             env={"SETUPTOOLS_USE_DISTUTILS": "stdlib"},
+            shell=False,
         ) as process:
             try:
                 self._do_process_output_logging(process)
@@ -342,6 +343,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                     stdout=subprocess.PIPE,
                     universal_newlines=True,
                     stderr=subprocess.STDOUT,
+                    shell=False, 
                 ) as process:
                     self._do_process_output_logging(process)
 
@@ -351,6 +353,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
             stdout=subprocess.PIPE,
             universal_newlines=True,
             stderr=subprocess.STDOUT,
+            shell=False,
         ) as process:
             self._do_process_output_logging(process)
 
@@ -506,7 +509,7 @@ def are_packages_importable(device) -> bool:
 
 def check_pip_installed() -> bool:
     try:
-        subprocess.check_output([PYTHON_EXECUTABLE_PATH, "-m", "pip", "--version"])
+        subprocess.check_output([PYTHON_EXECUTABLE_PATH, "-m", "pip", "--version"], shell=False)
         return True
     except subprocess.CalledProcessError:
         return False
