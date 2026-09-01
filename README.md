@@ -20,9 +20,13 @@ With this plugin, we aim to provide an easy to use framework to use these models
 
 ## Installation
 
-### Plugin installation
+### Via QGIS repository
 
-As of now, the plugin is not yet published in official QGIS repos, so you have to clone or copy this code into the python plugin directory of QGIS and manualy install.
+Search for `iamap` in QGIS plugin menu and install it with the menu. You can find the different releases [here](https://plugins.qgis.org/plugins/iamap/).
+
+### Local installation
+
+Alternatively, you can clone or copy this code into the python plugin directory of QGIS and manualy install.
 
 ```
 git clone --depth 1 https://github.com/umr-amap/iamap.git
@@ -60,8 +64,8 @@ Documentation is available [here](https://iamap.readthedocs.io/en/latest/).
 
 - [x] Saving and using sklearn models in inference
 - [x] Implementation of [Pangaea benchmark models](https://github.com/VMarsocci/pangaea-bench/tree/main) (SSL4EO MOCO and DOFA for now)
+- [x] Publication on QGIS repo
 - [ ] Handling features of non-ViT-like models
-- [ ] Publication on QGIS repo
 
 ## Contributing
 
