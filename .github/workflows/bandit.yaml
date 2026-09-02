@@ -2,6 +2,8 @@ name: Bandit security checks
 
 on:
   push:
+    branches:
+      - workflows
     tags:
       - "v*"
   workflow_dispatch:
