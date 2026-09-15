@@ -5,6 +5,7 @@ src/iamap/icons/__pycache__
 src/iamap/utils/__pycache__
 assets/test.tif.aux.xml
 python*/
+iamap/python*/
 features/
 utils/__pycache__
 icons/__pycache__
@@ -22,3 +23,4 @@ test.qix
 test.shp
 test.shx
 pretrained_models
+iamap/pretrained_models/
