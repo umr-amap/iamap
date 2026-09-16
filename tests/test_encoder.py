@@ -14,11 +14,10 @@ import torch
 import huggingface_hub
 
 # from torchgeo.datasets import RasterDataset
-from ..tg.datasets import RasterDataset
-
-from ..encoder import EncoderAlgorithm
-from ..utils.misc import get_file_md5_hash
-from ..utils.geo import validate_geotiff
+from iamap.tg.datasets import RasterDataset
+from iamap.encoder import EncoderAlgorithm
+from iamap.utils.misc import get_file_md5_hash
+from iamap.utils.geo import validate_geotiff
 
 
 INPUT = os.path.join(Path(__file__).parent.parent.absolute(), "assets", "test.tif")
@@ -117,8 +116,8 @@ class TestEncoderAlgorithm(unittest.TestCase):
         self.algorithm.quantization = True
         self.algorithm.device = 'cpu'
         archs = [
-            Path(os.path.join(self.algorithm.cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
-            Path(os.path.join(self.algorithm.cwd,'pangaea','configs','encoder','dofa.yaml')),
+            Path(os.path.join(self.algorithm.cwd,'iamap','pangaea','configs','encoder','ssl4eo_moco.yaml')),
+            Path(os.path.join(self.algorithm.cwd,'iamap','pangaea','configs','encoder','dofa.yaml')),
             "vit_small_patch8_224.dino",
             "vit_base_patch16_224.dino",
             "vit_tiny_patch16_224.augreg_in21k",

@@ -8,12 +8,12 @@ from qgis.core import (
     QgsProcessingFeedback,
 )
 
-from ..ml import MLAlgorithm
-from ..similarity import SimilarityAlgorithm
-from ..clustering import ClusterAlgorithm
-from ..reduction import ReductionAlgorithm
-from ..utils.misc import get_file_md5_hash, remove_files_with_extensions
-from ..utils.geo import validate_geotiff
+from iamap.ml import MLAlgorithm
+from iamap.similarity import SimilarityAlgorithm
+from iamap.clustering import ClusterAlgorithm
+from iamap.reduction import ReductionAlgorithm
+from iamap.utils.misc import get_file_md5_hash, remove_files_with_extensions
+from iamap.utils.geo import validate_geotiff
 
 
 INPUT = os.path.join(Path(__file__).parent.parent.absolute(), "assets", "test.tif")
