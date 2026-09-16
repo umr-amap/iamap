@@ -1,5 +1,5 @@
 <p align="center">
-<img src="./icons/favicon.svg" width=20% height=20%> 
+<img src="./iamap/icons/favicon.svg" width=20% height=20%> 
 </p>
 
 # IAMAP
@@ -26,7 +26,7 @@ Search for `iamap` in QGIS plugin menu and install it with the menu. You can fin
 
 ### Local installation
 
-Alternatively, you can clone or copy this code into the python plugin directory of QGIS and manualy install.
+Alternatively, you can clone this code and copy the `iamap` directory into the python plugin directory of QGIS and manualy install.
 
 ```
 git clone --depth 1 https://github.com/umr-amap/iamap.git
