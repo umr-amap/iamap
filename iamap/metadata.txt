@@ -10,3 +10,4 @@ email=paul.tresson@ird.fr
 repository=https://github.com/umr-amap/iamap
 tracker=https://github.com/umr-amap/iamap/issues
 homepage=https://iamap.readthedocs.io/
+tags=deep learning, machine learning
