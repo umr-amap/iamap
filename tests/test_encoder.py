@@ -111,13 +111,14 @@ class TestEncoderAlgorithm(unittest.TestCase):
 
     @pytest.mark.xfail(raises=huggingface_hub.errors.LocalEntryNotFoundError)
     def test_init_model(self):
-        self.algorithm.cwd = Path(__file__).parent.parent.absolute()
+        root_dir = Path(__file__).parent.parent.absolute()
+        self.algorithm.cwd = os.path.join(root_dir, 'iamap')
         self.algorithm.ckpt_path = ''
         self.algorithm.quantization = True
         self.algorithm.device = 'cpu'
         archs = [
-            Path(os.path.join(self.algorithm.cwd,'iamap','pangaea','configs','encoder','ssl4eo_moco.yaml')),
-            Path(os.path.join(self.algorithm.cwd,'iamap','pangaea','configs','encoder','dofa.yaml')),
+            Path(os.path.join(self.algorithm.cwd,'pangaea','configs','encoder','ssl4eo_moco.yaml')),
+            Path(os.path.join(self.algorithm.cwd,'pangaea','configs','encoder','dofa.yaml')),
             "vit_small_patch8_224.dino",
             "vit_base_patch16_224.dino",
             "vit_tiny_patch16_224.augreg_in21k",
